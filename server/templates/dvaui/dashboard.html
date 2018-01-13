@@ -127,7 +127,7 @@
                         </div>
                         <div class="row m-t">
                             <div class="col-xs-5 text-center"><a class="btn btn-success" href="/stored_process/"><i class="fa fa-play"></i> Run DVAPQL script</a></div>
-                            <div class="col-xs-7 text-center"><a class="btn btn-primary" href="/process/"><i class="fa fa-list"></i> Monitor running processes</a></div>
+                            <div class="col-xs-7 text-center"><a class="btn btn-success" href="/stored_process/#shortcuts"> <i class="fa fa-plus"></i> Create/Apply/Train models</a></div>
                         </div>
                         <div class="modal fade" tabindex="-1" role="dialog" id="allowed">
                         <div class="modal-dialog" role="document">
@@ -211,8 +211,11 @@
                             <div class="col-xs-3 text-center">
                                 <h4 style="margin: 18px auto">Task status</h4>
                             </div>
-                            <div class="col-xs-offset-6 col-xs-3 text-center">
-                                <a class="btn btn-primary" href="{% url 'tasks' %}" style="margin: 10px auto" > <i class="fa fa-list"></i> All tasks</a>
+                            <div class="col-xs-offset-3 col-xs-3 text-center">
+                                <a class="btn btn-primary" href="/process/" style="margin: 10px auto">All processes</a>
+                            </div>
+                            <div class="col-xs-3 text-center">
+                                <a class="btn btn-primary" href="{% url 'tasks' %}" style="margin: 10px auto" >All tasks</a>
                             </div>
                         </div>
                     </div>
@@ -238,9 +241,6 @@
                         <div class="row">
                             <div class="col-xs-3 text-center">
                                 <h4 style="margin-top:18px">Objects</h4>
-                            </div>
-                            <div class="col-xs-9 text-center">
-                                <a class="btn btn-success" href="/stored_process/#shortcuts" style="margin: 10px auto" > <i class="fa fa-plus"></i> Import/Apply model, Create training set, Train model</a>
                             </div>
                         </div>
                     </div>

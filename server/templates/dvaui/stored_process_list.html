@@ -199,13 +199,42 @@
     </div>
     <div class="row">
         <div class="col-lg-6">
-            <div class="box box-primary">
-                <div class="box-header with-border">
-                    <h4>Create training set for training index approximation</h4>
-                </div>
-                <div class="box-body">
-                </div>
+        <form action="/shortcuts" method="post">
+        <div class="box box-primary">
+            <div class="box-header with-border">
+                <h4>Create training set for index approximation</h4>
             </div>
+            <div class="box-body">
+                    <div class="row">
+                        <div class="col-lg-12 form-group">
+                            <label for="name">name</label>
+                            <input name="name" class="form-control" placeholder="name" required="required" type="text" >
+                        </div>
+                        <div class="col-lg-12 form-group">
+                        <div class="form-group">
+                            <label for="frame_video_name">Select Video / Datasets</label>
+                            <select class="js-example-basic-multiple" multiple="multiple" id="approximator_training_video_pk" name="video_pk" class="form-control" style="width:100%">
+                            {% for v in videos %}
+                                <option value="{{ v.pk }}">{{ v.name }}</option>
+                            {% endfor %}
+                            </select>
+                        </div>
+                        </div>
+                        <div class="col-lg-12 form-group">
+                            <label for="selected">Select Indexer</label>
+                            <select class="js-example-basic" id="approximator_training_indexers" name="indexer_shasum"  style="width:100%">
+                            {% for i in indexers %}
+                                <option value="{{ i.shasum }}">{{ i.name }}</option>
+                            {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+            </div>
+            <div class="box-footer text-center">
+                {% csrf_token %}<button name="op" value="approximator_training_set" class="btn btn-primary">Create Training set for Index approximation</button>
+            </div>
+        </div>
+        </form>
         </div>
         <div class="col-lg-6">
             <div class="box box-primary">
@@ -283,10 +312,12 @@
         });
         //
         $("#selected_indexers").select2({theme: "bootstrap"});
+        $("#approximator_training_indexers").select2({theme: "bootstrap"});
         $("#selected_approximators").select2({theme: "bootstrap"});
         $("#apply_target").select2({theme: "bootstrap"});
         $("#apply_model_pk").select2({theme: "bootstrap"});
         $("#apply_video_pk").select2({theme: "bootstrap",multiple:true});
+        $("#approximator_training_video_pk").select2({theme: "bootstrap",multiple:true});
     })
 </script>
 {% endblock %}

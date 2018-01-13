@@ -21,7 +21,7 @@ if __name__ == '__main__':
     except:
         raise SystemError("Could not start container")
     while max_minutes:
-        print "Waiting for {max_minutes} minutes, while checking if DVA is running".format(max_minutes=max_minutes)
+        print "Checking if DVA server is running, waiting for another minute and at most {max_minutes} minutes".format(max_minutes=max_minutes)
         try:
             r = requests.get("http://localhost:8000")
             if r.ok:
