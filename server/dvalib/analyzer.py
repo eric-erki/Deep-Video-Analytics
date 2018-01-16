@@ -8,6 +8,7 @@ from PIL import Image
 import logging
 import numpy as np
 from .base_analyzer import BaseAnnotator
+from collections import namedtuple
 
 if os.environ.get('PYTORCH_MODE',False):
     import dvalib.crnn.utils as utils
@@ -18,12 +19,16 @@ if os.environ.get('PYTORCH_MODE',False):
     logging.info("In pytorch mode, not importing TF")
 elif os.environ.get('CAFFE_MODE',False):
     pass
+elif os.environ.get('MXNET_MODE',False):
+    import mxnet as mx
+    from PIL import Image
 else:
     import tensorflow as tf
     from tensorflow.contrib.slim.python.slim.nets import inception
     from tensorflow.python.training import saver as tf_saver
     slim = tf.contrib.slim
 
+Batch = namedtuple('Batch', ['data'])
 
 
 
@@ -138,3 +143,58 @@ class CRNNAnnotator(BaseAnnotator):
         return self.object_name,sim_pred,{},None
 
 
+class LocationNet(BaseAnnotator):
+
+    def __init__(self,model_path,epoch):
+        super(LocationNet, self).__init__()
+        self.session = None
+        self.object_name = "location"
+        self.model_path = model_path
+        self.cuda = False
+        self.model_path = model_path
+        self.prefix = "{}/RN101-5k500".format(model_path)
+        self.epoch = epoch
+        self.grids = []
+
+    def load(self):
+        sym, arg_params, aux_params = mx.model.load_checkpoint(self.prefix, self.epoch)
+        self.session = mx.mod.Module(symbol=sym, context=mx.gpu())
+        self.session.bind([('data', (1, 3, 224, 224))], for_training=False)
+        self.session.set_params(arg_params, aux_params, allow_missing=True)
+        self.mean_rgb = np.array([123.68, 116.779, 103.939]).reshape((3, 1, 1))
+        with open('{}/grids.txt'.format(self.model_path), 'r') as f:
+            for line in f:
+                line = line.strip().split('\t')
+                lat = float(line[1])
+                lng = float(line[2])
+                self.grids.append((lat, lng))
+
+    def apply(self,image_path):
+        if self.session is None:
+            self.load()
+        self.session.forward(Batch(self.preprocess(image_path)), is_train=False)
+        prob = self.session.get_outputs()[0].asnumpy()[0]
+        pred = np.argsort(prob)[::-1]
+        results = {}
+        for i in range(5):
+            pred_loc = self.grids[int(pred[i])]
+            results[i+1] = {'score':prob[pred[i]],
+                            'lat':pred_loc[0],
+                            'long': pred_loc[1],
+                            'bin_index':int(pred[i])
+                            }
+        return self.object_name,"",results,None
+
+    def preprocess(self,path):
+        img = Image.load(path)
+        short_side = min(img.shape[:2])
+        yy = int((img.shape[0] - short_side) / 2)
+        xx = int((img.shape[1] - short_side) / 2)
+        crop_img = img[yy: yy + short_side, xx: xx + short_side]
+        resized_img = img.resize(224, 224)
+        sample = np.asarray(resized_img) * 256
+        sample = np.swapaxes(sample, 0, 2)
+        sample = np.swapaxes(sample, 1, 2)
+        normed_img = sample - self.mean_rgb
+        normed_img = normed_img.reshape((1, 3, 224, 224))
+        return [mx.nd.array(normed_img)]

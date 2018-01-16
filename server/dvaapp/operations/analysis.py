@@ -19,5 +19,7 @@ class Analyzers(object):
                 Analyzers._analyzers[da.name] = analyzer.CRNNAnnotator(aroot + "{}/crnn.pth".format(da.uuid))
             elif da.name == 'tagger':
                 Analyzers._analyzers[da.name] = analyzer.OpenImagesAnnotator(aroot + "{}/open_images.ckpt".format(da.uuid))
+            elif da.algorithm == 'location_net':
+                Analyzers._analyzers[da.name] = analyzer.LocationNet(aroot + "{}/".format(da.uuid),epoch=da.argumets['epoch'])
             else:
                 raise ValueError,"analyzer by id {} not found".format(da.pk)
