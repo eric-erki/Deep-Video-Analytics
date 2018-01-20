@@ -143,15 +143,19 @@ class TrainingSet(models.Model):
     TRAIN_TASK_TYPES = (
         (DETECTION, 'Detection'),
         (INDEXING, 'Indexing'),
-        (CLASSIFICATION, 'Classication')
+        (LOPQINDEX, 'LOPQ Approximation'),
+        (CLASSIFICATION, 'Classification')
     )
     IMAGES = 'I'
     VIDEOS = 'V'
+    INDEX = 'X'
     INSTANCE_TYPES = (
         (IMAGES, 'images'),
+        (INDEX, 'index'),
         (VIDEOS, 'videos'),
     )
-    event = models.ForeignKey(TEvent)
+    event = models.ForeignKey(TEvent,null=True)
+    source_filters = JSONField(blank=True,null=True)
     training_task_type = models.CharField(max_length=1,choices=TRAIN_TASK_TYPES,db_index=True,default=DETECTION)
     instance_type = models.CharField(max_length=1,choices=INSTANCE_TYPES,db_index=True,default=IMAGES)
     count = models.IntegerField(null=True)

@@ -8,11 +8,60 @@
             <h2>Training Sets
                 <a href="/stored_process#shortcuts" class="btn btn-success" style="float: right"><i class="fa fa-plus-square"></i> Create training set</a>
             </h2>
+            {% if is_paginated %}
+                <div class="pagination text-center" style="width:100%">
+                    <span class="page-links">
+                        {% if page_obj.has_previous %}
+                            <a class="btn btn-info" style="float:left" href=".?page={{ page_obj.previous_page_number }}"><i class="fa fa-backward"></i>  Go back</a>
+                        {% endif %}
+                        <span class="page-current " style="font-size:24pt;font-weight:bold">
+                            {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                        </span>
+                        {% if page_obj.has_next %}
+                            <a class="btn btn-info" style="float:right" href=".?page={{ page_obj.next_page_number }}">Load more  <i class="fa fa-forward"></i></a>
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
 </section>
 <section class="content">
+<div class="row">
+    <div class="col-lg-12 col-md-12">
+        <div class="box">
+            <div class="box-body">
+                <table class="table dataTables">
+                <thead>
+                <tr>
+                    <th class="text-center">name</th>
+                    <th class="text-center">instances</th>
+                    <th class="text-center">task</th>
+                    <th class="text-center">created</th>
+                    <th class="text-center">built</th>
+                    <th class="text-center">build event</th>
+                    <th class="text-center">details</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for t in object_list %}
+                    <tr>
+                        <td>{{ t.name }} </td>
+                        <td>{{ t.get_instance_type_display }} </td>
+                        <td>{{ t.get_training_task_type_display }} </td>
+                        <td>{{ t.created|timesince }} ago</td>
+                        <td>{{ t.built }} </td>
+                        <td class="text-center">{% if t.event %}<a href="/task_detail/{{ t.event_id }}">build event</a> {% endif %}</td>
+                        <td class="text-center"><a  href="/training_sets/{{ t.pk }}">details</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 </section>
 {% endblock %}
 {% block page_js%}

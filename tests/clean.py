@@ -19,7 +19,7 @@ if __name__ == '__main__':
     subprocess.check_output(shlex.split('python manage.py flush --no-input'),cwd='../server')
     utils.migrate()
     for dirname in os.listdir(settings.MEDIA_ROOT):
-        if 'DS_store' not in dirname:
+        if 'DS_Store' not in dirname:
             shutil.rmtree("{}/{}".format(settings.MEDIA_ROOT,dirname))
     for log_filename in glob.glob("../logs/*.log"):
         os.remove(log_filename)

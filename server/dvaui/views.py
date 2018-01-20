@@ -349,8 +349,23 @@ class TrainingSetList(UserPassesTestMixin, ListView):
     template_name = "dvaui/training_set_list.html"
     paginate_by = 50
 
+    class Meta:
+        ordering = ["-created"]
+
     def get_context_data(self, **kwargs):
         context = super(TrainingSetList, self).get_context_data(**kwargs)
+        return context
+
+    def test_func(self):
+        return user_check(self.request.user)
+
+
+class TrainingSetDetail(UserPassesTestMixin, DetailView):
+    model = TrainingSet
+    template_name = "dvaui/training_set_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(TrainingSetDetail, self).get_context_data(**kwargs)
         return context
 
     def test_func(self):
@@ -968,6 +983,12 @@ def shortcuts(request):
                 algorithm = Retriever.EXACT
             _ = view_shared.create_retriever(name,algorithm,filters,indexer_shasum,approximator_shasum,user)
             return redirect('retriever_list')
+        elif request.POST.get('op') == 'create_approximator_training_set':
+            name = request.POST.get('name')
+            video_pks = request.POST.getlist('video_pk')
+            indexer_shasum = request.POST.get('indexer_shasum')
+            _ = view_shared.create_approximator_training_set(name,indexer_shasum,video_pks,user)
+            return redirect('training_set_list')
         else:
             raise NotImplementedError(request.POST.get('op'))
     else:
