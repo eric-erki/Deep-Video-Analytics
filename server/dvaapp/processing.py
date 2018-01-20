@@ -27,7 +27,7 @@ SYNC_TASKS = {
     'perform_indexing':[{'operation': 'perform_sync', 'arguments': {'dirname': 'indexes'}},],
     'perform_index_approximation':[{'operation': 'perform_sync', 'arguments': {'dirname': 'indexes'}},],
     'perform_import':[{'operation': 'perform_sync', 'arguments': {}},],
-    'perform_detector_training':[],
+    'perform_training':[],
     'perform_detector_import':[],
 }
 

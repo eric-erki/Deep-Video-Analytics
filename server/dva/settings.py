@@ -268,6 +268,6 @@ TASK_NAMES_TO_QUEUE = {
     "perform_sync":Q_EXTRACTOR,
     "perform_detector_import":Q_EXTRACTOR,
     "perform_import":Q_EXTRACTOR,
-    "perform_detector_training": Q_TRAINER,
+    "perform_training": Q_TRAINER,
     "perform_video_decode_lambda": Q_LAMBDA
 }

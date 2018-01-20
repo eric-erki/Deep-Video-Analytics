@@ -587,4 +587,5 @@ def perform_training(training_set_pk,args,user=None):
     }
     p = DVAPQLProcess()
     p.create_from_json(spec, user)
+    p.launch()
     return p.process.pk
