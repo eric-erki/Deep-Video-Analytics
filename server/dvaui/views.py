@@ -1001,7 +1001,7 @@ def shortcuts(request):
             args['v'] = request.POST.get('v')
             args['sub'] = request.POST.get('sub')
             process_pk = view_shared.perform_training(training_set_pk,args,user)
-            return redirect('process_list',process_pk)
+            return redirect('process_detail',process_pk)
         else:
             raise NotImplementedError(request.POST.get('op'))
     else:
