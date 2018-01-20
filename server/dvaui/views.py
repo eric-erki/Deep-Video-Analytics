@@ -415,6 +415,7 @@ class StoredProcessList(UserPassesTestMixin, ListView):
         context['models'] = TrainedModel.objects.filter(model_type__in=[TrainedModel.INDEXER,TrainedModel.DETECTOR,
                                                                         TrainedModel.ANALYZER])
         context["videos"] = Video.objects.all()
+        context["lopq_training_sets"] = TrainingSet.objects.filter(training_task_type=TrainingSet.LOPQINDEX, built=True)
         return context
 
     def test_func(self):
@@ -989,62 +990,19 @@ def shortcuts(request):
             indexer_shasum = request.POST.get('indexer_shasum')
             _ = view_shared.create_approximator_training_set(name,indexer_shasum,video_pks,user)
             return redirect('training_set_list')
+        elif request.POST.get('op') == 'perform_approximator_training':
+            training_set_pk = request.POST.get('lopq_training_set_pk')
+            dt = TrainingSet.objects.get(pk=training_set_pk)
+            args = {}
+            args['trainer'] = "LOPQ"
+            args['indexer_shasum'] = dt.source_filters['indexer_shasum']
+            args['components'] = request.POST.get('components')
+            args['m'] = request.POST.get('m')
+            args['v'] = request.POST.get('v')
+            args['sub'] = request.POST.get('sub')
+            process_pk = view_shared.perform_training(training_set_pk,args,user)
+            return redirect('process_list',process_pk)
         else:
             raise NotImplementedError(request.POST.get('op'))
     else:
         raise NotImplementedError("Only POST allowed")
-
-
-
-# @user_passes_test(user_check)
-# def index_video(request):
-#     if request.method == 'POST':
-#         filters = {
-#             'region_type__in': request.POST.getlist('region_type__in', []),
-#             'w__gte': int(request.POST.get('w__gte')),
-#             'h__gte': int(request.POST.get('h__gte'))
-#          }
-#         for optional_key in ['text__contains', 'object_name__contains', 'object_name']:
-#             if request.POST.get(optional_key, None):
-#                 filters[optional_key] = request.POST.get(optional_key)
-#         for optional_key in ['h__lte', 'w__lte']:
-#             if request.POST.get(optional_key, None):
-#                 filters[optional_key] = int(request.POST.get(optional_key))
-#         args = {'filters':filters,'index':request.POST.get('visual_index_name')}
-#         p = DVAPQLProcess()
-#         spec = {
-#             'process_type':DVAPQL.PROCESS,
-#             'tasks':[
-#                 {
-#                     'operation':'perform_indexing',
-#                     'arguments':args,
-#                     'video_id':request.POST.get('video_id')
-#                 }
-#             ]
-#         }
-#         user = request.user if request.user.is_authenticated else None
-#         p.create_from_json(spec,user)
-#         p.launch()
-#         redirect('process_detail',pk=p.process.pk)
-#     else:
-#         raise ValueError
-#
-#
-# @user_passes_test(user_check)
-# def detect_objects(request):
-#     if request.method == 'POST':
-#         detector_pk = request.POST.get('detector_pk')
-#         video_pk = request.POST.get('video_pk')
-#         p = DVAPQLProcess()
-#         p.create_from_json(j={
-#             "process_type":DVAPQL.PROCESS,
-#             "tasks":[{'operation':"perform_detection",
-#                       'arguments':{'detector_pk': int(detector_pk),'detector':"custom"},
-#                       'video_id':video_pk}]
-#         },user=request.user if request.user.is_authenticated else None)
-#         p.launch()
-#         return redirect('process_detail',pk=p.process.pk)
-#     else:
-#         raise ValueError
-
-

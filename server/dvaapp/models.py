@@ -154,6 +154,7 @@ class TrainingSet(models.Model):
         (INDEX, 'index'),
         (VIDEOS, 'videos'),
     )
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     event = models.ForeignKey(TEvent,null=True)
     source_filters = JSONField(blank=True,null=True)
     training_task_type = models.CharField(max_length=1,choices=TRAIN_TASK_TYPES,db_index=True,default=DETECTION)

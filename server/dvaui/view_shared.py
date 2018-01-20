@@ -571,3 +571,20 @@ def create_approximator_training_set(name,indexer_shasum,video_pks,user=None):
     p = DVAPQLProcess()
     p.create_from_json(spec, user)
     p.launch()
+
+
+def perform_training(training_set_pk,args,user=None):
+    args['training_set_pk'] = training_set_pk
+    spec = {
+        'process_type': DVAPQL.PROCESS,
+        'tasks': [
+
+                    {
+                        "operation":"perform_training",
+                        "arguments":args
+                    }
+                ]
+    }
+    p = DVAPQLProcess()
+    p.create_from_json(spec, user)
+    return p.process.pk

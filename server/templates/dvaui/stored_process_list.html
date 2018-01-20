@@ -197,7 +197,7 @@
         </form>
     </div>
     </div>
-    <div class="row">
+    <div class="row" id="shortcuts_training">
         <div class="col-lg-6">
         <form action="/shortcuts" method="post">
         <div class="box box-primary">
@@ -237,13 +237,30 @@
         </form>
         </div>
         <div class="col-lg-6">
+            <form action="/shortcuts" method="post">
             <div class="box box-primary">
                 <div class="box-header with-border">
                     <h4>Train an LOPQ approximator</h4>
                 </div>
                 <div class="box-body">
+                        <div class="col-lg-12 form-group">
+                            <label for="selected">Select Training Set (only build )</label>
+                            <select class="js-example-basic" id="lopq_training_set_pk" name="lopq_training_set_pk"  style="width:100%">
+                            {% for i in lopq_training_sets %}
+                                <option value="{{ i.pk }}">{{ i.name }} ( id {{ i.pk }})</option>
+                            {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-6"><div class="form-group"><label>components<input value="128" type="number" class="form-control" name="components"></label></div></div>
+                        <div class="col-lg-3 col-md-6"><div class="form-group"><label>M<input type="number" value="32" class="form-control" name="m"></label></div></div>
+                        <div class="col-lg-3 col-md-6"><div class="form-group"><label>V<input type="number" value="32" class="form-control" name="v"></label></div></div>
+                        <div class="col-lg-3 col-md-6"><div class="form-group"><label>Sub-quantizers<input type="number" value="256" class="form-control" name="sub"></label></div></div>
+                </div>
+                <div class="box-footer text-center">
+                {% csrf_token %}<button name="op" value="perform_approximator_training" class="btn btn-primary">Train LOPQ approximator</button>
                 </div>
             </div>
+            </form>
         </div>
     </div>
     <div class="row">
@@ -316,6 +333,7 @@
         $("#selected_approximators").select2({theme: "bootstrap"});
         $("#apply_target").select2({theme: "bootstrap"});
         $("#apply_model_pk").select2({theme: "bootstrap"});
+        $("#lopq_training_set_pk").select2({theme: "bootstrap"});
         $("#apply_video_pk").select2({theme: "bootstrap",multiple:true});
         $("#approximator_training_video_pk").select2({theme: "bootstrap",multiple:true});
     })

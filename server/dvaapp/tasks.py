@@ -9,6 +9,7 @@ from . import models
 from .operations.retrieval import Retrievers
 from .operations.decoding import VideoDecoder
 from .operations.dataset import DatasetCreator
+from .operations.training import train_lopq
 from .processing import process_next, mark_as_completed
 from . import global_model_retriever
 from . import task_handlers
@@ -531,15 +532,20 @@ def perform_training(task_id):
     else:
         start.started = True
         start.save()
-    train_detector = subprocess.Popen(['fab', 'train_yolo:{}'.format(start.pk)],
-                                      cwd=os.path.join(os.path.abspath(__file__).split('tasks.py')[0], '../'))
-    train_detector.wait()
-    if train_detector.returncode != 0:
-        start.errored = True
-        start.error_message = "fab train_yolo:{} failed with return code {}".format(start.pk, train_detector.returncode)
-        start.duration = (timezone.now() - start.start_ts).total_seconds()
-        start.save()
-        raise ValueError(start.error_message)
+    args = start.arguments
+    trainer = args['trainer']
+    if trainer == 'LOPQ':
+        train_lopq(args)
+    elif trainer == 'YOLO':
+        train_detector = subprocess.Popen(['fab', 'train_yolo:{}'.format(start.pk)],
+                                          cwd=os.path.join(os.path.abspath(__file__).split('tasks.py')[0], '../'))
+        train_detector.wait()
+        if train_detector.returncode != 0:
+            start.errored = True
+            start.error_message = "fab train_yolo:{} failed with return code {}".format(start.pk, train_detector.returncode)
+            start.duration = (timezone.now() - start.start_ts).total_seconds()
+            start.save()
+            raise ValueError(start.error_message)
     mark_as_completed(start)
     return 0
 
