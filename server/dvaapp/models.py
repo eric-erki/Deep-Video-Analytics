@@ -135,6 +135,31 @@ class TEvent(models.Model):
     task_group_id = models.IntegerField(default=-1)
 
 
+class TrainingSet(models.Model):
+    DETECTION = 'D'
+    INDEXING = 'I'
+    LOPQINDEX = 'A'
+    CLASSIFICATION = 'C'
+    TRAIN_TASK_TYPES = (
+        (DETECTION, 'Detection'),
+        (INDEXING, 'Indexing'),
+        (CLASSIFICATION, 'Classication')
+    )
+    IMAGES = 'I'
+    VIDEOS = 'V'
+    INSTANCE_TYPES = (
+        (IMAGES, 'images'),
+        (VIDEOS, 'videos'),
+    )
+    event = models.ForeignKey(TEvent)
+    training_task_type = models.CharField(max_length=1,choices=TRAIN_TASK_TYPES,db_index=True,default=DETECTION)
+    instance_type = models.CharField(max_length=1,choices=INSTANCE_TYPES,db_index=True,default=IMAGES)
+    count = models.IntegerField(null=True)
+    name = models.CharField(max_length=500,default="")
+    built = models.BooleanField(default=False)
+    created = models.DateTimeField('date created', auto_now_add=True)
+
+
 class TrainedModel(models.Model):
     """
     A model Model
@@ -180,6 +205,7 @@ class TrainedModel(models.Model):
     arguments = JSONField(null=True,blank=True)
     source = models.ForeignKey(TEvent, null=True)
     trained = models.BooleanField(default=False)
+    training_set = models.ForeignKey(TrainingSet,null=True)
     url = models.CharField(max_length=200,default="")
     files = JSONField(null=True,blank=True)
     produces_labels = models.BooleanField(default=False)
@@ -671,26 +697,3 @@ class QueryRegionIndexVector(models.Model):
     created = models.DateTimeField('date created', auto_now_add=True)
 
 
-class TrainingSet(models.Model):
-    DETECTION = 'D'
-    INDEXING = 'I'
-    LOPQINDEX = 'A'
-    CLASSIFICATION = 'C'
-    TRAIN_TASK_TYPES = (
-        (DETECTION, 'Detection'),
-        (INDEXING, 'Indexing'),
-        (CLASSIFICATION, 'Classication')
-    )
-    IMAGES = 'I'
-    VIDEOS = 'V'
-    INSTANCE_TYPES = (
-        (IMAGES, 'images'),
-        (VIDEOS, 'videos'),
-    )
-    event = models.ForeignKey(TEvent)
-    training_task_type = models.CharField(max_length=1,choices=TRAIN_TASK_TYPES,db_index=True,default=DETECTION)
-    instance_type = models.CharField(max_length=1,choices=INSTANCE_TYPES,db_index=True,default=IMAGES)
-    count = models.IntegerField(null=True)
-    name = models.CharField(max_length=500,default="")
-    built = models.BooleanField(default=False)
-    created = models.DateTimeField('date created', auto_now_add=True)
