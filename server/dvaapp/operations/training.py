@@ -1,6 +1,7 @@
 import json, shutil, os
 import numpy as np
 from dvalib.trainers import lopq_trainer
+from django.conf import settings
 from dvaapp.models import TrainedModel, Retriever
 
 
