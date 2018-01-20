@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from models import Video, Frame, Region, DVAPQL, QueryResults, TEvent, IndexEntries, \
     Tube, Segment, Label, VideoLabel, FrameLabel, RegionLabel, \
     SegmentLabel, TubeLabel, TrainedModel, Retriever, SystemState, QueryRegion,\
-    QueryRegionResults, Worker
+    QueryRegionResults, Worker, TrainingSet
 import os, json, logging, glob
 from collections import defaultdict
 from django.conf import settings
@@ -51,6 +51,14 @@ class TrainedModelSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = TrainedModel
+        fields = '__all__'
+
+
+class TrainingSetSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.ReadOnlyField()
+
+    class Meta:
+        model = TrainingSet
         fields = '__all__'
 
 

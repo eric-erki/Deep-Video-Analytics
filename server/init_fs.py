@@ -33,7 +33,8 @@ if __name__ == "__main__":
                 pass
     if ExternalServer.objects.count() == 0:
         for e in json.loads(file("../configs/custom_defaults/external.json").read()):
-            ExternalServer.objects.get_or_create(name=e['name'],url=e['url'])
+            de,_ = ExternalServer.objects.get_or_create(name=e['name'],url=e['url'])
+            de.pull()
     if sys.platform == 'darwin':
         default_models = json.loads(file("../configs/custom_defaults/trained_models_mac.json").read())
     else:

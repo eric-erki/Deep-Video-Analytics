@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-import subprocess, os, logging, io, sys, json, tempfile, gzip
+import subprocess, os, logging, io, sys, json, tempfile, gzip, copy
 from urlparse import urlparse
 from collections import defaultdict
 from PIL import Image
@@ -491,6 +491,30 @@ def perform_training_set_creation(task_id):
     else:
         start.started = True
         start.save()
+    args = start.arguments
+    dt = models.TrainingSet.objects.get(pk=args['training_set_pk'])
+    if dt.event:
+        raise ValueError("Training set has been already built or failed to build, please clone instead of rebuilding.")
+    if dt.training_task_type == models.TrainingSet.LOPQINDEX:
+        file_list = []
+        filters = copy.deepcopy(dt.source_filters)
+        filters['approximate'] = False
+        queryset, target = task_shared.build_queryset(args=args,target="index_entries",filters=filters)
+        total_count = 0
+        for di in queryset:
+            file_list.append({
+                "path": di.npy_path(""),
+                "count": di.count,
+                "pk": di.pk
+            })
+            total_count += di.count
+        dt.built = True
+        dt.count = total_count
+        dt.files = file_list
+        dt.event = start
+        dt.save()
+    else:
+        raise NotImplementedError
     mark_as_completed(start)
     return 0
 

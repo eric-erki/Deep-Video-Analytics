@@ -556,7 +556,7 @@ def create_approximator_training_set(name,indexer_shasum,video_pks,user=None):
                     "instance_type":TrainingSet.INDEX,
                     "source_filters": {
                         "indexer_shasum": indexer_shasum,
-                        "video_id_in":video_pks,
+                        "video_id__in":video_pks,
                     }
                 },
                 "tasks":[
