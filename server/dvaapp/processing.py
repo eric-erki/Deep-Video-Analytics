@@ -32,6 +32,7 @@ SYNC_TASKS = {
 }
 
 ANALYER_NAME_TO_PK = {}
+APPROXIMATOR_NAME_TO_PK = {}
 INDEXER_NAME_TO_PK = {}
 APPROXIMATOR_SHASUM_TO_PK = {}
 RETRIEVER_NAME_TO_PK = {}
@@ -54,6 +55,12 @@ def get_queues():
 
 
 def get_model_specific_queue_name(operation,args):
+    """
+    TODO simplify this mess by using model_selector
+    :param operation:
+    :param args:
+    :return:
+    """
     if 'detector_pk' in args:
         queue_name = "q_detector_{}".format(args['detector_pk'])
     elif 'indexer_pk' in args:
@@ -78,6 +85,12 @@ def get_model_specific_queue_name(operation,args):
             APPROXIMATOR_SHASUM_TO_PK[ashasum] = TrainedModel.objects.get(shasum=ashasum,
                                                                           model_type=TrainedModel.APPROXIMATOR).pk
         queue_name = 'q_approximator_{}'.format(APPROXIMATOR_SHASUM_TO_PK[ashasum])
+    elif 'approximator' in args:
+        ashasum= args['approximator']
+        if args['approximator'] not in APPROXIMATOR_NAME_TO_PK:
+            APPROXIMATOR_SHASUM_TO_PK[ashasum] = TrainedModel.objects.get(name=args['approximator'],
+                                                                          model_type=TrainedModel.APPROXIMATOR).pk
+        queue_name = 'q_approximator_{}'.format(APPROXIMATOR_NAME_TO_PK[args['approximator']])
     elif 'analyzer' in args:
         if args['analyzer'] not in ANALYER_NAME_TO_PK:
             ANALYER_NAME_TO_PK[args['analyzer']] = TrainedModel.objects.get(name=args['analyzer'],model_type=TrainedModel.ANALYZER).pk
