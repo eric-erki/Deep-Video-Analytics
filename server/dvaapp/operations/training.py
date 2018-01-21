@@ -13,7 +13,7 @@ def train_lopq(start,args):
         os.mkdir(dirname)
     except:
         pass
-    l = lopq_trainer.LOPQTrainer(name="LOPQ trained on {} event {}".format(dt.pk,start.pk),
+    l = lopq_trainer.LOPQTrainer(name=args["name"],
                                  dirname=dirname,
                                  components=args['components'],m=args['m'],v=args['v'],sub=args['sub'],
                                  source_indexer_shasum=args['indexer_shasum'])
@@ -34,6 +34,7 @@ def train_lopq(start,args):
     m.algorithm = j["algorithm"]
     m.model_type = j["model_type"]
     m.arguments = j["arguments"]
+    m.shasum = j["shasum"]
     m.files = j["files"]
     m.event = start
     m.training_set = dt

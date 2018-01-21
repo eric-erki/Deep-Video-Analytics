@@ -995,6 +995,7 @@ def shortcuts(request):
             dt = TrainingSet.objects.get(pk=training_set_pk)
             args = {}
             args['trainer'] = "LOPQ"
+            args['name'] = request.POST.get('name')
             args['indexer_shasum'] = dt.source_filters['indexer_shasum']
             args['components'] = request.POST.get('components')
             args['m'] = request.POST.get('m')
