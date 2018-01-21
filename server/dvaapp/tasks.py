@@ -516,6 +516,7 @@ def perform_training_set_creation(task_id):
         dt.save()
     else:
         raise NotImplementedError
+    process_next(start.pk)
     mark_as_completed(start)
     return 0
 
@@ -546,6 +547,7 @@ def perform_training(task_id):
             start.duration = (timezone.now() - start.start_ts).total_seconds()
             start.save()
             raise ValueError(start.error_message)
+    process_next(start.pk)
     mark_as_completed(start)
     return 0
 
