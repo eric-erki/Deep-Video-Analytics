@@ -56,7 +56,7 @@ class Approximators(object):
         return Approximators._index_approximator[di.pk]
 
     @classmethod
-    def approximate_queryset(cls,approx,da,queryset,video_id,event_id):
+    def approximate_queryset(cls,approx,da,queryset,event_id):
         new_approx_indexes = []
         for index_entry in queryset:
             uid = str(uuid.uuid1()).replace('-', '_')
@@ -65,7 +65,7 @@ class Approximators(object):
             if da.algorithm == 'LOPQ':
                 for i, e in enumerate(entries):
                     e['codes'] = approx.approximate(vectors[i, :])
-                entries_fname = "{}/{}/indexes/{}.json".format(settings.MEDIA_ROOT, video_id, uid)
+                entries_fname = "{}/{}/indexes/{}.json".format(settings.MEDIA_ROOT, index_entry.video_id, uid)
                 with open(entries_fname, 'w') as entryfile:
                     json.dump(entries, entryfile)
                 approx_ind.entries_file_name = "{}.json".format(uid)
@@ -73,8 +73,8 @@ class Approximators(object):
             elif da.algorithm == 'PCA':
                 # TODO optimize this by doing matmul rather than calling for each entry
                 approx_vectors = np.array([approx.approximate(vectors[i, :]) for i, e in enumerate(entries)])
-                entries_fname = "{}/{}/indexes/{}.json".format(settings.MEDIA_ROOT, video_id, uid)
-                feat_fname = "{}/{}/indexes/{}.npy".format(settings.MEDIA_ROOT, video_id, uid)
+                entries_fname = "{}/{}/indexes/{}.json".format(settings.MEDIA_ROOT, index_entry.video_id, uid)
+                feat_fname = "{}/{}/indexes/{}.npy".format(settings.MEDIA_ROOT, index_entry.video_id, uid)
                 with open(entries_fname, 'w') as entryfile:
                     json.dump(entries, entryfile)
                 with open(feat_fname, 'w') as featfile:
