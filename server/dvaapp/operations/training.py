@@ -42,4 +42,4 @@ def train_lopq(start,args):
     m.create_directory()
     m.upload()
     _ = Retriever.objects.create(name="lopq retriever",source_filters={}, algorithm=Retriever.LOPQ,
-                                  approximator_shasum=m.shasum)
+                                  approximator_shasum=m.shasum,indexer_shasum=args['indexer_shasum'])
