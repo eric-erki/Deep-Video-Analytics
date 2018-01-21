@@ -6,7 +6,15 @@
 <div class="row">
     <div class="box box-info">
         <div class="box-header">
-            <h2>Custom Detector {{ object.name }} trained using {{ object.algorithm }} with {{ object.boxes_count }} boxes on {{ object.frames_count }} images </h2>
+            <h2>
+            <div style="float:right">
+                <form action="/shortcuts" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" value="{{ object.pk }}" name="model_pk" />
+                    <button class="btn btn-success" name="op" value="export_model" type="submit"><i class="fa fa-download"></i> Export trained model</button>
+                </form>
+            </div>
+            Trained model {{ object.name }} </h2>
         </div>
     </div>
 </div>
@@ -23,26 +31,25 @@
                 <textarea class="form-control" readonly="readonly"  rows="10">{{ object.arguments }}</textarea>
             </div>
             <div class="box-footer">
-                <a href="{{ MEDIA_URL }}exports/{{ object.pk }}.dva_detector.zip" class="btn btn-primary" ><i class="fa fa-download"></i> Download trained model</a>
             </div>
             </div>
         </div>
         <div class="col-md-6">
             <div class="box box-primary">
-            <div class="box-header with-border"><h3>Class distribution</h3></div>
+            <div class="box-header with-border"><h3>Files</h3></div>
             <div class="box-body">
                 <table class="table dataTables-dict">
                     <thead>
                         <tr>
-                            <th>Object</th>
-                            <th>Count</th>
+                            <th>Filename</th>
+                            <th>URL/Path</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for k,v in class_distribution %}
+                        {% for f in object.files %}
                             <tr>
-                                <td>{{ k }}</td>
-                                <td class="text-right">{{ v }}</td>
+                                <td>{{ f.filename }}</td>
+                                <td>{{ f.url }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -54,51 +61,15 @@
     <div class="row">
         <div class="col-md-6">
             <div class="box box-primary">
-            <div class="box-header with-border"><h3>Phase 1 loss</h3></div>
+            <div class="box-header with-border"><h3>Training Set</h3></div>
             <div class="box-body">
-                <table class="table dataTables-dict">
-                    <thead>
-                        <tr>
-                            <th>Epoch</th>
-                            <th>Train loss</th>
-                            <th>Validation loss loss</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for k in phase_1_log %}
-                            <tr>
-                                <td class="text-center">{{ k.0 }}</td>
-                                <td class="text-right">{{ k.1 }}</td>
-                                <td class="text-right">{{ k.2 }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
             </div>
             </div>
         </div>
         <div class="col-md-6">
             <div class="box box-primary">
-            <div class="box-header with-border"><h3>Phase 2 loss</h3></div>
+            <div class="box-header with-border"><h3>Training Event</h3></div>
             <div class="box-body">
-                    <table class="table dataTables-dict">
-                    <thead>
-                        <tr>
-                            <th>Epoch</th>
-                            <th>Train loss</th>
-                            <th>Validation loss loss</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for k in phase_2_log %}
-                            <tr>
-                                <td class="text-center">{{ k.0 }}</td>
-                                <td class="text-right">{{ k.1 }}</td>
-                                <td class="text-right">{{ k.2 }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
             </div>
             </div>
         </div>

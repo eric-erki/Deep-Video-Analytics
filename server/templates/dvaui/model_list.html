@@ -44,12 +44,10 @@
                     <th class="text-center">Type</th>
                     <th class="text-center">Sub type</th>
                     <th>Mode</th>
-                    <th>weights file checksum</th>
-                    <th>labels</th>
-                    <th>text</th>
-                    <th>metadata</th>
+                    <th class="text-center">Shasum</th>
+                    <th class="text-center">Training Set</th>
+                    <th class="text-center">Training event</th>
                     <th class="text-center">Details</th>
-
                 </tr>
                 </thead>
                 <tbody>
@@ -60,10 +58,9 @@
                         <td>{{ i.get_detector_type_display }} </td>
                         <td>{{ i.get_mode_display }} </td>
                         <td>{{ i.shasum }}</td>
-                        <td>{{ i.produces_labels }}</td>
-                        <td>{{ i.produces_text }}</td>
-                        <td>{{ i.produces_json }}</td>
-                        <td class="text-center"><a href="/models/{{ d.pk }}">details</a></td>
+                        <td class="text-center">{% if i.training_set %}<a href="training_set/{{ i.training_set.pk }}">Training set</a>{% endif %}</td>
+                        <td class="text-center">{% if i.event %}<a href="task_detail/{{ i.event_id }}">Training event</a>{% endif %}</td>
+                        <td class="text-center"><a href="/models/{{ i.pk }}">details</a></td>
                     </tr>
                 {% endfor %}
                 </tbody>
