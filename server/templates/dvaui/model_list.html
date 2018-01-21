@@ -58,8 +58,8 @@
                         <td>{{ i.get_detector_type_display }} </td>
                         <td>{{ i.get_mode_display }} </td>
                         <td>{{ i.shasum }}</td>
-                        <td class="text-center">{% if i.training_set %}<a href="training_set/{{ i.training_set.pk }}">Training set</a>{% endif %}</td>
-                        <td class="text-center">{% if i.event %}<a href="task_detail/{{ i.event_id }}">Training event</a>{% endif %}</td>
+                        <td class="text-center">{% if i.training_set %}<a href="/training_sets/{{ i.training_set.pk }}">Training set</a>{% endif %}</td>
+                        <td class="text-center">{% if i.event %}<a href="/task_detail/{{ i.event_id }}">Training event</a>{% endif %}</td>
                         <td class="text-center"><a href="/models/{{ i.pk }}">details</a></td>
                     </tr>
                 {% endfor %}
