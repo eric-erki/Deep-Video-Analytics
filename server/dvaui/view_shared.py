@@ -574,7 +574,7 @@ def create_approximator_training_set(name,indexer_shasum,video_pks,user=None):
 
 
 def perform_training(training_set_pk,args,user=None):
-    args['training_set_pk'] = training_set_pk
+    args['selector'] = {"pk": training_set_pk}
     spec = {
         'process_type': DVAPQL.PROCESS,
         'tasks': [

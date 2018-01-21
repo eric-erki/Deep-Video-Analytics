@@ -6,7 +6,7 @@ from dvaapp.models import TrainedModel, Retriever, TrainingSet, IndexEntries
 
 
 def train_lopq(start,args):
-    dt = TrainingSet.objects.get(pk=args['training_set_pk'])
+    dt = TrainingSet.objects.get(**args['selector'])
     m = TrainedModel()
     dirname = "{}/models/{}".format(settings.MEDIA_ROOT,m.uuid)
     try:
