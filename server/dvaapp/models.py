@@ -209,7 +209,7 @@ class TrainedModel(models.Model):
     model_filename = models.CharField(max_length=200,default="",null=True)
     created = models.DateTimeField('date created', auto_now_add=True)
     arguments = JSONField(null=True,blank=True)
-    source = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent, null=True)
     trained = models.BooleanField(default=False)
     training_set = models.ForeignKey(TrainingSet,null=True)
     url = models.CharField(max_length=200,default="")
@@ -237,17 +237,10 @@ class TrainedModel(models.Model):
         else:
             return None
 
-    def get_yolo_args(self):
-        model_dir = "{}/models/{}/".format(settings.MEDIA_ROOT, self.uuid)
-        class_names = {k: v for k, v in json.loads(self.class_names)}
-        args = {'root_dir': model_dir,
-                'detector_pk': self.pk,
-                'class_names':{i: k for k, i in class_names.items()}
-                }
-        return args
-
-    def get_class_dist(self):
-        return json.loads(self.class_distribution) if self.class_distribution.strip() else {}
+    def upload(self):
+        for m in self.files:
+            if settings.DISABLE_NFS and sys.platform != 'darwin':
+                fs.upload_file_to_remote("/models/{}/{}".format(self.uuid,m['filename']))
 
     def download(self):
         root_dir = settings.MEDIA_ROOT
@@ -266,8 +259,7 @@ class TrainedModel(models.Model):
                 shutil.copy(m['url'], dlpath)
             else:
                 fs.get_path_to_file(m['url'],dlpath)
-            if settings.DISABLE_NFS and sys.platform != 'darwin':
-                fs.upload_file_to_remote("/models/{}/{}".format(self.uuid,m['filename']))
+        self.upload()
         if self.model_type == TrainedModel.DETECTOR and self.detector_type == TrainedModel.YOLO:
             source_zip = "{}/models/{}/model.zip".format(settings.MEDIA_ROOT, self.uuid)
             zipf = zipfile.ZipFile(source_zip, 'r')

@@ -535,7 +535,7 @@ def perform_training(task_id):
     args = start.arguments
     trainer = args['trainer']
     if trainer == 'LOPQ':
-        train_lopq(args)
+        train_lopq(start,args)
     elif trainer == 'YOLO':
         train_detector = subprocess.Popen(['fab', 'train_yolo:{}'.format(start.pk)],
                                           cwd=os.path.join(os.path.abspath(__file__).split('tasks.py')[0], '../'))

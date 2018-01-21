@@ -18,6 +18,11 @@ class Detectors(object):
                                                                   class_index_to_string=
                                                                   cd.arguments['class_index_to_string'])
             elif cd.detector_type == TrainedModel.YOLO:
+                    # class_names = {k: v for k, v in json.loads(self.class_names)}
+                    # args = {'root_dir': model_dir,
+                    #         'detector_pk': self.pk,
+                    #         'class_names':{i: k for k, i in class_names.items()}
+                    #         }
                 Detectors._detectors[cd.pk] = detector.YOLODetector(cd.get_yolo_args())
             elif cd.name == 'face':
                 Detectors._detectors[cd.pk] = detector.FaceDetector()

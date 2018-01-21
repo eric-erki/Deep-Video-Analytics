@@ -2,26 +2,43 @@ import json, shutil, os, logging
 import numpy as np
 from dvalib.trainers import lopq_trainer
 from django.conf import settings
-from dvaapp.models import TrainedModel, Retriever
+from dvaapp.models import TrainedModel, Retriever, TrainingSet, IndexEntries
 
 
-def train_lopq(args):
-    # trainingset_pk =
-    #
-    # l = lopq_trainer.LOPQTrainer(name=args['indexer_shasum'],
-    #                              dirname="{}",
-    #                              components=args['components'],m=args['m'],v=args['v'],sub=args['sub'],
-    #                              source_indexer_shasum=args['source_indexer_shasum'])
-    # data = np.load(vectors_path)
-    # l.train(data)
-    # j = l.save()
-    # m = TrainedModel(**j)
-    # m.training_set = training_set
-    # m.save()
-    # m.create_directory()
-    # for f in m.files:
-    #     shutil.copy(f['url'],'{}/models/{}/{}'.format(settings.MEDIA_ROOT,m.pk,f['filename']))
-    # dr = Retriever.objects.create(name="lopq retriever",source_filters={},
-    #                               algorithm=Retriever.LOPQ, approximator_shasum=m.shasum)
-    logging.info(args)
-    pass
+def train_lopq(start,args):
+    dt = TrainingSet.objects.get(pk=args['training_set_pk'])
+    m = TrainedModel()
+    dirname = "{}/models/{}".format(settings.MEDIA_ROOT,m.uuid)
+    try:
+        os.mkdir(dirname)
+    except:
+        pass
+    l = lopq_trainer.LOPQTrainer(name="LOPQ trained on {} event {}".format(dt.pk,start.pk),
+                                 dirname=dirname,
+                                 components=args['components'],m=args['m'],v=args['v'],sub=args['sub'],
+                                 source_indexer_shasum=args['indexer_shasum'])
+    index_list = []
+    for f in dt.files:
+        di = IndexEntries.objects.get(pk=f['pk'])
+        vecs, _ = di.load_index()
+        if di.count:
+            index_list.append(np.atleast_2d(vecs))
+            logging.info("loaded {}".format(index_list[-1].shape))
+        else:
+            logging.info("Ignoring {}".format(di.pk))
+    data = np.concatenate(vecs).squeeze()
+    logging.info("Final shape {}".format(data.shape))
+    l.train(data)
+    j = l.save()
+    m.name = j["name"]
+    m.algorithm = j["algorithm"]
+    m.model_type = j["model_type"]
+    m.arguments = j["arguments"]
+    m.files = j["files"]
+    m.event = start
+    m.training_set = dt
+    m.save()
+    m.create_directory()
+    m.upload()
+    _ = Retriever.objects.create(name="lopq retriever",source_filters={}, algorithm=Retriever.LOPQ,
+                                  approximator_shasum=m.shasum)
