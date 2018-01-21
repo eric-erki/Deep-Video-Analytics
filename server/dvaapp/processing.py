@@ -88,7 +88,7 @@ def get_model_specific_queue_name(operation,args):
     elif 'approximator' in args:
         ashasum= args['approximator']
         if args['approximator'] not in APPROXIMATOR_NAME_TO_PK:
-            APPROXIMATOR_SHASUM_TO_PK[ashasum] = TrainedModel.objects.get(name=args['approximator'],
+            APPROXIMATOR_NAME_TO_PK[ashasum] = TrainedModel.objects.get(name=args['approximator'],
                                                                           model_type=TrainedModel.APPROXIMATOR).pk
         queue_name = 'q_approximator_{}'.format(APPROXIMATOR_NAME_TO_PK[args['approximator']])
     elif 'analyzer' in args:
