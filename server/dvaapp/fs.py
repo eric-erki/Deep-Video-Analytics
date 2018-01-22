@@ -61,7 +61,7 @@ def get_from_cache(path):
     if not path.startswith('/'):
         path = "/{}".format(path)
     if cacheable(path):
-        body = redis_client(path)
+        body = redis_client.get(path)
         return body
     return None
 

@@ -236,7 +236,12 @@ def launch_tasks(k, dt, inject_filters, map_filters = None, launch_type = ""):
         args = perform_substitution(k['arguments'], dt, inject_filters, f)
         logging.info("launching {} -> {} with args {} as specified in {}".format(dt.operation, op, args, launch_type))
         q, op = get_queue_name_and_operation(k['operation'], args)
-        next_task = TEvent.objects.create(video=v, operation=op, arguments=args, parent=dt, parent_process=p, queue=q)
+        if "video_selector" in k and v is None:
+            video_per_task = Video.objects.get(**k['video_selector'])
+        else:
+            video_per_task = v
+        next_task = TEvent.objects.create(video=video_per_task, operation=op, arguments=args, parent=dt,
+                                          parent_process=p, queue=q)
         tids.append(app.send_task(k['operation'], args=[next_task.pk, ], queue=q).id)
     return tids
 
