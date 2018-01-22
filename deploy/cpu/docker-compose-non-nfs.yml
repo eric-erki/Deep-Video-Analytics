@@ -54,6 +54,20 @@
        - redis
        - db
        - rabbit
+   trainer:
+     image: akshayubhat/dva-auto:latest
+     container_name: trainer
+     env_file:
+       - ../common.env
+       - ~/aws.env
+     environment:
+       - DISABLE_NFS=1
+       - LAUNCH_Q_qtrainer=1
+     command: bash -c "git pull && sleep 60 && ./start_container.py"
+     depends_on:
+       - redis
+       - db
+       - rabbit
    scheduler:
      image: akshayubhat/dva-auto:latest
      container_name: scheduler
