@@ -222,6 +222,11 @@ class TrainedModel(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     def create_directory(self,create_subdirs=True):
+        if not os.path.isdir('{}/models/'.format(settings.MEDIA_ROOT)):
+            try:
+                os.mkdir('{}/models/'.format(settings.MEDIA_ROOT))
+            except:
+                pass
         try:
             os.mkdir('{}/models/{}'.format(settings.MEDIA_ROOT, self.uuid))
         except:

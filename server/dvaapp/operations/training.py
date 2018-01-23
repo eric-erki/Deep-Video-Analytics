@@ -9,10 +9,7 @@ def train_lopq(start,args):
     dt = TrainingSet.objects.get(**args['selector'])
     m = TrainedModel()
     dirname = "{}/models/{}".format(settings.MEDIA_ROOT,m.uuid)
-    try:
-        os.mkdir(dirname)
-    except:
-        pass
+    m.create_directory()
     l = lopq_trainer.LOPQTrainer(name=args["name"],
                                  dirname=dirname,
                                  components=args['components'],m=args['m'],v=args['v'],sub=args['sub'],
@@ -39,7 +36,6 @@ def train_lopq(start,args):
     m.event = start
     m.training_set = dt
     m.save()
-    m.create_directory()
     m.upload()
     _ = Retriever.objects.create(name="Retriever for approximator {}".format(m.pk),source_filters={}, algorithm=Retriever.LOPQ,
                                   approximator_shasum=m.shasum,indexer_shasum=args['indexer_shasum'])
