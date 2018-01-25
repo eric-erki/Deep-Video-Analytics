@@ -25,7 +25,7 @@ def train_lopq(start,args):
             logging.info("Ignoring {}".format(di.pk))
     data = np.concatenate(vecs).squeeze()
     logging.info("Final shape {}".format(data.shape))
-    l.train(data)
+    l.train(data,lopq_train_opts=args["lopq_train_opts"])
     j = l.save()
     m.name = j["name"]
     m.algorithm = j["algorithm"]

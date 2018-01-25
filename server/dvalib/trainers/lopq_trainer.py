@@ -44,7 +44,7 @@ class LOPQTrainer(object):
         P = P[:, self.permuted_inds]
         return P, mu
 
-    def train(self,training_data):
+    def train(self,training_data,lopq_train_opts):
         self.pca_reduction = PCA(n_components=self.n_components)
         self.pca_reduction.fit(training_data)
         training_data = self.pca_reduction.transform(training_data)
@@ -52,7 +52,10 @@ class LOPQTrainer(object):
         training_data = training_data - self.mu
         training_data = np.dot(training_data, self.P)
         self.model = LOPQModel(V=self.v, M=self.m, subquantizer_clusters=self.sub)
-        self.model.fit(training_data, n_init=1)  # replace self.data by train
+        lopq_train_opts['data']=training_data
+        lopq_train_opts['random_state'] = None
+        lopq_train_opts['verbose'] = False
+        self.model.fit(**lopq_train_opts)
 
     def save(self):
         model_proto_filename = "{}/model.proto".format(self.dirname)
