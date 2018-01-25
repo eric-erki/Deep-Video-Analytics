@@ -493,7 +493,12 @@ def perform_training_set_creation(task_id):
         start.started = True
         start.save()
     args = start.arguments
-    dt = models.TrainingSet.objects.get(pk=args['training_set_pk'])
+    if 'training_set_pk'in args:
+        dt = models.TrainingSet.objects.get(pk=args['training_set_pk'])
+    elif 'training_set_selector'in args:
+        dt = models.TrainingSet.objects.get(**args['training_set_selector'])
+    else:
+        raise ValueError("Could not find training set {}".format(args))
     if dt.event:
         raise ValueError("Training set has been already built or failed to build, please clone instead of rebuilding.")
     if dt.training_task_type == models.TrainingSet.LOPQINDEX:
