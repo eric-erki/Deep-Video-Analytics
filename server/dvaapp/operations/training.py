@@ -1,4 +1,4 @@
-import json, shutil, os, logging
+import json, shutil, os, logging, copy
 import numpy as np
 from dvalib.trainers import lopq_trainer
 from django.conf import settings
@@ -6,6 +6,7 @@ from dvaapp.models import TrainedModel, Retriever, TrainingSet, IndexEntries
 
 
 def train_lopq(start,args):
+    args = copy.deepcopy(args)
     dt = TrainingSet.objects.get(**args['training_set_selector'])
     m = TrainedModel()
     dirname = "{}/models/{}".format(settings.MEDIA_ROOT,m.uuid)
