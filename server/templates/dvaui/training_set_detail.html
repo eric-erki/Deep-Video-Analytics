@@ -5,14 +5,83 @@
 <div class="row">
     <div class="box box-info">
         <div class="box-header">
-            <h2>Training Set {{ object.pk }}</h2>
+            <h2>Training Set {{ object.pk }} : {{ object.get_training_task_type_display_string }}</h2>
         </div>
     </div>
 </div>
 </section>
 <section class="content">
-<div class="row">
-</div>
+    {% if object.training_task_type == 'A' %}
+        <div class="row">
+        <div class="col-lg-6">
+        <div class="box">
+            <div class="box-header"><h4>Source Filters</h4></div>
+            <div class="box-body"><textarea contenteditable="false" style="width:100%;height:200px">{{ object.source_filters }}</textarea></div>
+        </div>
+        </div>
+        <div class="col-lg-6">
+        <div class="box">
+            <div class="box-header"><h4>Indexes</h4></div>
+            <div class="box-body">
+                <table class="table dataTables">
+                <thead>
+                <tr>
+                    <th class="text-center">Index Entry PK</th>
+                    <th class="text-center">Path</th>
+                    <th class="text-center">Count</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for t in object.files %}
+                    <tr>
+                        <td class="text-right">{{ t.pk }}</td>
+                        <td>{{ t.path }}</td>
+                        <td class="text-right">{{ t.count }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+            <div class="box">
+            <div class="box-header"><h4>Trained models</h4></div>
+            <div class="box-body">
+                <table class="table dataTables-dict">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th class="text-center">Type</th>
+                    <th class="text-center">Sub type</th>
+                    <th>Mode</th>
+                    <th class="text-center">Shasum</th>
+                    <th class="text-center">Training event</th>
+                    <th class="text-center">Details</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for i in trained_model_set %}
+                    <tr>
+                        <td>{{ i.name }} </td>
+                        <td>{{ i.get_model_type_display }} </td>
+                        <td>{{ i.get_detector_type_display }} </td>
+                        <td>{{ i.get_mode_display }} </td>
+                        <td>{{ i.shasum }}</td>
+                        <td class="text-center">{% if i.event %}<a href="/task_detail/{{ i.event_id }}">Training event</a>{% endif %}</td>
+                        <td class="text-center"><a href="/models/{{ i.pk }}">details</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                </table>
+
+            </div>
+            </div>
+            </div>
+        </div>
+    {% endif %}
 </section>
 {% endblock %}
 {% block page_js%}

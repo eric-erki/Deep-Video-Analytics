@@ -354,6 +354,7 @@ class TrainingSetDetail(UserPassesTestMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(TrainingSetDetail, self).get_context_data(**kwargs)
+        context['trained_model_set'] = TrainedModel.objects.filter(training_set=context['object'])
         return context
 
     def test_func(self):

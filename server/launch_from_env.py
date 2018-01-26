@@ -74,24 +74,24 @@ if __name__ == '__main__':
         subprocess.check_output(["chmod", "0777", "-R", "dva/staticfiles/"])
         # subprocess.check_output(["chmod","0777","-R","/root/media/"])
         try:
-            subprocess.check_output(["mv", "../configs/nginx.conf", "/etc/nginx/"])
+            subprocess.check_output(["cp", "../configs/nginx.conf", "/etc/nginx/"])
         except:
             print "warning assuming that the config was already moved"
             pass
         if 'ENABLE_BASICAUTH' in os.environ:
             try:
-                subprocess.check_output(["mv", "../configs/nginx-app_password.conf", "/etc/nginx/sites-available/default"])
+                subprocess.check_output(["cp", "../configs/nginx-app_password.conf", "/etc/nginx/sites-available/default"])
             except:
                 print "warning assuming that the config was already moved"
                 pass
         else:
             try:
-                subprocess.check_output(["mv", "../configs/nginx-app.conf", "/etc/nginx/sites-available/default"])
+                subprocess.check_output(["cp", "../configs/nginx-app.conf", "/etc/nginx/sites-available/default"])
             except:
                 print "warning assuming that the config was already moved"
                 pass
         try:
-            subprocess.check_output(["mv", "../configs/supervisor-app.conf", "/etc/supervisor/conf.d/"])
+            subprocess.check_output(["cp", "../configs/supervisor-app.conf", "/etc/supervisor/conf.d/"])
         except:
             print "warning assuming that the config was already moved"
             pass
