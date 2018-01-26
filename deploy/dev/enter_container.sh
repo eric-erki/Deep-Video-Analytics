@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-docker exec -it devserver bash
+docker exec -it webserver bash

@@ -7,7 +7,7 @@
         "filename": "coco_mobilenet.pb",
         "files": [
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/coco_mobilenet.pb",
+                "url": "/users/aub3/shared/coco_mobilenet.pb",
                 "filename": "coco_mobilenet.pb"
             }
         ],
@@ -101,19 +101,19 @@
         "name": "textbox",
         "files": [
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/checkpoint",
+                "url": "/users/aub3/shared/checkpoint",
                 "filename": "checkpoint"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/VGGnet_fast_rcnn_iter_50000.ckpt.data-00000-of-00001",
+                "url": "/users/aub3/shared/VGGnet_fast_rcnn_iter_50000.ckpt.data-00000-of-00001",
                 "filename": "VGGnet_fast_rcnn_iter_50000.ckpt.data-00000-of-00001"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/VGGnet_fast_rcnn_iter_50000.ckpt.index",
+                "url": "/users/aub3/shared/VGGnet_fast_rcnn_iter_50000.ckpt.index",
                 "filename": "VGGnet_fast_rcnn_iter_50000.ckpt.index"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/VGGnet_fast_rcnn_iter_50000.ckpt.meta",
+                "url": "/users/aub3/shared/VGGnet_fast_rcnn_iter_50000.ckpt.meta",
                 "filename": "VGGnet_fast_rcnn_iter_50000.ckpt.meta"
             }
         ],
@@ -133,7 +133,7 @@
         "name": "inception",
         "files": [
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/network.pb",
+                "url": "/users/aub3/shared/network.pb",
                 "filename": "network.pb"
             }
         ],
@@ -145,7 +145,7 @@
         "name": "facenet",
         "files": [
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/facenet.pb",
+                "url": "/users/aub3/shared/facenet.pb",
                 "filename": "facenet.pb"
             }
         ],
@@ -157,7 +157,7 @@
         "name": "crnn",
         "files": [
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/crnn.pth",
+                "url": "/users/aub3/shared/crnn.pth",
                 "filename": "crnn.pth"
             }
         ],
@@ -169,19 +169,19 @@
         "name": "tagger",
         "files": [
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/open_images.ckpt",
+                "url": "/users/aub3/shared/open_images.ckpt",
                 "filename": "open_images.ckpt"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/open_images.ckpt.meta",
+                "url": "/users/aub3/shared/open_images.ckpt.meta",
                 "filename": "open_images.ckpt.meta"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/open_images_labelmap.txt",
+                "url": "/users/aub3/shared/open_images_labelmap.txt",
                 "filename": "open_images_labelmap.txt"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/open_images_dict.csv",
+                "url": "/users/aub3/shared/open_images_dict.csv",
                 "filename": "open_images_dict.csv"
             }
         ],
@@ -190,23 +190,23 @@
     {
         "files": [
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/facenet_lopq/model.proto",
+                "url": "/users/aub3/shared/facenet_lopq/model.proto",
                 "filename": "model.proto"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/facenet_lopq/model.P.npy",
+                "url": "/users/aub3/shared/facenet_lopq/model.P.npy",
                 "filename": "model.P.npy"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/facenet_lopq/model.mu.npy",
+                "url": "/users/aub3/shared/facenet_lopq/model.mu.npy",
                 "filename": "model.mu.npy"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/facenet_lopq/model.pca.pkl",
+                "url": "/users/aub3/shared/facenet_lopq/model.pca.pkl",
                 "filename": "model.pca.pkl"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/facenet_lopq/model.permind.pkl",
+                "url": "/users/aub3/shared/facenet_lopq/model.permind.pkl",
                 "filename": "model.permind.pkl"
             }
         ],
@@ -225,15 +225,15 @@
     {
         "files": [
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/yt8m/eigenvals.npy",
+                "url": "/users/aub3/shared/yt8m/eigenvals.npy",
                 "filename": "eigenvals.npy"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/yt8m/eigenvecs.npy",
+                "url": "/users/aub3/shared/yt8m/eigenvecs.npy",
                 "filename": "eigenvecs.npy"
             },
             {
-                "url": "/users/aub3/DeepVideoAnalytics/shared/yt8m/mean.npy",
+                "url": "/users/aub3/shared/yt8m/mean.npy",
                 "filename": "mean.npy"
             }
         ],
