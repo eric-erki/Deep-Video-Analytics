@@ -932,7 +932,7 @@ def rename_video(request):
     if request.user.is_staff: # currently only staff can rename
         video_pk = request.POST.get('video_id')
         name = request.POST.get('name')
-        v = Video.objects.get(pk=int(video_pk))
+        v = Video.objects.get(pk=video_pk)
         v.name = name
         v.save()
         return redirect('video_list')
