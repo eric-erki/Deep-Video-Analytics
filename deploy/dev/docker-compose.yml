@@ -55,7 +55,7 @@
        - redis
      volumes:
        - dvadata:/root/media
-       - ../../server/:/root/DVA/server/
+       - ../:/root/DVA/
  volumes:
   dvapgdata:
   dvadata:
