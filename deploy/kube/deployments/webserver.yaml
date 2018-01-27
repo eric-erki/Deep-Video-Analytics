@@ -113,7 +113,7 @@ spec:
         args:
           - bash
           - -c
-          - git pull && sleep 10 && ./start_container.py
+          - git reset --hard && git pull && sleep 10 && ./start_container.py
 ---
 apiVersion: v1
 kind: Service

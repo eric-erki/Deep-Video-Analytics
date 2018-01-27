@@ -96,4 +96,4 @@ spec:
         args:
           - bash
           - -c
-          - git pull && sleep 15  && ./start_container.py
+          - git reset --hard && git pull && sleep 15  && ./start_container.py

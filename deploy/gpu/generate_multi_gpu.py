@@ -30,7 +30,7 @@ skeleton = """
        - LAUNCH_SERVER_NGINX=1
        - LAUNCH_NOTEBOOK=1
        - INIT_PROCESS=/root/DVA/configs/custom_defaults/init_process.json
-     command: bash -c "git pull && sleep 10 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80"
        - "127.0.0.1:8888:8888"
@@ -50,7 +50,7 @@ skeleton = """
        - LAUNCH_Q_qextract=1
        - LAUNCH_SCHEDULER=1
        - LAUNCH_Q_GLOBAL_RETRIEVER=1
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       
@@ -67,7 +67,7 @@ skeleton = """
        - NVIDIA_VISIBLE_DEVICES={global_model_gpu_id}
        - GPU_MEMORY={global_model_memory_fraction}
        - LAUNCH_Q_GLOBAL_MODEL=1
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       
@@ -90,7 +90,7 @@ block = """   {worker_name}:
        - NVIDIA_VISIBLE_DEVICES={gpu_id}
        - GPU_MEMORY={memory_fraction}
        - {env_key}={env_value}
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       

@@ -30,7 +30,7 @@
        - LAUNCH_SERVER_NGINX=1
        - LAUNCH_NOTEBOOK=1
        - INIT_PROCESS=/root/DVA/configs/custom_defaults/init_process.json
-     command: bash -c "git pull && sleep 10 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80"
        - "127.0.0.1:8888:8888"
@@ -50,7 +50,7 @@
        - LAUNCH_Q_qextract=1
        - LAUNCH_SCHEDULER=1
        - LAUNCH_Q_GLOBAL_RETRIEVER=1
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       
@@ -66,7 +66,7 @@
        - NVIDIA_VISIBLE_DEVICES=0
        - GPU_MEMORY=0.3
        - LAUNCH_BY_NAME_indexer_inception=1
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       
@@ -82,7 +82,7 @@
        - NVIDIA_VISIBLE_DEVICES=0
        - GPU_MEMORY=0.4
        - LAUNCH_BY_NAME_analyzer_tagger=1
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       
@@ -98,7 +98,7 @@
        - NVIDIA_VISIBLE_DEVICES=0
        - GPU_MEMORY=0.2
        - LAUNCH_BY_NAME_analyzer_crnn=1
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       
@@ -114,7 +114,7 @@
        - NVIDIA_VISIBLE_DEVICES=1
        - GPU_MEMORY=1.0
        - LAUNCH_BY_NAME_detector_coco=1
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       
@@ -130,7 +130,7 @@
        - NVIDIA_VISIBLE_DEVICES=2
        - GPU_MEMORY=0.7
        - LAUNCH_BY_NAME_detector_face=1
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       
@@ -146,7 +146,7 @@
        - NVIDIA_VISIBLE_DEVICES=3
        - GPU_MEMORY=0.5
        - LAUNCH_BY_NAME_detector_textbox=1
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       
@@ -162,7 +162,7 @@
        - NVIDIA_VISIBLE_DEVICES=3
        - GPU_MEMORY=0.45
        - LAUNCH_BY_NAME_indexer_facenet=1
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       
@@ -178,7 +178,7 @@
        - NVIDIA_VISIBLE_DEVICES=2
        - GPU_MEMORY=0.29
        - LAUNCH_Q_GLOBAL_MODEL=1
-     command: bash -c "git pull && sleep 45 && ./start_container.py"
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
        - db
        - redis       
