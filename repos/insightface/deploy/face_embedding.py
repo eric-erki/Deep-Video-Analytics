@@ -43,7 +43,10 @@ class FaceModel:
     prefix = _vec[0]
     epoch = int(_vec[1])
     print('loading',prefix, epoch)
-    ctx = mx.gpu(args.gpu)
+    if args.gpu is None:
+      ctx = mx.cpu()
+    else:
+      ctx = mx.gpu(args.gpu)
     sym, arg_params, aux_params = mx.model.load_checkpoint(prefix, epoch)
     all_layers = sym.get_internals()
     sym = all_layers['fc1_output']
@@ -53,7 +56,7 @@ class FaceModel:
     model.set_params(arg_params, aux_params)
     self.model = model
     mtcnn_path = os.path.join(os.path.dirname(__file__), 'mtcnn-model')
-    detector = MtcnnDetector(model_folder=mtcnn_path, ctx=ctx, num_worker=1, accurate_landmark = True, threshold=[0.0,0.0,0.2])
+    detector = MtcnnDetector(model_folder=mtcnn_path, ctx=ctx, num_worker=1, accurate_landmark = True, threshold=[0.0,0.0,0.0])
     self.detector = detector
 
 
