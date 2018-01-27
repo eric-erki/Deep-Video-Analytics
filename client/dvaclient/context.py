@@ -4,7 +4,9 @@ import os, json, requests
 class DVAContext(object):
     def __init__(self, server=None, token=None):
         if server:
-            self.server = "{server}/api/".format(server=server)
+            if not server.endswith('/'):
+                server = "{}/".format(server)
+            self.server = "{server}api/".format(server=server)
         else:
             self.server = 'http://localhost:8000/api/'
         if token:
