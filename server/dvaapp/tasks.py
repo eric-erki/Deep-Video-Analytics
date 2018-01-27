@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import subprocess, os, logging, io, sys, json, tempfile, gzip, copy
 from urlparse import urlparse
 from collections import defaultdict
+from datetime import datetime, timedelta
 from PIL import Image
 from django.conf import settings
 from dva.celery import app
@@ -46,6 +47,26 @@ def start_task(task_id, task, args, **kwargs):
         if W and start.worker is None:
             start.worker_id = W.pk
         start.save()
+
+
+@app.task(track_started=True, name="perform_reduce")
+def perform_reduce(task_id):
+    start = models.TEvent.objects.get(pk=task_id)
+    if not start.started:
+        start.started = True
+        start.save()
+    timeout_seconds = start.arguments.get('timeout',settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
+    all_completed = True
+    for t in models.TEvent.objects.filter(parent=start.parent):
+        if not(t.completed or t.errored):
+            all_completed = False
+    if all_completed:
+        next_ids = process_next(start.pk)
+        mark_as_completed(start)
+        return next_ids
+    else:
+        eta = datetime.utcnow() + timedelta(seconds=timeout_seconds)
+        app.send_task(start.operation, args=[start.pk, ], queue=start.queue, eta=eta)
 
 
 @app.task(track_started=True, name="perform_indexing")

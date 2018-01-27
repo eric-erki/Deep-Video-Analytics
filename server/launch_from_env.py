@@ -58,6 +58,8 @@ if __name__ == '__main__':
     if os.environ.get("LAUNCH_NOTEBOOK", False):
         _ = subprocess.Popen(['./run_jupyter.sh','--allow-root','--notebook-dir=/root/DVA/docs/'],cwd="/")
     if os.environ.get("LAUNCH_SCHEDULER", False):
+        # Launch reducer tasks on same machine
+        _ = subprocess.Popen(shlex.split('./startq.py {}'.format(settings.Q_REDUCER)))
         # Should be launched only once per deployment
         _ = subprocess.Popen(['./start_scheduler.py'])
     if block_on_manager:  # the container process waits on the manager
