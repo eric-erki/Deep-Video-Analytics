@@ -6,14 +6,14 @@
 
 #### Developing Deep Video Analytics
 
-- /dev contains a docker-compose file which maps host /server directory (relative path), and can be used
-       for interactively development and testing.
+- /dev contains a docker-compose file which maps local directory as a shared volume (between host/container) for
+  interactively development and testing.
 
-#### Three deployment scenarios.
+#### Three deployment scenarios
 
 1. /cpu contains docker-compose files for non-GPU single machine deployments on Linode, AWS, GCP etc.
 
-2. /gpu contains docker-compose files for GPU single machine deployments on GCP & AWS etc.
+2. /gpu contains docker-compose files for single machine with 1/2/4 GPU deployments on GCP & AWS etc.
 
 3. /kube contains files used for launching DVA in a scalable GKE + GCS setup
 
