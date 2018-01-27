@@ -18,6 +18,7 @@ docs/experiments/coco/coco_annotations
 docs/experiments/yolo/yolo_test.zip
 /backups/
 /repos/vdn
+/repos/insightface/models/model-r34-amf
 /server/dva/staticfiles/
 /server/dvap/
 /shared/

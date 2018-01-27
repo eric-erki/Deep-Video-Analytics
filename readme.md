@@ -58,6 +58,7 @@ We provide instructions for deploying DVA in three scenarios.
 | Facenet   |  [MIT License](https://github.com/davidsandberg/facenet)  |
 | JSFeat   |  [MIT License](https://inspirit.github.io/jsfeat/)  |
 | MTCNN   |  [MIT License](https://github.com/kpzhang93/MTCNN_face_detection_alignment)  |
+| Insight Face   |  [MIT License](https://github.com/deepinsight/insightface)  |
 | CRNN.pytorch  |  [MIT License](https://github.com/meijieru/crnn.pytorch/blob/master/LICENSE.md)  |
 | Original CRNN code by Baoguang Shi  |  [MIT License](https://github.com/bgshih/crnn) |
 | Object Detector App using TF Object detection API |  [MIT License](https://github.com/datitran/Object-Detector-App) | 
