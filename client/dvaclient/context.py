@@ -16,7 +16,7 @@ class DVAContext(object):
         self.headers = {'Authorization': 'Token {}'.format(self.token)}
 
     def list_videos(self):
-        r = requests.get("{server}/videos/".format(server=self.server),
+        r = requests.get("{server}videos/".format(server=self.server),
                          headers=self.headers)
         if r.ok:
             return r.json()
@@ -24,7 +24,7 @@ class DVAContext(object):
             r.raise_for_status()
 
     def list_queries(self):
-        r = requests.get("{server}/queries/".format(server=self.server),
+        r = requests.get("{server}queries/".format(server=self.server),
                          headers=self.headers)
         if r.ok:
             return r.json()
@@ -32,7 +32,7 @@ class DVAContext(object):
             r.raise_for_status()
 
     def list_models(self):
-        r = requests.get("{server}/models/".format(server=self.server),
+        r = requests.get("{server}models/".format(server=self.server),
                          headers=self.headers)
         if r.ok:
             return r.json()
@@ -40,7 +40,7 @@ class DVAContext(object):
             r.raise_for_status()
 
     def list_retrievers(self):
-        r = requests.get("{server}/retrievers/".format(server=self.server),
+        r = requests.get("{server}retrievers/".format(server=self.server),
                          headers=self.headers)
         if r.ok:
             return r.json()
@@ -48,7 +48,7 @@ class DVAContext(object):
             r.raise_for_status()
 
     def list_events(self,verbose=False,query_id=None):
-        r = requests.get("{server}/events/".format(server=self.server),
+        r = requests.get("{server}events/".format(server=self.server),
                          headers=self.headers)
         if r.ok:
             l = r.json()
@@ -63,7 +63,7 @@ class DVAContext(object):
             r.raise_for_status()
 
     def get_frame(self, frame_pk):
-        r = requests.get("{server}/frames/{frame_pk}".format(server=self.server,frame_pk=frame_pk),
+        r = requests.get("{server}frames/{frame_pk}".format(server=self.server,frame_pk=frame_pk),
                          headers=self.headers)
         if r.ok:
             return r.json()
@@ -71,7 +71,7 @@ class DVAContext(object):
             r.raise_for_status()
 
     def get_region(self, region_pk):
-        r = requests.get("{server}/regions/{region_pk}".format(server=self.server,region_pk=region_pk),
+        r = requests.get("{server}regions/{region_pk}".format(server=self.server,region_pk=region_pk),
                          headers=self.headers)
         if r.ok:
             return r.json()
@@ -79,7 +79,7 @@ class DVAContext(object):
             r.raise_for_status()
 
     def execute_query(self, query):
-        r = requests.post("{server}/queries/".format(server=self.server), data={'script': json.dumps(query)},
+        r = requests.post("{server}queries/".format(server=self.server), data={'script': json.dumps(query)},
                           headers=self.headers)
         if r.ok:
             return r.json()
@@ -87,7 +87,7 @@ class DVAContext(object):
             raise r.raise_for_status()
 
     def get_results(self, query_id):
-        r = requests.get("{server}/queries/{query_id}/".format(server=self.server, query_id=query_id),
+        r = requests.get("{server}queries/{query_id}/".format(server=self.server, query_id=query_id),
                          headers=self.headers)
         if r.ok:
             return r.json()

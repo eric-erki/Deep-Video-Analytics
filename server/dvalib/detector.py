@@ -15,10 +15,10 @@ else:
     try:
         import cv2
         import tensorflow as tf
+        sys.path.append('/root/DVA/repos/tf_ctpn_cpu/')
         from dvalib.yolo import trainer
         from .facenet import facenet
         from .facenet.align import detect_face
-        sys.path.append(os.path.join(os.path.dirname(__file__),'../../repos/tf_ctpn_cpu/'))
         from lib.networks.factory import get_network
         from lib.fast_rcnn.config import cfg, cfg_from_file
         from lib.fast_rcnn.test import test_ctpn

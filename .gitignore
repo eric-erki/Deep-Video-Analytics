@@ -13,6 +13,7 @@ connect.sh
 creds.json
 *.pid
 *.mov
+*.pyc
 docs/experiments/private
 docs/experiments/coco/coco_annotations
 docs/experiments/yolo/yolo_test.zip
