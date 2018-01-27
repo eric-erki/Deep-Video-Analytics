@@ -28,6 +28,7 @@ SYNC_TASKS = {
     'perform_index_approximation':[{'operation': 'perform_sync', 'arguments': {'dirname': 'indexes'}},],
     'perform_import':[{'operation': 'perform_sync', 'arguments': {}},],
     'perform_training':[],
+    'perform_reduce':[],
     'perform_detector_import':[],
 }
 
@@ -263,6 +264,12 @@ def process_next(task_id,inject_filters=None,custom_next_tasks=None,sync=True,la
     for k in next_tasks+custom_next_tasks:
         map_filters = get_map_filters(k,dt.video)
         launched += launch_tasks(k, dt, inject_filters,map_filters,'map')
+    reduce_task = dt.arguments.get('reduce',None)
+    if reduce_task:
+        next_task = TEvent.objects.create(video=dt.video, operation="perform_reduce",
+                                          arguments=reduce_task['arguments'], parent=dt,
+                                          parent_process_id=dt.parent_process_id, queue=settings.Q_REDUCER)
+        launched.append(app.send_task(next_task.operation, args=[next_task.pk, ], queue=next_task.operation).id)
     return launched
 
 
