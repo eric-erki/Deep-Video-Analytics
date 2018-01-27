@@ -47,7 +47,7 @@
        - LAUNCH_SERVER=1 # This supersedes NGINX and launches django development server with auto-reload
        - ENABLE_DEBUG=1 # Enables django debug mode
        - INIT_PROCESS=/root/DVA/configs/custom_defaults/init_process.json
-     command: bash -c "sleep 10 && ./start_container.py"
+     command: bash -c "cd /root/DVA/repos/tf_ctpn_cpu/lib/utils/ && ./make.sh && /root/DVA/repos/ && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80"
        - "127.0.0.1:8888:8888"
