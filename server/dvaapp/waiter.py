@@ -20,7 +20,7 @@ class Waiter(object):
             raise ValueError("{} invalid reduce_target".format(self.reduce_target))
 
     def quick_is_complete_root(self):
-        for t in TEvent.objects.filter(parent_id=self.task.pk):
+        for t in TEvent.objects.filter(parent_id=self.task.parent_id):
             # Don't wait on perform_reduce for the root to prevent deadlock (i.e. one task waiting on another)
             if not (t.completed or t.errored) and t.operation != 'perform_reduce':
                 logging.info(
@@ -31,7 +31,7 @@ class Waiter(object):
 
     def quick_is_complete_all(self):
         if self.quick_is_complete_root():
-            for t in TEvent.objects.filter(parent_id=self.task.pk):
+            for t in TEvent.objects.filter(parent_id=self.task.parent_id):
                 if t.operation != 'perform_reduce':  # Don't wait on perform_reduce child_tasks to prevent deadlock
                     if not self.check_if_task_children_are_complete_recursive(t.pk):
                         return False
