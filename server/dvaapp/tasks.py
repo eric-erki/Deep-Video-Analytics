@@ -19,6 +19,7 @@ from django.utils import timezone
 from celery.signals import task_prerun, celeryd_init
 from . import fs
 from . import task_shared
+from .waiter import Waiter
 
 try:
     import numpy as np
@@ -57,9 +58,8 @@ def perform_reduce(task_id):
         start.started = True
         start.save()
     timeout_seconds = start.arguments.get('timeout',settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
-    recursive = start.arguments.get('recursive',True)
-    completed = task_shared.check_if_complete(start.parent_id,recursive=recursive)
-    if completed:
+    reduce_waiter = Waiter(start)
+    if reduce_waiter.is_complete():
         next_ids = process_next(start.pk)
         mark_as_completed(start)
         return next_ids

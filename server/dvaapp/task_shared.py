@@ -18,24 +18,6 @@ def pid_exists(pid):
         return True
 
 
-def check_if_complete(task_id,recursive=True):
-    """
-    TODO Implement ability to wait on only specific task_group and its parents.
-    :param task_id:
-    :param ignore_task_id:
-    :param recursive:
-    :return:
-    """
-    for t in TEvent.objects.filter(parent_id=task_id):
-        if not(t.completed or t.errored) and t.operation != 'perform_reduce':
-            logging.info("Returning false {} running {} on {} has not yet completed/failed".format(t.pk,t.operation,t.queue))
-            return False
-        if recursive and t.operation != 'perform_reduce':
-            if not check_if_complete(t.pk, recursive):
-                return False
-    return True
-
-
 def relaunch_failed_task(old, app):
     """
     TODO: Relaunch failed tasks, requires a rethink in how we store number of attempts.
