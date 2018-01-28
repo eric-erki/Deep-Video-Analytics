@@ -269,7 +269,7 @@ def process_next(task_id,inject_filters=None,custom_next_tasks=None,sync=True,la
         next_task = TEvent.objects.create(video=dt.video, operation="perform_reduce",
                                           arguments=reduce_task['arguments'], parent=dt,
                                           parent_process_id=dt.parent_process_id, queue=settings.Q_REDUCER)
-        launched.append(app.send_task(next_task.operation, args=[next_task.pk, ], queue=next_task.operation).id)
+        launched.append(app.send_task(next_task.operation, args=[next_task.pk, ], queue=settings.Q_REDUCER).id)
     return launched
 
 

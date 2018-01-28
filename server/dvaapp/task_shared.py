@@ -17,6 +17,21 @@ def pid_exists(pid):
         return True
 
 
+def check_if_complete(task_id,ignore_task_id,recursive=False):
+    """
+    TODO Implement recursive case which is required to ensure that all downstream tasks have also succeeded.
+    :param task_id:
+    :param ignore_task_id:
+    :param recursive:
+    :return:
+    """
+    for t in TEvent.objects.filter(parent_id=task_id):
+        if not(t.completed or t.errored) and t.pk != ignore_task_id:
+            logging.info("Returning false since task id {} has not yet completed or errored".format(t.pk))
+            return False
+    return True
+
+
 def relaunch_failed_task(old, app):
     """
     TODO: Relaunch failed tasks, requires a rethink in how we store number of attempts.

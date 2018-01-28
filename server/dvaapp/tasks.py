@@ -56,11 +56,8 @@ def perform_reduce(task_id):
         start.started = True
         start.save()
     timeout_seconds = start.arguments.get('timeout',settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
-    all_completed = True
-    for t in models.TEvent.objects.filter(parent=start.parent):
-        if not(t.completed or t.errored):
-            all_completed = False
-    if all_completed:
+    completed = task_shared.check_if_complete(start.parent_id,start.pk)
+    if completed:
         next_ids = process_next(start.pk)
         mark_as_completed(start)
         return next_ids
