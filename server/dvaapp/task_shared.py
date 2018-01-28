@@ -8,6 +8,7 @@ from dva.in_memory import redis_client
 from .fs import ensure, upload_file_to_remote, upload_video_to_remote, get_path_to_file
 from dva.celery import app
 
+
 def pid_exists(pid):
     try:
         os.kill(pid, 0)
@@ -17,9 +18,9 @@ def pid_exists(pid):
         return True
 
 
-def check_if_complete(task_id,ignore_task_id,recursive=False):
+def check_if_complete(task_id,ignore_task_id,recursive=True):
     """
-    TODO Implement recursive case which is required to ensure that all downstream tasks have also succeeded.
+    TODO Implement ability to wait on only specific task_group and its parents.
     :param task_id:
     :param ignore_task_id:
     :param recursive:
@@ -27,8 +28,11 @@ def check_if_complete(task_id,ignore_task_id,recursive=False):
     """
     for t in TEvent.objects.filter(parent_id=task_id):
         if not(t.completed or t.errored) and t.pk != ignore_task_id:
-            logging.info("Returning false since task id {} has not yet completed or errored".format(t.pk))
+            logging.info("Returning false {} running {} on {} has not yet completed/failed".format(t.pk,t.operation,t.queue))
             return False
+        if recursive:
+            if not check_if_complete(t.pk, ignore_task_id, recursive):
+                return False
     return True
 
 

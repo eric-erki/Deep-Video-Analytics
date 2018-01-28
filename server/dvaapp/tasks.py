@@ -56,7 +56,8 @@ def perform_reduce(task_id):
         start.started = True
         start.save()
     timeout_seconds = start.arguments.get('timeout',settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
-    completed = task_shared.check_if_complete(start.parent_id,start.pk)
+    recursive = start.arguments.get('recursive',True)
+    completed = task_shared.check_if_complete(start.parent_id,start.pk,recursive=recursive)
     if completed:
         next_ids = process_next(start.pk)
         mark_as_completed(start)
