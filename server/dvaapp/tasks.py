@@ -43,7 +43,8 @@ def start_task(task_id, task, args, **kwargs):
     if task.name.startswith('perform'):
         start = models.TEvent.objects.get(pk=args[0])
         start.task_id = task_id
-        start.start_ts = timezone.now()
+        if start.start_ts is None:
+            start.start_ts = timezone.now()
         if W and start.worker is None:
             start.worker_id = W.pk
         start.save()
@@ -57,7 +58,7 @@ def perform_reduce(task_id):
         start.save()
     timeout_seconds = start.arguments.get('timeout',settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
     recursive = start.arguments.get('recursive',True)
-    completed = task_shared.check_if_complete(start.parent_id,start.pk,recursive=recursive)
+    completed = task_shared.check_if_complete(start.parent_id,recursive=recursive)
     if completed:
         next_ids = process_next(start.pk)
         mark_as_completed(start)

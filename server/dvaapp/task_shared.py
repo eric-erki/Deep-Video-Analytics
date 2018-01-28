@@ -18,7 +18,7 @@ def pid_exists(pid):
         return True
 
 
-def check_if_complete(task_id,ignore_task_id,recursive=True):
+def check_if_complete(task_id,recursive=True):
     """
     TODO Implement ability to wait on only specific task_group and its parents.
     :param task_id:
@@ -27,11 +27,11 @@ def check_if_complete(task_id,ignore_task_id,recursive=True):
     :return:
     """
     for t in TEvent.objects.filter(parent_id=task_id):
-        if not(t.completed or t.errored) and t.pk != ignore_task_id:
+        if not(t.completed or t.errored) and t.operation != 'perform_reduce':
             logging.info("Returning false {} running {} on {} has not yet completed/failed".format(t.pk,t.operation,t.queue))
             return False
-        if recursive:
-            if not check_if_complete(t.pk, ignore_task_id, recursive):
+        if recursive and t.operation != 'perform_reduce':
+            if not check_if_complete(t.pk, recursive):
                 return False
     return True
 
