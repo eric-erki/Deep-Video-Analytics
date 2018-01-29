@@ -463,7 +463,7 @@ def index(request, query_pk=None, frame_pk=None, detection_pk=None):
                                                       '{}_{}'.format(i.pk,r.pk)))
     if query_pk:
         previous_query = DVAPQL.objects.get(pk=query_pk)
-        context['initial_url'] = '{}queries/{}.png'.format(settings.MEDIA_URL, query_pk)
+        context['initial_url'] = '{}queries/{}.png'.format(settings.MEDIA_URL, previous_query.uuid)
     elif frame_pk:
         frame = Frame.objects.get(pk=frame_pk)
         context['initial_url'] = '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, frame.video.pk, frame.frame_index)
