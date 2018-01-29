@@ -88,10 +88,10 @@ def delete_video_object(video_pk,deleter):
     p = processing.DVAPQLProcess()
     query = {
         'process_type': DVAPQL.PROCESS,
-        'tasks': [
+        'delete': [
             {
-                'arguments': {'video_pk': video_pk,'deleter_pk':deleter.pk},
-                'operation': 'perform_deletion',
+                'MODEL': 'Video',
+                'selector':{'pk':video_pk},
             }
         ]
     }

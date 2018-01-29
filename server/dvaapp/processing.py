@@ -10,7 +10,7 @@ except ImportError:
     np = None
     logging.warning("Could not import indexer / clustering assuming running in front-end mode")
 from django.apps import apps
-from models import Video,DVAPQL,TEvent,TrainedModel,Retriever,Worker
+from models import Video,DVAPQL,TEvent,TrainedModel,Retriever,Worker, DeletedVideo
 from celery.result import AsyncResult
 import fs
 import task_shared
@@ -334,6 +334,17 @@ class DVAPQLProcess(object):
 
     def launch(self):
         if self.process.script['process_type'] == DVAPQL.PROCESS:
+            for d in self.process.script.get('delete',[]):
+                if d['MODEL'] == 'Video':
+                    d_copy = copy.deepcopy(d)
+                    m = apps.get_model(app_label='dvaapp',model_name=d['MODEL'])
+                    instance = m.objects.get(**d_copy['selector'])
+                    DeletedVideo.objects.create(deleter=self.process.user, video_uuid=instance.pk)
+                    instance.delete()
+                else:
+                    self.process.failed = True
+                    self.process.error_message = "Cannot delete {}; Only video deletion implemented.".format(d['MODEL'])
+            self.assign_task_group_id(self.process.script.get('tasks',[]))
             for c in self.process.script.get('create',[]):
                 c_copy = copy.deepcopy(c)
                 m = apps.get_model(app_label='dvaapp',model_name=c['MODEL'])

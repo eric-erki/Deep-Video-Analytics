@@ -43,6 +43,8 @@ class DVAPQL(models.Model):
     results_metadata = models.TextField(default="")
     results_available = models.BooleanField(default=False)
     completed = models.BooleanField(default=False)
+    failed = models.BooleanField(default=False)
+    error_message = models.TextField(default="",blank=True,null=True)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
 
@@ -661,15 +663,11 @@ class VideoLabel(models.Model):
 
 
 class DeletedVideo(models.Model):
-    name = models.CharField(max_length=500,default="")
-    description = models.TextField(default="")
-    uploader = models.ForeignKey(User,null=True,related_name="user_uploader")
-    url = models.TextField(default="")
     deleter = models.ForeignKey(User,related_name="user_deleter",null=True)
-    original_pk = models.IntegerField()
+    video_uuid = models.UUIDField(default=uuid.uuid4,null=True)
 
     def __unicode__(self):
-        return u'Deleted {}'.format(self.name)
+        return u'Deleted {} by {}'.format(self.video_uuid,self.deleter)
 
 
 class ManagementAction(models.Model):
