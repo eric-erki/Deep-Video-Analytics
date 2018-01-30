@@ -287,6 +287,8 @@ class DVAPQLProcess(object):
         self.task_results = {}
         self.created_objects = []
         self.task_group_index = 0
+        self.task_group_name_to_index = {}
+        self.parent_task_group_index = {}
 
     def create_from_json(self, j, user=None):
         if self.process is None:
@@ -323,14 +325,23 @@ class DVAPQLProcess(object):
     def validate(self):
         pass
 
-    def assign_task_group_id(self, tasks):
+    def assign_task_group_id(self, tasks, parent_group_index = None):
         for t in tasks:
             t['task_group_id'] = self.task_group_index
             self.task_group_index += 1
+            if parent_group_index:
+                self.parent_task_group_index[t['task_group_id']] = parent_group_index
+            task_group_name = t['arguments'].get('task_group_name',None)
+            if task_group_name:
+                if task_group_name in self.task_group_name_to_index:
+                    self.process.failed = True
+                    self.process.error_message = "Repeated task group name."
+                else:
+                    self.task_group_name_to_index[task_group_name] = t['task_group_id']
             if 'map' in t.get('arguments',{}):
-                self.assign_task_group_id(t['arguments']['map'])
+                self.assign_task_group_id(t['arguments']['map'],t['task_group_id'])
             if 'reduce' in t.get('arguments',{}):
-                self.assign_task_group_id(t['arguments']['reduce'])
+                self.assign_task_group_id(t['arguments']['reduce'],t['task_group_id'])
 
     def launch(self):
         if self.process.script['process_type'] == DVAPQL.PROCESS:
@@ -344,7 +355,6 @@ class DVAPQLProcess(object):
                 else:
                     self.process.failed = True
                     self.process.error_message = "Cannot delete {}; Only video deletion implemented.".format(d['MODEL'])
-            self.assign_task_group_id(self.process.script.get('tasks',[]))
             for c in self.process.script.get('create',[]):
                 c_copy = copy.deepcopy(c)
                 m = apps.get_model(app_label='dvaapp',model_name=c['MODEL'])
@@ -368,6 +378,8 @@ class DVAPQLProcess(object):
                 self.task_results[next_task.pk] = app.send_task(name=operation,args=[next_task.pk, ],queue=queue_name,priority=5)
         else:
             raise NotImplementedError
+        self.process.script['task_group_name_to_index'] = self.task_group_name_to_index
+        self.process.script['parent_task_group_index'] = self.parent_task_group_index
         self.process.save()
 
     def wait(self,timeout=60):
