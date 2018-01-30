@@ -14,15 +14,15 @@ class Waiter(object):
         self.parent_task_group_index = self.task.parent_process.script.get('parent_task_group_index', {})
         for task_name in self.reduce_filter:
             task_group_id = self.task_group_name_to_index[task_name]
-            self.filter_set.add(task_group_id)
+            self.filter_set.add(int(task_group_id))
             self.add_parent_groups(task_group_id)
         if self.reduce_filter:
             logging.info("The waiter will wait on following task groups : {}".format(self.filter_set))
 
     def add_parent_groups(self,task_group_id):
-        if task_group_id in self.parent_task_group_index:
+        if str(task_group_id) in self.parent_task_group_index:
             parent_group_id = self.parent_task_group_index[str(task_group_id)]
-            self.filter_set.add(parent_group_id)
+            self.filter_set.add(int(parent_group_id))
             if parent_group_id != self.root_group_id:
                 self.add_parent_groups(parent_group_id)
 
