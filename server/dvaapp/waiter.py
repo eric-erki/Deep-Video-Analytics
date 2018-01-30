@@ -11,7 +11,7 @@ class Waiter(object):
         self.root_group_id = self.task.parent.task_group_id
         self.filter_set = set()
         self.task_group_name_to_index = self.task.parent_process.script.get('task_group_name_to_index',{})
-        self.parent_task_group_index = self.task.parent_process.script.get('task_group_name_to_index', {})
+        self.parent_task_group_index = self.task.parent_process.script.get('parent_task_group_index', {})
         for task_name in self.reduce_filter:
             task_group_id = self.task_group_name_to_index[task_name]
             self.filter_set.add(task_group_id)
@@ -21,17 +21,20 @@ class Waiter(object):
 
     def add_parent_groups(self,task_group_id):
         if task_group_id in self.parent_task_group_index:
-            parent_group_id = self.parent_task_group_index[task_group_id]
+            parent_group_id = self.parent_task_group_index[str(task_group_id)]
             self.filter_set.add(parent_group_id)
             if parent_group_id != self.root_group_id:
                 self.add_parent_groups(parent_group_id)
 
     def is_complete(self):
         if self.reduce_target == 'root':
+            logging.info("waiting only on immediate children of root task")
             return self.is_complete_root()
         elif self.reduce_target == 'all':
+            logging.info("waiting on all children tasks and their children tasks.")
             return self.is_complete_all()
         elif self.reduce_target == 'filter':
+            logging.info("waiting on subset of children tasks")
             return self.is_complete_filtered()
         else:
             raise ValueError("{} invalid reduce_target".format(self.reduce_target))
