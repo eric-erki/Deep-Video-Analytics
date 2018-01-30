@@ -9,6 +9,7 @@
 <div class="row">
     <div class="box box-info">
         <div class="box-header">
+            <a class="btn btn-primary" style="float:right" href="/task_detail/{{ object.parent_id }}"> <i class="fa fa-arrow-up"></i> Parent task </a>
             <h3>Task {{ object.pk }} running {{ object.operation }} on {{ object.queue }} under <a href="/process/{{ object.parent_process_id }}"> process {{ object.parent_process_id }}</a></h3>
             <h4>Video: {% if object.video %}<a href="/videos/{{ object.video_id }}">{{ object.video.name }}</a>{% endif %}</h4>
         </div>
@@ -23,7 +24,7 @@
             <div class="box-body">
             <div class="row">
                 <div class="col-lg-8">
-                    <h4>Task id: {{ object.task_id }}</h4>
+                    <h4>Task id: {{ object.task_id }} in Task group {{ object.task_group_id }}</h4>
                     <h4>Submitted: {{ object.created|timesince }}</h4>
                     <h4>Execution time: {{  object.duration|floatformat}}</h4>
                 </div>
