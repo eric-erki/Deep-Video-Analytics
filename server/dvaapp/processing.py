@@ -371,6 +371,7 @@ class DVAPQLProcess(object):
             for t in self.process.script.get('tasks',[]):
                 self.launch_task(t)
         elif self.process.script['process_type'] == DVAPQL.QUERY:
+            self.assign_task_group_id(self.process.script.get('tasks', []))
             for t in self.process.script['tasks']:
                 operation = t['operation']
                 arguments = t.get('arguments',{})
