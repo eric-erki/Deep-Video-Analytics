@@ -87,17 +87,17 @@ class Waiter(object):
 
     def check_if_task_children_are_complete_recursive_filtered(self, task_id):
         """
-        This is intentionally different since we DO wish to wait on reduce tasks performed by child tasks.
         :param task_id:
         :return:
         """
         for t in TEvent.objects.filter(parent_id=task_id):
+            logging.info("{} in filter_set: {}".format(t.task_group_id,self.filter_set))
             if t.task_group_id in self.filter_set:
                 if not (t.completed or t.errored):
                     logging.info(
                         "Returning false {} running {} on {} from task group {} has not "
                         "yet completed/failed".format(t.pk, t.operation, t.queue, t.task_group_id))
                     return False
-            if not self.check_if_task_children_are_complete_recursive(t.pk):
-                return False
+                if not self.check_if_task_children_are_complete_recursive_filtered(t.pk):
+                    return False
         return True
