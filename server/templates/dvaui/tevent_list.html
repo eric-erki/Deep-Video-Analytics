@@ -44,6 +44,7 @@
                     <thead>
                     <tr>
                         <th>Process</th>
+                        <th>Group</th>
                         <th>Video</th>
                         <th>Operation</th>
                         <th>Queue</th>
@@ -61,6 +62,7 @@
                     {% for e in object_list %}
                         <tr>
                             <td><a href="/process/{{ e.parent_process_id }}">{{ e.parent_process_id }}</a></td>
+                            <td>{{ e.task_group_id }}</td>
                             <td>{% if e.video %}<a href="/videos/{{ e.video_id }}">{{ e.video.name }}</a>{% endif %}</td>
                             <td>{{ e.operation }}</td>
                             <td>{{ e.queue }}</td>
