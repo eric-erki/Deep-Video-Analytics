@@ -32,7 +32,7 @@ if __name__ == "__main__":
                                                                                                   queue_name)
     elif queue_name == settings.Q_STREAMER:
         try:
-            subprocess.check_output(['pip','install','--upgrade','livestreamer'])
+            subprocess.check_output(['pip','install','--upgrade','livestreamer','psutil'])
         except:
             logging.exception("Could not install livestreamer")
             pass
