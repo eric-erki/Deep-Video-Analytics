@@ -249,6 +249,7 @@ GLOBAL_RETRIEVER_QUEUE_ENABLED = False if os.environ.get('DISABLE_GLOBAL_RETRIEV
 Q_MANAGER = 'qmanager'
 Q_REDUCER = 'qreducer'
 Q_EXTRACTOR = 'qextract'
+Q_STREAMER = 'qstreamer'
 Q_TRAINER = 'qtrainer'
 Q_LAMBDA = 'qlambda'
 GLOBAL_MODEL_FLASK_SERVER_PORT = 8989

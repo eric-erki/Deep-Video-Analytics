@@ -75,6 +75,12 @@ class Video(models.Model):
         else:
             return "{}/{}/video/{}.mp4".format(settings.MEDIA_ROOT,self.pk,self.pk)
 
+    def segments_dir(self,media_root=None):
+        if not (media_root is None):
+            return "{}/{}/segments/".format(media_root, self.pk, self.pk)
+        else:
+            return "{}/{}/segments/".format(settings.MEDIA_ROOT,self.pk,self.pk)
+
     def get_frame_list(self,media_root=None):
         if media_root is None:
             media_root = settings.MEDIA_ROOT

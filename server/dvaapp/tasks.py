@@ -247,10 +247,6 @@ def perform_video_decode(task_id):
 
 @app.task(track_started=True, name="perform_detection")
 def perform_detection(task_id):
-    """
-    :param task_id:
-    :return:
-    """
     start = models.TEvent.objects.get(pk=task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
@@ -430,10 +426,6 @@ def perform_frame_download(event_id):
 
 @app.task(track_started=True, name="perform_sync")
 def perform_sync(task_id):
-    """
-    :param task_id:
-    :return:
-    """
     start = models.TEvent.objects.get(pk=task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
@@ -500,12 +492,13 @@ def perform_deletion(task_id):
     return
 
 
+@app.task(track_started=True, name="perform_stream_capture")
+def perform_stream_capture(task_id):
+    pass
+    
+
 @app.task(track_started=True, name="perform_training_set_creation")
 def perform_training_set_creation(task_id):
-    """
-    :param task_id:
-    :return:
-    """
     start = models.TEvent.objects.get(pk=task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
@@ -548,10 +541,6 @@ def perform_training_set_creation(task_id):
 
 @app.task(track_started=True, name="perform_training")
 def perform_training(task_id):
-    """
-    :param task_id:
-    :return:
-    """
     start = models.TEvent.objects.get(pk=task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
