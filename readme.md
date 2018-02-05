@@ -41,7 +41,7 @@ We provide instructions for deploying DVA in three scenarios.
 
 - /client : Python client using DVA REST API
 - /configs : ngnix config + defaults.py defining models + processing pipelines (can be replaced by mounting a volume)
-- /deploy : Dockerfiles + Instructions for development, single machine deployment abnd scalable deployment with Kubernetes
+- /deploy : Dockerfiles + Instructions for development, single machine deployment and scalable deployment with Kubernetes
 - /docs : Documentation, tutorial and experiments
 - /tests : Files required for testing
 - /repos : Code copied from third party repos, e.g. Yahoo LOPQ, TF-CTPN etc.
