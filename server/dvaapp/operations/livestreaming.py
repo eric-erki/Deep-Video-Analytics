@@ -66,7 +66,9 @@ class LivestreamCapture(object):
 
     def start_process(self):
         self.start_time = time.time()
-        self.capture = sp.Popen(['./scripts/consume_livestream.sh',self.path,self.segments_dir],cwd="/root/DVA/server/")
+        args = ['./scripts/consume_livestream.sh',self.path,self.segments_dir]
+        logging.info(args)
+        self.capture = sp.Popen(args,cwd="/root/DVA/server/")
         logging.info("Started capturing {} using process {}".format(self.path,self.capture))
 
     def parse_segment_framelist(self,segment_id, framelist):
@@ -150,8 +152,9 @@ class LivestreamCapture(object):
             if not new_segments:
                 time.sleep(self.wait_time)
             if (time.time() - self.last_segment_time) > self.max_wait:
+                logging.info("no new segment found in last {} seconds".format(self.max_wait))
                 break
-        logging.info("Killing capture process, no new segment found in last {} seconds".format(self.max_wait))
+        logging.info("Killing capture process")
         kill(self.capture.pid)
         try:
             self.upload(final=True)
