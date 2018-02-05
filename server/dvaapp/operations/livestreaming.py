@@ -1,8 +1,14 @@
 import subprocess as sp
-import os, time, logging, psutil, shlex
+import os, time, logging, shlex
 from ..models import Segment
 from ..fs import upload_file_to_remote
 from django.conf import settings
+
+try:
+    import psutil
+except ImportError:
+    pass
+
 
 def kill(proc_pid):
     process = psutil.Process(proc_pid)
