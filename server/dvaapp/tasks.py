@@ -11,6 +11,7 @@ from .operations.retrieval import Retrievers
 from .operations.decoding import VideoDecoder
 from .operations.dataset import DatasetCreator
 from .operations.training import train_lopq
+from .operations.livestreaming import LivestreamCapture
 from .processing import process_next, mark_as_completed
 from . import global_model_retriever
 from . import task_handlers
@@ -494,8 +495,19 @@ def perform_deletion(task_id):
 
 @app.task(track_started=True, name="perform_stream_capture")
 def perform_stream_capture(task_id):
-    pass
-    
+    start = models.TEvent.objects.get(pk=task_id)
+    if start.started:
+        return 0  # to handle celery bug with ACK in SOLO mode
+    else:
+        start.started = True
+        start.save()
+    l = LivestreamCapture(start.video,start)
+    l.start_process()
+    l.poll()
+    l.finalize()
+    mark_as_completed(start)
+    return
+
 
 @app.task(track_started=True, name="perform_training_set_creation")
 def perform_training_set_creation(task_id):

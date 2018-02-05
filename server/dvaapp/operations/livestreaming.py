@@ -1,7 +1,7 @@
 import subprocess as sp
 import os, time, logging, psutil, shlex
 from ..models import Segment
-
+from ..fs import upload_file_to_remote
 
 def kill(proc_pid):
     process = psutil.Process(proc_pid)
@@ -18,13 +18,13 @@ class LivestreamCapture(object):
         self.dv = dv
         self.path = self.dv.url
         self.capture = None
-        self.wait_time = wait_time
-        self.max_time = max_time
+        self.wait_time = event.arguments.get('wait_time',wait_time)
+        self.max_time = event.arguments.get('max_time',max_time)
         self.last_processsed_segment_index = -1
         self.segments_dir = self.dv.segments_dir()
         self.start_time = None
         self.processed_segments = set()
-        self.max_wait = max_wait
+        self.max_wait = event.arguments.get('max_wait',max_wait)
         self.dv.create_directory()
         self.segment_frames_dict = {}
         self.start_index = 0
@@ -118,8 +118,12 @@ class LivestreamCapture(object):
         ds.event_id = self.event.pk
         ds.metadata = segment_json
         ds.save()
+        upload_file_to_remote(ds.path())
+        self.dv.segments = self.last_processsed_segment_index + 1
+        self.dv.save()
         self.last_segment_time = time.time()
         self.processed_segments.add(segment_file_name)
+
 
     def poll(self):
         while (time.time() - self.start_time < self.max_time) and (self.capture.poll() is None):

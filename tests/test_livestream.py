@@ -9,14 +9,11 @@ sys.path.append('../server/')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dva.settings")
 django.setup()
 from dvaapp.models import TEvent, Video
-from dvaapp.operations import livestreaming
+from dvaapp.tasks import perform_stream_capture
 
 if __name__ == '__main__':
     dv = Video(name="test",url=sys.argv[-1])
     dv.save()
-    start = TEvent(video=dv,operation="perform_stream_capture")
+    start = TEvent(video=dv,operation="perform_stream_capture",arguments={"max_time":180})
     start.save()
-    l = livestreaming.LivestreamCapture(dv,start)
-    l.start_process()
-    l.poll()
-    l.finalize()
+    perform_stream_capture(start.pk)
