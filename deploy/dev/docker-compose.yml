@@ -44,7 +44,7 @@
        - LAUNCH_Q_qtrainer=1
        - LAUNCH_Q_qstreamer=1
        - LAUNCH_SCHEDULER=1
-       - TWITCH_TOKEN={TWITCH_TOKEN}
+       - TWITCH_TOKEN=${TWITCH_TOKEN}
        - LAUNCH_SERVER=1 # This supersedes NGINX and launches django development server with auto-reload
        - ENABLE_DEBUG=1 # Enables django debug mode
        - INIT_PROCESS=/root/DVA/configs/custom_defaults/init_process.json
