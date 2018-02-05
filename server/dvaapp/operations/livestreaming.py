@@ -20,7 +20,7 @@ def kill(proc_pid):
 
 class LivestreamCapture(object):
 
-    def __init__(self,dv,event,wait_time=3,max_time=31536000,max_wait=120):
+    def __init__(self,dv,event,wait_time=3,max_time=31536000,max_wait=120,segments_batch_size=5):
         self.pid = None
         self.event = event
         self.dv = dv
@@ -37,7 +37,7 @@ class LivestreamCapture(object):
         self.segment_frames_dict = {}
         self.start_index = 0
         self.csv_format = None
-        self.segments_batch_size = event.arguments.get('segments_batch_size',max_time)
+        self.segments_batch_size = event.arguments.get('segments_batch_size',segments_batch_size)
         self.segments_batch = set()
         self.last_segment_time = time.time()
 
