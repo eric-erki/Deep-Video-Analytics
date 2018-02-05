@@ -410,6 +410,9 @@ class DVAPQLProcess(object):
             map_filters = get_map_filters(t, v)
         else:
             map_filters = [{}]
+        # This is useful in case of perform_stream_capture where batch size is used but number of segments is unknown
+        if map_filters == []:
+            map_filters = [{}]
         for f in map_filters:
             args = copy.deepcopy(t.get('arguments', {}))  # make copy so that spec isnt mutated.
             if f:
