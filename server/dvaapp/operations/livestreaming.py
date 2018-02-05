@@ -2,6 +2,7 @@ import subprocess as sp
 import os, time, logging, psutil, shlex
 from ..models import Segment
 from ..fs import upload_file_to_remote
+from django.conf import settings
 
 def kill(proc_pid):
     process = psutil.Process(proc_pid)
@@ -20,7 +21,7 @@ class LivestreamCapture(object):
         self.capture = None
         self.wait_time = event.arguments.get('wait_time',wait_time)
         self.max_time = event.arguments.get('max_time',max_time)
-        self.last_processsed_segment_index = -1
+        self.last_processed_segment_index = -1
         self.segments_dir = self.dv.segments_dir()
         self.start_time = None
         self.processed_segments = set()
@@ -78,19 +79,17 @@ class LivestreamCapture(object):
 
     def upload(self,final=False):
         segments_processed = False
-        logging.info(self.last_processsed_segment_index)
+        logging.info(self.last_processed_segment_index)
         if not final:
-            while os.path.isfile('{}{}.mp4'.format(self.segments_dir,self.last_processsed_segment_index+2)):
-                segment_file_name = '{}{}.mp4'.format(self.segments_dir,self.last_processsed_segment_index+1)
-                segment_index = self.last_processsed_segment_index + 1
+            while os.path.isfile('{}{}.mp4'.format(self.segments_dir,self.last_processed_segment_index+2)):
+                segment_file_name = '{}{}.mp4'.format(self.segments_dir,self.last_processed_segment_index+1)
+                segment_index = self.last_processed_segment_index + 1
                 self.process_segment(segment_index, segment_file_name)
-                self.last_processsed_segment_index = segment_index
                 segments_processed = True
         else:
-            segment_file_name = '{}{}.mp4'.format(self.segments_dir, self.last_processsed_segment_index + 1)
-            segment_index = self.last_processsed_segment_index + 1
+            segment_file_name = '{}{}.mp4'.format(self.segments_dir, self.last_processed_segment_index + 1)
+            segment_index = self.last_processed_segment_index + 1
             self.process_segment(segment_index, segment_file_name)
-            self.last_processsed_segment_index = segment_index
             segments_processed = True
         return segments_processed
 
@@ -118,12 +117,14 @@ class LivestreamCapture(object):
         ds.event_id = self.event.pk
         ds.metadata = segment_json
         ds.save()
-        upload_file_to_remote(ds.path())
-        self.dv.segments = self.last_processsed_segment_index + 1
+        self.last_processed_segment_index = segment_index
+        if settings.DISABLE_NFS:
+            upload_file_to_remote(ds.path(""))
+            upload_file_to_remote(ds.framelist_path(""))
+        self.dv.segments = self.last_processed_segment_index + 1
         self.dv.save()
         self.last_segment_time = time.time()
         self.processed_segments.add(segment_file_name)
-
 
     def poll(self):
         while (time.time() - self.start_time < self.max_time) and (self.capture.poll() is None):
