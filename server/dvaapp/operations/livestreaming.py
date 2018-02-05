@@ -3,6 +3,7 @@ import os, time, logging, shlex
 from ..models import Segment
 from ..fs import upload_file_to_remote
 from django.conf import settings
+from ..processing import process_next
 
 try:
     import psutil
@@ -36,6 +37,8 @@ class LivestreamCapture(object):
         self.segment_frames_dict = {}
         self.start_index = 0
         self.csv_format = None
+        self.segments_batch_size = event.arguments.get('segments_batch_size',max_time)
+        self.segments_batch = set()
         self.last_segment_time = time.time()
 
     def detect_csv_segment_format(self):
@@ -95,8 +98,9 @@ class LivestreamCapture(object):
         else:
             segment_file_name = '{}{}.mp4'.format(self.segments_dir, self.last_processed_segment_index + 1)
             segment_index = self.last_processed_segment_index + 1
-            self.process_segment(segment_index, segment_file_name)
-            segments_processed = True
+            if os.path.isfile(segment_file_name):
+                self.process_segment(segment_index, segment_file_name)
+                segments_processed = True
         return segments_processed
 
     def process_segment(self, segment_index, segment_file_name):
@@ -129,8 +133,12 @@ class LivestreamCapture(object):
             upload_file_to_remote(ds.framelist_path(""))
         self.dv.segments = self.last_processed_segment_index + 1
         self.dv.save()
+        self.segments_batch.add(segment_index)
         self.last_segment_time = time.time()
         self.processed_segments.add(segment_file_name)
+        if (self.last_processed_segment_index % self.segments_batch_size == 0):
+            process_next(self.event.pk,map_filters=[{'segment_index__in':list(self.segments_batch)}])
+            self.segments_batch = set()
 
     def poll(self):
         while (time.time() - self.start_time < self.max_time) and (self.capture.poll() is None):
@@ -145,7 +153,10 @@ class LivestreamCapture(object):
                 break
         logging.info("Killing capture process, no new segment found in last {} seconds".format(self.max_wait))
         kill(self.capture.pid)
-        self.upload(final=True)
+        try:
+            self.upload(final=True)
+        except:
+            pass
 
     def finalize(self):
-        pass
+        process_next(self.event.pk, map_filters=[{'segment_index__in': list(self.segments_batch)}])

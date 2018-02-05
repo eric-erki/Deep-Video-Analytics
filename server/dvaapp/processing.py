@@ -248,7 +248,7 @@ def launch_tasks(k, dt, inject_filters, map_filters = None, launch_type = ""):
     return tids
 
 
-def process_next(task_id,inject_filters=None,custom_next_tasks=None,sync=True,launch_next=True):
+def process_next(task_id,inject_filters=None,custom_next_tasks=None,sync=True,launch_next=True,map_filters=None):
     if custom_next_tasks is None:
         custom_next_tasks = []
     dt = TEvent.objects.get(pk=task_id)
@@ -263,7 +263,8 @@ def process_next(task_id,inject_filters=None,custom_next_tasks=None,sync=True,la
             else:
                 launched += launch_tasks(k,dt,inject_filters,None,'sync')
     for k in next_tasks+custom_next_tasks:
-        map_filters = get_map_filters(k,dt.video)
+        if map_filters is None:
+            map_filters = get_map_filters(k,dt.video)
         launched += launch_tasks(k, dt, inject_filters,map_filters,'map')
     for reduce_task in dt.arguments.get('reduce',[]):
         next_task = TEvent.objects.create(video=dt.video, operation="perform_reduce",
