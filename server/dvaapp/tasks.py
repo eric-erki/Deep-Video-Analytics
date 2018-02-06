@@ -230,6 +230,7 @@ def perform_video_decode(task_id):
     args = start.arguments
     video_id = start.video_id
     dv = models.Video.objects.get(id=video_id)
+    dv.create_directory()
     kwargs = args.get('filters', {})
     kwargs['video_id'] = video_id
     v = VideoDecoder(dvideo=dv, media_dir=settings.MEDIA_ROOT)

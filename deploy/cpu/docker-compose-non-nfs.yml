@@ -194,6 +194,21 @@
        - redis
        - db
        - rabbit
+   streamer:
+     image: akshayubhat/dva-auto:latest
+     container_name: streamer
+     env_file:
+       - ../common.env
+       - ~/aws.env
+     environment:
+       - DISABLE_NFS=1
+       - TWITCH_TOKEN=${TWITCH_TOKEN}
+       - LAUNCH_Q_qstreamer=1
+     command: bash -c "git reset --hard && git pull && sleep 60 && ./start_container.py"
+     depends_on:
+       - redis
+       - db
+       - rabbit
    global_retriever:
      image: akshayubhat/dva-auto:latest
      container_name: global_retriever
