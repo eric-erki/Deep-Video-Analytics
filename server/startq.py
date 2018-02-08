@@ -32,9 +32,9 @@ if __name__ == "__main__":
                                                                                                   queue_name)
     elif queue_name == settings.Q_STREAMER:
         try:
-            subprocess.check_output(['pip','install','--upgrade','livestreamer','psutil'])
+            subprocess.check_output(['pip','install','--upgrade','streamlink','psutil'])
         except:
-            logging.exception("Could not install livestreamer")
+            logging.exception("Could not install streamlink")
             pass
         command = 'celery -A dva worker -l info {} -c {} -Q {} -n {}.%h -f ../logs/{}.log'.format(mute, max(int(conc), 2),
                                                                                                   queue_name, queue_name,

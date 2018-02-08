@@ -202,7 +202,6 @@
        - ~/aws.env
      environment:
        - DISABLE_NFS=1
-       - TWITCH_TOKEN=${TWITCH_TOKEN}
        - LAUNCH_Q_qstreamer=1
      command: bash -c "git reset --hard && git pull && sleep 60 && ./start_container.py"
      depends_on:
