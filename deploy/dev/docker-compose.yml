@@ -56,10 +56,10 @@
        - rabbit
        - redis
      volumes:
-       - dvadata:/root/media
        - ../../:/root/DVA/
+     tmpfs:
+       - /root/media
  volumes:
   dvapgdata:
-  dvadata:
   dvarabbit:
   dvaredis:

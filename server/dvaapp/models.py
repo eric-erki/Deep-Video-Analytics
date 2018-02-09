@@ -62,6 +62,7 @@ class Video(models.Model):
     dataset = models.BooleanField(default=False)
     uploader = models.ForeignKey(User,null=True)
     segments = models.IntegerField(default=0)
+    stream = models.BooleanField(default=False)
     url = models.TextField(default="")
     youtube_video = models.BooleanField(default=False)
     parent_process = models.ForeignKey(DVAPQL,null=True)

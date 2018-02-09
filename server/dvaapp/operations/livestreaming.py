@@ -34,6 +34,7 @@ class LivestreamCapture(object):
         self.processed_segments = set()
         self.max_wait = event.arguments.get('max_wait',max_wait)
         self.dv.create_directory()
+        self.dv.stream = True
         self.segment_frames_dict = {}
         self.start_index = 0
         self.csv_format = None

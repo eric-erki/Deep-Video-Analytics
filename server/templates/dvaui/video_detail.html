@@ -21,13 +21,13 @@
                     <th class="text-center">height</th>
                     <th class="text-center">width</th>
                     <th class="text-center">created</th>
-                    <th class="text-center">youtube</th>
+                    <th class="text-center">URL</th>
 
                 </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>{%  if object.dataset and object.query %} Query {% elif object.dataset %} Dataset {% else %}Video {% endif %}</td>
+                        <td>{%  if object.dataset and object.query %} Query {% elif object.stream %} Stream {% elif object.dataset %} Dataset {% else %}Video {% endif %}</td>
                         <td>{{ object.name }} </td>
                         <td class="text-right">{{ object.length_in_seconds }} </td>
                         <td class="text-right">{{ object.frames }} </td>
@@ -37,7 +37,7 @@
                         <td class="text-right">{{ object.height }} </td>
                         <td class="text-right">{{ object.width }} </td>
                         <td class="text-center">{{ object.created }}</td>
-                        <td class="text-center">{% if object.youtube_video %}<a href="{{ object.url }}" target="_blank">youtube link</a>{% endif %}</td>
+                        <td class="text-center">{% if object.url %}<a href="{{ object.url }}" target="_blank">object.url</a>{% endif %}</td>
                     </tr>
                 </tbody>
                 </table>
@@ -53,12 +53,16 @@
         <div class="box">
         <div class="box-header with-border" >
             <h3>Video</h3>
-            {%  if object.youtube_video %}<a href="{{ object.url }}" target="_blank">{{ object.url }}</a>{% endif %}
+            {%  if object.url %}<a href="{{ object.url }}" target="_blank">{{ object.url }}</a>{% endif %}
         </div>
         <div class="box-body" style="text-align:center">
+            {% if video.stream %}
+                <h4>The video is a livestream. Please select segment below</h4>
+            {% else %}
             <video controls="" preload="metadata" name="media" style="width:90%;margin-left:auto;margin-right:auto">
-            <source src="{{url}}" type="video/mp4">
+                <source src="{{url}}" type="video/mp4">
             </video>
+            {% endif %}
         </div>
         </div>
         {% endif %}
