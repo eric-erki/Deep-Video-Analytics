@@ -12,7 +12,6 @@
                 <thead>
                 <tr>
                     <th class="text-center">type</th>
-                    <th class="text-center">name</th>
                     <th class="text-center">duration</th>
                     <th class="text-center">frames</th>
                     <th class="text-center">segments</th>
@@ -28,7 +27,6 @@
                 <tbody>
                     <tr>
                         <td>{%  if object.dataset and object.query %} Query {% elif object.stream %} Stream {% elif object.dataset %} Dataset {% else %}Video {% endif %}</td>
-                        <td>{{ object.name }} </td>
                         <td class="text-right">{{ object.length_in_seconds }} </td>
                         <td class="text-right">{{ object.frames }} </td>
                         <td class="text-right">{{ object.segments }} </td>
@@ -37,7 +35,7 @@
                         <td class="text-right">{{ object.height }} </td>
                         <td class="text-right">{{ object.width }} </td>
                         <td class="text-center">{{ object.created }}</td>
-                        <td class="text-center">{% if object.url %}<a href="{{ object.url }}" target="_blank">object.url</a>{% endif %}</td>
+                        <td class="text-center">{% if object.url %}<a href="{{ object.url }}" target="_blank">{{ object.url }}</a>{% endif %}</td>
                     </tr>
                 </tbody>
                 </table>
@@ -58,6 +56,26 @@
         <div class="box-body" style="text-align:center">
             {% if video.stream %}
                 <h4>The video is a livestream. Please select segment below</h4>
+                <table class="table dataTables">
+                <thead>
+                <tr>
+                    <th class="text-center">Segment index</th>
+                    <th class="text-center">start frame index</th>
+                    <th class="text-center">frames</th>
+                    <th class="text-center">view</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for f in segments %}
+                    <tr>
+                        <td class="text-right">{{ f.segment_index }} </td>
+                        <td class="text-right">{{ f.start_index }} </td>
+                        <td class="text-right">{{ f.frame_count }} </td>
+                        <td class="text-center"><a href="/segments/{{ f.pk }}">view</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                </table>
             {% else %}
             <video controls="" preload="metadata" name="media" style="width:90%;margin-left:auto;margin-right:auto">
                 <source src="{{url}}" type="video/mp4">

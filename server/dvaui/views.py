@@ -188,6 +188,7 @@ class VideoDetail(UserPassesTestMixin, DetailView):
                                               range(int(math.ceil(max_frame_index / float(delta))))]
         context['frame_first'] = context['frame_list'].first()
         context['frame_last'] = context['frame_list'].last()
+        context['segments'] = Segment.objects.filter(video=self.object)
         context['pending_tasks'] = TEvent.objects.all().filter(video=self.object,started=False, errored=False).count()
         context['running_tasks'] = TEvent.objects.all().filter(video=self.object,started=True, completed=False, errored=False).count()
         context['successful_tasks'] = TEvent.objects.all().filter(video=self.object,completed=True).count()
