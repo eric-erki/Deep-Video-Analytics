@@ -253,8 +253,9 @@ def process_next(dt,inject_filters=None,custom_next_tasks=None,sync=True,launch_
         custom_next_tasks = []
     task_id = dt.pk
     launched = []
+    args = copy.deepcopy(dt.arguments)
     logging.info("next tasks for {}".format(dt.operation))
-    next_tasks = dt.arguments.get('map',[]) if dt.arguments and launch_next else []
+    next_tasks = args.get('map',[]) if args and launch_next else []
     if sync and settings.MEDIA_BUCKET:
         for k in SYNC_TASKS.get(dt.operation,[]):
             if settings.DISABLE_NFS:
@@ -266,7 +267,7 @@ def process_next(dt,inject_filters=None,custom_next_tasks=None,sync=True,launch_
         if map_filters is None:
             map_filters = get_map_filters(k,dt.video)
         launched += launch_tasks(k, dt, inject_filters,map_filters,'map')
-    for reduce_task in dt.arguments.get('reduce',[]):
+    for reduce_task in args.get('reduce',[]):
         next_task = TEvent.objects.create(video=dt.video, operation="perform_reduce",
                                           arguments=reduce_task['arguments'], parent=dt,
                                           task_group_id=reduce_task['task_group_id'],

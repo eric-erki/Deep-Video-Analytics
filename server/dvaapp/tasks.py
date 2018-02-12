@@ -78,7 +78,7 @@ def perform_indexing(task_id):
         start.started = True
         start.save()
     sync = task_handlers.handle_perform_indexing(start)
-    next_ids = process_next(start.pk, sync=sync)
+    next_ids = process_next(start, sync=sync)
     mark_as_completed(start)
     return next_ids
 
@@ -92,7 +92,7 @@ def perform_index_approximation(task_id):
         start.started = True
         start.save()
     sync = task_handlers.handle_perform_index_approximation(start)
-    next_ids = process_next(start.pk, sync=sync)
+    next_ids = process_next(start, sync=sync)
     mark_as_completed(start)
     return next_ids
 
@@ -130,7 +130,7 @@ def perform_transformation(task_id):
             else:
                 cropped.save(dr.path())
     queryset.update(materialized=True)
-    process_next(task_id)
+    process_next(start)
     mark_as_completed(start)
 
 
@@ -182,7 +182,7 @@ def perform_dataset_extraction(task_id):
     dv.create_directory(create_subdirs=True)
     v = DatasetCreator(dvideo=dv, media_dir=settings.MEDIA_ROOT)
     v.extract(start)
-    process_next(task_id)
+    process_next(start)
     mark_as_completed(start)
     return 0
 
@@ -212,9 +212,9 @@ def perform_video_segmentation(task_id):
         next_args = {'rescale': args['rescale'], 'rate': args['rate']}
         next_task = models.TEvent.objects.create(video=dv, operation='perform_video_decode', arguments=next_args, parent=start)
         perform_video_decode(next_task.pk)  # decode it synchronously for testing in Travis
-        process_next(task_id, sync=True, launch_next=False)
+        process_next(start, sync=True, launch_next=False)
     else:
-        process_next(task_id)
+        process_next(start)
     mark_as_completed(start)
     return 0
 
@@ -242,7 +242,7 @@ def perform_video_decode(task_id):
     task_shared.ensure_files(queryset, target)
     for ds in queryset:
         v.decode_segment(ds=ds, denominator=args.get('rate', 30), event_id=task_id)
-    process_next(task_id)
+    process_next(start)
     mark_as_completed(start)
     return task_id
 
@@ -264,7 +264,7 @@ def perform_detection(task_id):
         global_model_retriever.run_task_in_model_specific_flask_server(start)
     else:
         task_handlers.handle_perform_detection(start)
-    launched = process_next(task_id)
+    launched = process_next(start)
     mark_as_completed(start)
     if query_flow:
         return launched
@@ -281,7 +281,7 @@ def perform_analysis(task_id):
         start.started = True
         start.save()
     task_handlers.handle_perform_analysis(start)
-    process_next(task_id)
+    process_next(start)
     mark_as_completed(start)
     return 0
 
@@ -329,7 +329,7 @@ def perform_model_import(task_id):
     args = start.arguments
     dm = models.TrainedModel.objects.get(pk=args['pk'])
     dm.download()
-    process_next(task_id)
+    process_next(start)
     mark_as_completed(start)
 
 
