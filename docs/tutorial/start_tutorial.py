@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, requests, subprocess, time, webbrowser
+import os, urllib2, subprocess, time, webbrowser
 
 if __name__ == '__main__':
     print "Checking if docker-compose is available"
@@ -23,8 +23,8 @@ if __name__ == '__main__':
     while max_minutes:
         print "Checking if DVA server is running, waiting for another minute and at most {max_minutes} minutes".format(max_minutes=max_minutes)
         try:
-            r = requests.get("http://localhost:8000")
-            if r.ok:
+            r = urllib2.urlopen("http://localhost:8000")
+            if r.getcode() == 200:
                 print "Open browser window and go to http://localhost:8000 to access DVA Web UI"
                 print 'Use following auth code to use jupyter notebook on  '
                 print subprocess.check_output(["docker", "exec", "-it", "webserver", "jupyter", 'notebook', 'list'])
