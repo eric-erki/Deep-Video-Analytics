@@ -28,6 +28,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_SERVER_NGINX=1
@@ -46,6 +47,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_Q_qextract=1
@@ -60,6 +62,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_Q_qtrainer=1
@@ -74,6 +77,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_SCHEDULER=1
@@ -88,6 +92,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_indexer_inception=1
@@ -102,6 +107,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_indexer_facenet=1
@@ -116,6 +122,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_detector_coco=1
@@ -130,6 +137,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_analyzer_crnn=1
@@ -144,6 +152,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_analyzer_tagger=1
@@ -158,6 +167,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_detector_face=1
@@ -172,6 +182,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_detector_textbox=1
@@ -186,6 +197,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_Q_GLOBAL_MODEL=1
@@ -200,6 +212,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_Q_qstreamer=1
@@ -214,6 +227,7 @@
      env_file:
        - ../common.env
        - ~/aws.env
+       - ~/media.env
      environment:
        - DISABLE_NFS=1
        - LAUNCH_Q_GLOBAL_RETRIEVER=1
