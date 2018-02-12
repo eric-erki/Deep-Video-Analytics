@@ -140,7 +140,7 @@ class LivestreamCapture(object):
         self.last_segment_time = time.time()
         self.processed_segments.add(segment_file_name)
         if (self.last_processed_segment_index % self.segments_batch_size == 0):
-            process_next(self.event.pk,map_filters=[{'segment_index__in':list(self.segments_batch)}])
+            process_next(self.event,map_filters=[{'segment_index__in':list(self.segments_batch)}])
             self.segments_batch = set()
 
     def poll(self):
@@ -163,4 +163,4 @@ class LivestreamCapture(object):
             pass
 
     def finalize(self):
-        process_next(self.event.pk, map_filters=[{'segment_index__in': list(self.segments_batch)}])
+        process_next(self.event, map_filters=[{'segment_index__in': list(self.segments_batch)}])

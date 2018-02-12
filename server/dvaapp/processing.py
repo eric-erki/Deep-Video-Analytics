@@ -248,10 +248,10 @@ def launch_tasks(k, dt, inject_filters, map_filters = None, launch_type = ""):
     return tids
 
 
-def process_next(task_id,inject_filters=None,custom_next_tasks=None,sync=True,launch_next=True,map_filters=None):
+def process_next(dt,inject_filters=None,custom_next_tasks=None,sync=True,launch_next=True,map_filters=None):
     if custom_next_tasks is None:
         custom_next_tasks = []
-    dt = TEvent.objects.get(pk=task_id)
+    task_id = dt.pk
     launched = []
     logging.info("next tasks for {}".format(dt.operation))
     next_tasks = dt.arguments.get('map',[]) if dt.arguments and launch_next else []

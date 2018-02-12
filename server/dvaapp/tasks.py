@@ -61,7 +61,7 @@ def perform_reduce(task_id):
     timeout_seconds = start.arguments.get('timeout',settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
     reduce_waiter = Waiter(start)
     if reduce_waiter.is_complete():
-        next_ids = process_next(start.pk)
+        next_ids = process_next(start)
         mark_as_completed(start)
         return next_ids
     else:
@@ -371,7 +371,7 @@ def perform_import(event_id):
     else:
         task_shared.import_path(dv, start.arguments['path'])
     dv.save()
-    process_next(start.pk)
+    process_next(start)
     mark_as_completed(start)
 
 
@@ -400,7 +400,7 @@ def perform_region_import(event_id):
         raise ValueError("{}".format(temp_filename))
     task_shared.import_frame_regions_json(j, dv, event_id)
     dv.save()
-    process_next(start.pk)
+    process_next(start)
     os.remove(temp_filename)
     mark_as_completed(start)
 
@@ -422,7 +422,7 @@ def perform_frame_download(event_id):
     dv.create_directory(create_subdirs=True)
     task_shared.load_frame_list(dv, start.pk, frame_index__gte=filters['frame_index__gte'],
                                 frame_index__lt=filters.get('frame_index__lt', -1))
-    process_next(start.pk)
+    process_next(start)
     mark_as_completed(start)
 
 
@@ -547,7 +547,7 @@ def perform_training_set_creation(task_id):
         dt.save()
     else:
         raise NotImplementedError
-    process_next(start.pk)
+    process_next(start)
     mark_as_completed(start)
     return 0
 
@@ -574,7 +574,7 @@ def perform_training(task_id):
             start.duration = (timezone.now() - start.start_ts).total_seconds()
             start.save()
             raise ValueError(start.error_message)
-    process_next(start.pk)
+    process_next(start)
     mark_as_completed(start)
     return 0
 
