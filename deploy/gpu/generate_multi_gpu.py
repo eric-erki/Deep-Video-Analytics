@@ -48,6 +48,7 @@ skeleton = """
        - LAUNCH_BY_NAME_retriever_inception=1
        - LAUNCH_BY_NAME_retriever_facenet=1
        - LAUNCH_Q_qextract=1
+       - LAUNCH_Q_qstreamer=1
        - LAUNCH_SCHEDULER=1
        - LAUNCH_Q_GLOBAL_RETRIEVER=1
      command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
