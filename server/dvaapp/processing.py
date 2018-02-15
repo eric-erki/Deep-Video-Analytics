@@ -242,8 +242,12 @@ def launch_tasks(k, dt, inject_filters, map_filters = None, launch_type = ""):
             video_per_task = Video.objects.get(**k['video_selector'])
         else:
             video_per_task = v
+        if op == 'perform_sync':
+            task_group_id = k.get('task_group_id',-1)
+        else:
+            task_group_id = k['task_group_id']
         next_task = TEvent.objects.create(video=video_per_task, operation=op, arguments=args, parent=dt,
-                                          task_group_id=k['task_group_id'],parent_process=p, queue=q)
+                                          task_group_id=task_group_id,parent_process=p, queue=q)
         tids.append(app.send_task(k['operation'], args=[next_task.pk, ], queue=q).id)
     return tids
 
