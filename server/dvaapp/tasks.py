@@ -28,7 +28,7 @@ except ImportError:
     pass
 
 W = None
-
+TASK_ID_TO_OBJECT = {}
 
 @celeryd_init.connect
 def configure_workers(sender, conf, **kwargs):
@@ -42,8 +42,11 @@ def configure_workers(sender, conf, **kwargs):
 
 @task_prerun.connect
 def start_task(task_id, task, args, **kwargs):
+    global TASK_ID_TO_OBJECT
+    global W
     if task.name.startswith('perform'):
         start = models.TEvent.objects.get(pk=args[0])
+        TASK_ID_TO_OBJECT[args[0]] = start
         start.task_id = task_id
         if start.start_ts is None:
             start.start_ts = timezone.now()
@@ -54,7 +57,8 @@ def start_task(task_id, task, args, **kwargs):
 
 @app.task(track_started=True, name="perform_reduce")
 def perform_reduce(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if not start.started:
         start.started = True
         start.save()
@@ -71,7 +75,8 @@ def perform_reduce(task_id):
 
 @app.task(track_started=True, name="perform_indexing")
 def perform_indexing(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -85,7 +90,8 @@ def perform_indexing(task_id):
 
 @app.task(track_started=True, name="perform_index_approximation")
 def perform_index_approximation(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -104,7 +110,8 @@ def perform_transformation(task_id):
     :param task_id:
     :return:
     """
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -136,7 +143,8 @@ def perform_transformation(task_id):
 
 @app.task(track_started=True, name="perform_retrieval")
 def perform_retrieval(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     elif start.queue.startswith(settings.GLOBAL_RETRIEVER) and global_model_retriever.defer(start):
@@ -164,7 +172,8 @@ def perform_retrieval(task_id):
 
 @app.task(track_started=True, name="perform_dataset_extraction")
 def perform_dataset_extraction(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -189,7 +198,8 @@ def perform_dataset_extraction(task_id):
 
 @app.task(track_started=True, name="perform_video_segmentation")
 def perform_video_segmentation(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -221,7 +231,8 @@ def perform_video_segmentation(task_id):
 
 @app.task(track_started=True, name="perform_video_decode", ignore_result=False)
 def perform_video_decode(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -249,7 +260,8 @@ def perform_video_decode(task_id):
 
 @app.task(track_started=True, name="perform_detection")
 def perform_detection(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     elif start.queue.startswith(settings.GLOBAL_MODEL) and global_model_retriever.defer(start):
@@ -274,7 +286,8 @@ def perform_detection(task_id):
 
 @app.task(track_started=True, name="perform_analysis")
 def perform_analysis(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -288,7 +301,8 @@ def perform_analysis(task_id):
 
 @app.task(track_started=True, name="perform_export")
 def perform_export(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -320,7 +334,8 @@ def perform_export(task_id):
 
 @app.task(track_started=True, name="perform_model_import")
 def perform_model_import(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -334,8 +349,9 @@ def perform_model_import(task_id):
 
 
 @app.task(track_started=True, name="perform_import")
-def perform_import(event_id):
-    start = models.TEvent.objects.get(pk=event_id)
+def perform_import(task_id):
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -376,8 +392,9 @@ def perform_import(event_id):
 
 
 @app.task(track_started=True, name="perform_region_import")
-def perform_region_import(event_id):
-    start = models.TEvent.objects.get(pk=event_id)
+def perform_region_import(task_id):
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -398,7 +415,7 @@ def perform_region_import(event_id):
             j = json.load(gzip.GzipFile(temp_filename))
     except:
         raise ValueError("{}".format(temp_filename))
-    task_shared.import_frame_regions_json(j, dv, event_id)
+    task_shared.import_frame_regions_json(j, dv, task_id)
     dv.save()
     process_next(start)
     os.remove(temp_filename)
@@ -406,8 +423,9 @@ def perform_region_import(event_id):
 
 
 @app.task(track_started=True, name="perform_frame_download")
-def perform_frame_download(event_id):
-    start = models.TEvent.objects.get(pk=event_id)
+def perform_frame_download(task_id):
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -415,9 +433,9 @@ def perform_frame_download(event_id):
         start.save()
     dv = start.video
     if dv.metadata.endswith('.gz'):
-        fs.ensure('/{}/framelist.gz'.format(dv.pk), safe=True, event_id=event_id)
+        fs.ensure('/{}/framelist.gz'.format(dv.pk), safe=True, event_id=task_id)
     else:
-        fs.ensure('/{}/framelist.json'.format(dv.pk), safe=True, event_id=event_id)
+        fs.ensure('/{}/framelist.json'.format(dv.pk), safe=True, event_id=task_id)
     filters = start.arguments['filters']
     dv.create_directory(create_subdirs=True)
     task_shared.load_frame_list(dv, start.pk, frame_index__gte=filters['frame_index__gte'],
@@ -428,7 +446,8 @@ def perform_frame_download(event_id):
 
 @app.task(track_started=True, name="perform_sync")
 def perform_sync(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -447,7 +466,8 @@ def perform_sync(task_id):
 
 @app.task(track_started=True, name="perform_deletion")
 def perform_deletion(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -496,7 +516,8 @@ def perform_deletion(task_id):
 
 @app.task(track_started=True, name="perform_stream_capture")
 def perform_stream_capture(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -512,7 +533,8 @@ def perform_stream_capture(task_id):
 
 @app.task(track_started=True, name="perform_training_set_creation")
 def perform_training_set_creation(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -554,7 +576,8 @@ def perform_training_set_creation(task_id):
 
 @app.task(track_started=True, name="perform_training")
 def perform_training(task_id):
-    start = models.TEvent.objects.get(pk=task_id)
+    global TASK_ID_TO_OBJECT
+    start = TASK_ID_TO_OBJECT[task_id]
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
