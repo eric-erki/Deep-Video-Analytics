@@ -9,7 +9,7 @@
 <div class="row">
     <div class="box box-info">
         <div class="box-header">
-            <a class="btn btn-primary" style="float:right" href="/task_detail/{{ object.parent_id }}"> <i class="fa fa-arrow-up"></i> Parent task </a>
+           {% if object.parent_id %} <a class="btn btn-primary" style="float:right" href="/task_detail/{{ object.parent_id }}"> <i class="fa fa-arrow-up"></i> Parent task </a>{% endif %}
             <h3>Task {{ object.pk }} running {{ object.operation }} on {{ object.queue }} under <a href="/process/{{ object.parent_process_id }}"> process {{ object.parent_process_id }}</a></h3>
             <h4>Video: {% if object.video %}<a href="/videos/{{ object.video_id }}">{{ object.video.name }}</a>{% endif %}</h4>
         </div>
@@ -68,6 +68,67 @@
     </div>
     {% endif %}
 </div>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="box">
+            <div class="box-header with-border">
+                <h3>Child tasks</h3>
+            </div>
+            <div class="box-body">
+                <form method="post">
+                {% csrf_token %}
+                <table class="table dataTables">
+                    <thead>
+                    <tr>
+                        <th>Process</th>
+                        <th>Group</th>
+                        <th>Video</th>
+                        <th>Operation</th>
+                        <th>Queue</th>
+                        <th>created</th>
+                        <th>started</th>
+                        <th>created ts</th>
+                        <th>started ts</th>
+                        <th>duration</th>
+                        <th class="text-center">status and details</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for e in child_tasks %}
+                        <tr>
+                            <td><a href="/process/{{ e.parent_process_id }}">{{ e.parent_process_id }}</a></td>
+                            <td>{{ e.task_group_id }}</td>
+                            <td>{% if e.video %}<a href="/videos/{{ e.video_id }}">{{ e.video.name }}</a>{% endif %}</td>
+                            <td>{{ e.operation }}</td>
+                            <td>{{ e.queue }}</td>
+                            <td class="text-center">{{ e.created|timesince}}</td>
+                            <td class="text-center">{{ e.start_ts|timesince}}</td>
+                            <td class="text-center">{{ e.created|date:"U" }}</td>
+                            <td class="text-center">{{ e.start_ts|date:"U" }}</td>
+                            <td class="text-right">{{ e.duration|floatformat }}</td>
+                            <td>
+                                {% if e.errored %}
+                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-danger btn-block">{% if e.imported %}Imported{% endif %} Failed</a>
+                                {% elif e.duration < 0 and not e.started %}
+                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-warning btn-block">{% if e.imported %}Imported{% endif %} Pending</a>
+                                {% elif e.duration < 0 and e.started and not e.completed%}
+                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-primary btn-block">{% if e.imported %}Imported{% endif %} Running</a>
+                                {% elif e.completed%}
+                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-success btn-block">{% if e.imported %}Imported{% endif %} Completed</a>
+                                {% else %}
+                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-info btn-block">Unknown</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 </section>
 {% endblock %}
 {% block page_js%}
