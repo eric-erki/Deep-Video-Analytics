@@ -55,10 +55,19 @@ def start_task(task_id, task, args, **kwargs):
         start.save()
 
 
+def get_task(task_id):
+    global TASK_ID_TO_OBJECT
+    if task_id in TASK_ID_TO_OBJECT:
+        return TASK_ID_TO_OBJECT[task_id]
+    else:
+        logging.warning("Task {} not found in cache querying DB ".format(task_id))
+        TASK_ID_TO_OBJECT[task_id] = models.TEvent.objects.get(pk=task_id)
+        return TASK_ID_TO_OBJECT[task_id]
+
+
 @app.task(track_started=True, name="perform_reduce")
 def perform_reduce(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if not start.started:
         start.started = True
         start.save()
@@ -75,8 +84,7 @@ def perform_reduce(task_id):
 
 @app.task(track_started=True, name="perform_indexing")
 def perform_indexing(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -90,8 +98,7 @@ def perform_indexing(task_id):
 
 @app.task(track_started=True, name="perform_index_approximation")
 def perform_index_approximation(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -110,8 +117,7 @@ def perform_transformation(task_id):
     :param task_id:
     :return:
     """
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -143,8 +149,7 @@ def perform_transformation(task_id):
 
 @app.task(track_started=True, name="perform_retrieval")
 def perform_retrieval(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     elif start.queue.startswith(settings.GLOBAL_RETRIEVER) and global_model_retriever.defer(start):
@@ -172,8 +177,7 @@ def perform_retrieval(task_id):
 
 @app.task(track_started=True, name="perform_dataset_extraction")
 def perform_dataset_extraction(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -198,8 +202,7 @@ def perform_dataset_extraction(task_id):
 
 @app.task(track_started=True, name="perform_video_segmentation")
 def perform_video_segmentation(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -231,8 +234,7 @@ def perform_video_segmentation(task_id):
 
 @app.task(track_started=True, name="perform_video_decode", ignore_result=False)
 def perform_video_decode(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -260,8 +262,7 @@ def perform_video_decode(task_id):
 
 @app.task(track_started=True, name="perform_detection")
 def perform_detection(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     elif start.queue.startswith(settings.GLOBAL_MODEL) and global_model_retriever.defer(start):
@@ -286,8 +287,7 @@ def perform_detection(task_id):
 
 @app.task(track_started=True, name="perform_analysis")
 def perform_analysis(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -301,8 +301,7 @@ def perform_analysis(task_id):
 
 @app.task(track_started=True, name="perform_export")
 def perform_export(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -334,8 +333,7 @@ def perform_export(task_id):
 
 @app.task(track_started=True, name="perform_model_import")
 def perform_model_import(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -350,8 +348,7 @@ def perform_model_import(task_id):
 
 @app.task(track_started=True, name="perform_import")
 def perform_import(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -393,8 +390,7 @@ def perform_import(task_id):
 
 @app.task(track_started=True, name="perform_region_import")
 def perform_region_import(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -424,8 +420,7 @@ def perform_region_import(task_id):
 
 @app.task(track_started=True, name="perform_frame_download")
 def perform_frame_download(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -446,8 +441,7 @@ def perform_frame_download(task_id):
 
 @app.task(track_started=True, name="perform_sync")
 def perform_sync(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -466,8 +460,7 @@ def perform_sync(task_id):
 
 @app.task(track_started=True, name="perform_deletion")
 def perform_deletion(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -516,8 +509,7 @@ def perform_deletion(task_id):
 
 @app.task(track_started=True, name="perform_stream_capture")
 def perform_stream_capture(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -533,8 +525,7 @@ def perform_stream_capture(task_id):
 
 @app.task(track_started=True, name="perform_training_set_creation")
 def perform_training_set_creation(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
@@ -576,8 +567,7 @@ def perform_training_set_creation(task_id):
 
 @app.task(track_started=True, name="perform_training")
 def perform_training(task_id):
-    global TASK_ID_TO_OBJECT
-    start = TASK_ID_TO_OBJECT[task_id]
+    start = get_task(task_id)
     if start.started:
         return 0  # to handle celery bug with ACK in SOLO mode
     else:
