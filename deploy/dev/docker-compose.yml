@@ -58,6 +58,7 @@
        - redis
      volumes:
        - ../../:/root/DVA/
+       - ../../configs/custom_defaults:/root/DVA/configs/custom_defaults
      tmpfs:
        - /root/media
  volumes:
