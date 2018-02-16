@@ -53,9 +53,8 @@
                         <th>created ts</th>
                         <th>started ts</th>
                         <th>duration</th>
-                        <th class="text-center">status and details</th>
-                        <th class="text-center">retry task</th>
-                        <th class="text-center">mark as failed</th>
+                        <th class="text-center">status</th>
+                        <th class="text-center">view details</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -84,8 +83,7 @@
                                     <a href="/task_detail/{{ e.pk }}" class="btn btn-info btn-block">Unknown</a>
                                 {% endif %}
                             </td>
-                            <td class="text-center"><button class="btn btn-warning" name="pk" formaction="/retry/" type="submit" value="{{ e.pk }}">Retry</button></td>
-                            <td class="text-center"><button class="btn btn-warning" name="pk" formaction="/failed/"  type="submit" value="{{ e.pk }}" >Mark as failed</button></td>
+                            <td> <a href="/task_detail/{{ e.pk }}" class="btn btn-info btn-block">View details</a></td>
                         </tr>
                     {% endfor %}
                     </tbody>

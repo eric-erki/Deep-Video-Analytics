@@ -90,7 +90,8 @@
                         <th>created ts</th>
                         <th>started ts</th>
                         <th>duration</th>
-                        <th class="text-center">status and details</th>
+                        <th class="text-center">status</th>
+                        <th class="text-center">view details</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -119,6 +120,7 @@
                                     <a href="/task_detail/{{ e.pk }}" class="btn btn-info btn-block">Unknown</a>
                                 {% endif %}
                             </td>
+                            <td> <a href="/task_detail/{{ e.pk }}" class="btn btn-info btn-block">View details</a></td>
                         </tr>
                     {% endfor %}
                     </tbody>
