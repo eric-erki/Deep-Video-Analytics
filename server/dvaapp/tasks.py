@@ -354,7 +354,7 @@ def perform_import(task_id):
     else:
         start.started = True
         start.save()
-    path = start.arguments.get('path', None)
+    path = start.url
     dv = start.video
     youtube_dl_download = False
     if path.startswith('http'):
@@ -369,20 +369,20 @@ def perform_import(task_id):
         fs.retrieve_video_via_url(dv, path)
     # Download list frames in JSON format
     elif framelist_file:
-        task_shared.import_path(dv, start.arguments['path'], framelist=True)
-        dv.metadata = start.arguments['path']
+        task_shared.import_path(dv, path, framelist=True)
+        dv.metadata = path
         dv.frames = task_shared.count_framelist(dv)
         dv.uploaded = False
     # Download and import previously exported file from DVA
     elif export_file:
-        task_shared.import_path(dv, start.arguments['path'], export=True)
+        task_shared.import_path(dv, path, export=True)
         task_shared.load_dva_export_file(dv)
     # Download and import .mp4 and .zip files which contain raw video / images.
     elif path.startswith('/') and settings.DISABLE_NFS and not (export_file or framelist_file):
         # TODO handle case when going from s3 ---> gs and gs ---> s3
         fs.copy_remote(dv, path)
     else:
-        task_shared.import_path(dv, start.arguments['path'])
+        task_shared.import_path(dv, path)
     dv.save()
     process_next(start)
     mark_as_completed(start)

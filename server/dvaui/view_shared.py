@@ -122,11 +122,12 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                 {'spec':{
                     'name' : name,
                     'uploader_id': user.pk if user else None,
-                    'created': '__timezone.now__'
+                    'created': '__timezone.now__',
+                    'url': fpath
                 },
                  'MODEL':'Video',
                  'tasks':[
-                     {'arguments': {'path':fpath},'video_id': '__pk__','operation': 'perform_import',}
+                     {'arguments': {},'video_id': '__pk__','operation': 'perform_import',}
                  ]
                  },
             ],
@@ -152,10 +153,11 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                             'name': name,
                             'dataset': True,
                             'uploader_id': user.pk if user else None,
+                            'url': fpath,
                             'created': '__timezone.now__'},
                         'MODEL': 'Video',
                         'tasks': [
-                            {'arguments': {'path': fpath,
+                            {'arguments': {
                                            'map':[
                                                {
                                                     'arguments': {'map': json.load(file("../configs/custom_defaults/dataset_processing.json"))},
@@ -178,11 +180,12 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                         'spec': {
                             'name': name,
                             'dataset': True,
+                            'url': fpath,
                             'uploader_id': user.pk if user else None,
                             'created': '__timezone.now__'},
                         'MODEL': 'Video',
                         'tasks': [
-                            {'arguments': {'path': fpath,
+                            {'arguments': {
                                            'map':[
                                                {
                                                    'operation': 'perform_frame_download',
@@ -207,11 +210,12 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                     {'spec': {
                         'name': name,
                         'uploader_id': user.pk if user else None,
+                        'url': fpath,
                         'created': '__timezone.now__'
                     },
                         'MODEL': 'Video',
                         'tasks': [
-                            {'arguments': {'path': fpath,
+                            {'arguments': {
                                            'map': [
                                                {
                                                    'arguments': {
@@ -297,7 +301,7 @@ def import_vdn_dataset_url(server, url, user, cached_response):
                 'MODEL': 'Video',
                 'tasks': [
                     {
-                        'arguments': {'path':response['path']},
+                        'arguments': {},
                         'video_id': '__pk__',
                         'operation': 'perform_import',
                     }

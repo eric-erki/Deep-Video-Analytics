@@ -619,7 +619,7 @@ def yt(request):
                         'tasks': [
                             {'video_id': '__pk__',
                              'operation': 'perform_import',
-                             'arguments': {'path': path,
+                             'arguments': {
                                            'force_youtube_dl': True,
                                            'map': [{
                                                'operation': 'perform_video_segmentation',
@@ -862,13 +862,13 @@ def import_s3(request):
                         next_tasks = [segment_decode_task,]
                     tasks.append({'video_id':'__pk__',
                                   'operation':'perform_import',
-                                  'arguments':{'path':key,
+                                  'arguments':{
                                                'source':'REMOTE',
                                                'map':next_tasks}
                                   })
                     create.append({'MODEL': 'Video',
                                    'spec': {'uploader_id': user.pk if user else None, 'dataset': dataset_type,
-                                            'name': key},
+                                            'name': key,'url':key},
                                    'tasks': tasks
                                    })
             else:
