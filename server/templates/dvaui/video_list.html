@@ -57,8 +57,8 @@
                         <td class="text-right">{{ v.segments }} </td>
                         <td class="text-right">{{ v.height }} </td>
                         <td class="text-right">{{ v.width }} </td>
-                        <td class="text-center">{{ v.created }}</td>
-                        <td class="text-center">{% if v.url %}<a href="{{ v.url }}" target="_blank">{{ v.url }}</a>{% endif %}</td>
+                        <td>{{ v.created }}</td>
+                        <td>{% if v.url %}<a href="{{ v.url }}" target="_blank">{{ v.url }}</a>{% endif %}</td>
                         <td class="text-center"><a  href="/videos/{{ v.pk }}">view</a></td>
                     </tr>
                     {% endif %}
