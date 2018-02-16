@@ -104,14 +104,14 @@
                   ]
                 }
               }
-            ],
-            "path": "https://www.dropbox.com/s/v4vkdl7yi0iuz5n/citest.mp4"
+            ]
           }
         }
       ],
       "spec": {
         "name": "citest",
         "uploader_id": null,
+        "url": "https://www.dropbox.com/s/v4vkdl7yi0iuz5n/citest.mp4",
         "created": "__timezone.now__"
       }
     },
@@ -222,14 +222,14 @@
                   ]
                 }
               }
-            ],
-            "path": "https://www.dropbox.com/s/jedrxd50lk0aocm/exampledataset.zip"
+            ]
           }
         }
       ],
       "spec": {
         "dataset": true,
         "name": "exampledataset",
+        "url": "https://www.dropbox.com/s/jedrxd50lk0aocm/exampledataset.zip",
         "uploader_id": null,
         "created": "__timezone.now__"
       }
@@ -341,8 +341,7 @@
                   ]
                 }
               }
-            ],
-            "path": "https://www.dropbox.com/s/srb6qige8cgfkqe/crnn_test.zip"
+            ]
           }
         }
       ],
@@ -350,7 +349,8 @@
         "dataset": true,
         "name": "crnn_test",
         "uploader_id": null,
-        "created": "__timezone.now__"
+        "created": "__timezone.now__",
+        "url": "https://www.dropbox.com/s/srb6qige8cgfkqe/crnn_test.zip"
       }
     },
     {
@@ -460,14 +460,14 @@
                   ]
                 }
               }
-            ],
-            "path": "https://www.dropbox.com/s/agbw9nl06nq33rk/coco_train2017_ci.zip"
+            ]
           }
         }
       ],
       "spec": {
         "dataset": true,
-        "name": "crnn_test",
+        "name": "coco_train_ci",
+        "url": "https://www.dropbox.com/s/agbw9nl06nq33rk/coco_train2017_ci.zip",
         "uploader_id": null,
         "created": "__timezone.now__"
       }
