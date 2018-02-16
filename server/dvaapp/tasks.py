@@ -354,8 +354,8 @@ def perform_import(task_id):
     else:
         start.started = True
         start.save()
-    path = start.url
     dv = start.video
+    path = start.video.url
     youtube_dl_download = False
     if path.startswith('http'):
         u = urlparse(path)
