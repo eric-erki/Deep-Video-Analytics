@@ -30,6 +30,7 @@ except ImportError:
 W = None
 TASK_ID_TO_OBJECT = {}
 
+
 @celeryd_init.connect
 def configure_workers(sender, conf, **kwargs):
     global W
@@ -45,68 +46,67 @@ def start_task(task_id, task, args, **kwargs):
     global TASK_ID_TO_OBJECT
     global W
     if task.name.startswith('perform'):
-        start = models.TEvent.objects.get(pk=args[0])
-        TASK_ID_TO_OBJECT[args[0]] = start
-        start.task_id = task_id
-        if start.start_ts is None:
-            start.start_ts = timezone.now()
-        if W and start.worker is None:
-            start.worker_id = W.pk
-        start.save()
+        dt = models.TEvent.objects.get(pk=args[0])
+        TASK_ID_TO_OBJECT[args[0]] = dt
+        dt.task_id = task_id
+        if dt.start_ts is None:
+            dt.start_ts = timezone.now()
+        if W and dt.worker is None:
+            dt.worker_id = W.pk
+        dt.save()
 
 
-def get_task(task_id):
+def get_and_check_task(task_id):
     global TASK_ID_TO_OBJECT
     if task_id in TASK_ID_TO_OBJECT:
-        return TASK_ID_TO_OBJECT[task_id]
+        dt = TASK_ID_TO_OBJECT[task_id]
     else:
         logging.warning("Task {} not found in cache querying DB ".format(task_id))
         TASK_ID_TO_OBJECT[task_id] = models.TEvent.objects.get(pk=task_id)
-        return TASK_ID_TO_OBJECT[task_id]
+        dt = TASK_ID_TO_OBJECT[task_id]
+    if not dt.started:
+        dt.started = True
+        dt.save()
+        return dt
+    else:
+        return None
 
 
 @app.task(track_started=True, name="perform_reduce")
 def perform_reduce(task_id):
-    start = get_task(task_id)
-    if not start.started:
-        start.started = True
-        start.save()
-    timeout_seconds = start.arguments.get('timeout',settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
-    reduce_waiter = Waiter(start)
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    timeout_seconds = dt.arguments.get('timeout',settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
+    reduce_waiter = Waiter(dt)
     if reduce_waiter.is_complete():
-        next_ids = process_next(start)
-        mark_as_completed(start)
+        next_ids = process_next(dt)
+        mark_as_completed(dt)
         return next_ids
     else:
         eta = datetime.utcnow() + timedelta(seconds=timeout_seconds)
-        app.send_task(start.operation, args=[start.pk, ], queue=start.queue, eta=eta)
+        app.send_task(dt.operation, args=[dt.pk, ], queue=dt.queue, eta=eta)
 
 
 @app.task(track_started=True, name="perform_indexing")
 def perform_indexing(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    sync = task_handlers.handle_perform_indexing(start)
-    next_ids = process_next(start, sync=sync)
-    mark_as_completed(start)
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    sync = task_handlers.handle_perform_indexing(dt)
+    next_ids = process_next(dt, sync=sync)
+    mark_as_completed(dt)
     return next_ids
 
 
 @app.task(track_started=True, name="perform_index_approximation")
 def perform_index_approximation(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    sync = task_handlers.handle_perform_index_approximation(start)
-    next_ids = process_next(start, sync=sync)
-    mark_as_completed(start)
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    sync = task_handlers.handle_perform_index_approximation(dt)
+    next_ids = process_next(dt, sync=sync)
+    mark_as_completed(dt)
     return next_ids
 
 
@@ -117,17 +117,14 @@ def perform_transformation(task_id):
     :param task_id:
     :return:
     """
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    args = start.arguments
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    args = dt.arguments
     resize = args.get('resize', None)
     kwargs = args.get('filters', {})
     paths_to_regions = defaultdict(list)
-    kwargs['video_id'] = start.video_id
+    kwargs['video_id'] = dt.video_id
     kwargs['materialized'] = False
     logging.info("executing crop with kwargs {}".format(kwargs))
     queryset = models.Region.objects.all().filter(**kwargs)
@@ -143,78 +140,72 @@ def perform_transformation(task_id):
             else:
                 cropped.save(dr.path())
     queryset.update(materialized=True)
-    process_next(start)
-    mark_as_completed(start)
+    process_next(dt)
+    mark_as_completed(dt)
 
 
 @app.task(track_started=True, name="perform_retrieval")
 def perform_retrieval(task_id):
-    start = get_task(task_id)
-    if start.started:
+    dt = get_and_check_task(task_id)
+    if dt.started:
         return 0  # to handle celery bug with ACK in SOLO mode
-    elif start.queue.startswith(settings.GLOBAL_RETRIEVER) and global_model_retriever.defer(start):
+    elif dt.queue.startswith(settings.GLOBAL_RETRIEVER) and global_model_retriever.defer(dt):
         logging.info("rerouting...")
         return 0
     else:
-        start.started = True
-        start.save()
-    args = start.arguments
+        dt.started = True
+        dt.save()
+    args = dt.arguments
     target = args.get('target', 'query')  # by default target is query
     if target == 'query':
-        vector = np.load(io.BytesIO(redis_client.get(start.parent_id)))
-        Retrievers.retrieve(start, args.get('retriever_pk', 20), vector, args.get('count', 20))
+        vector = np.load(io.BytesIO(redis_client.get(dt.parent_id)))
+        Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20))
     elif target == 'query_region_index_vectors':
         queryset, target = task_shared.build_queryset(args=args)
         for dr in queryset:
             vector = np.load(io.BytesIO(dr.vector))
-            Retrievers.retrieve(start, args.get('retriever_pk', 20), vector, args.get('count', 20),
+            Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20),
                                        region=dr.query_region)
     else:
         raise NotImplementedError(target)
-    mark_as_completed(start)
+    mark_as_completed(dt)
     return 0
 
 
 @app.task(track_started=True, name="perform_dataset_extraction")
 def perform_dataset_extraction(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    args = start.arguments
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    args = dt.arguments
     if args == {}:
         args['rescale'] = 0
         args['rate'] = 30
-        start.arguments = args
-    start.save()
-    video_id = start.video_id
+        dt.arguments = args
+    dt.save()
+    video_id = dt.video_id
     dv = models.Video.objects.get(id=video_id)
     task_shared.ensure('/{}/video/{}.zip'.format(video_id, video_id))
     dv.create_directory(create_subdirs=True)
     v = DatasetCreator(dvideo=dv, media_dir=settings.MEDIA_ROOT)
-    v.extract(start)
-    process_next(start)
-    mark_as_completed(start)
+    v.extract(dt)
+    process_next(dt)
+    mark_as_completed(dt)
     return 0
 
 
 @app.task(track_started=True, name="perform_video_segmentation")
 def perform_video_segmentation(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    args = start.arguments
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    args = dt.arguments
     if 'rescale' not in args:
         args['rescale'] = 0
     if 'rate' not in args:
         args['rate'] = 30
-    start.arguments = args
-    video_id = start.video_id
+    dt.arguments = args
+    video_id = dt.video_id
     dv = models.Video.objects.get(id=video_id)
     task_shared.ensure(dv.path(media_root=''))
     dv.create_directory(create_subdirs=True)
@@ -223,25 +214,22 @@ def perform_video_segmentation(task_id):
     v.segment_video(task_id)
     if args.get('sync', False):
         next_args = {'rescale': args['rescale'], 'rate': args['rate']}
-        next_task = models.TEvent.objects.create(video=dv, operation='perform_video_decode', arguments=next_args, parent=start)
+        next_task = models.TEvent.objects.create(video=dv, operation='perform_video_decode', arguments=next_args, parent=dt)
         perform_video_decode(next_task.pk)  # decode it synchronously for testing in Travis
-        process_next(start, sync=True, launch_next=False)
+        process_next(dt, sync=True, launch_next=False)
     else:
-        process_next(start)
-    mark_as_completed(start)
+        process_next(dt)
+    mark_as_completed(dt)
     return 0
 
 
 @app.task(track_started=True, name="perform_video_decode", ignore_result=False)
 def perform_video_decode(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    args = start.arguments
-    video_id = start.video_id
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    args = dt.arguments
+    video_id = dt.video_id
     dv = models.Video.objects.get(id=video_id)
     dv.create_directory()
     kwargs = args.get('filters', {})
@@ -249,36 +237,36 @@ def perform_video_decode(task_id):
     v = VideoDecoder(dvideo=dv, media_dir=settings.MEDIA_ROOT)
     if 'target' not in args:
         args['target'] = 'segments'
-    queryset, target = task_shared.build_queryset(args, video_id, start.parent_process_id)
+    queryset, target = task_shared.build_queryset(args, video_id, dt.parent_process_id)
     if target != 'segments':
         raise NotImplementedError("Cannot decode target:{}".format(target))
     task_shared.ensure_files(queryset, target)
     for ds in queryset:
         v.decode_segment(ds=ds, denominator=args.get('rate', 30), event_id=task_id)
-    process_next(start)
-    mark_as_completed(start)
+    process_next(dt)
+    mark_as_completed(dt)
     return task_id
 
 
 @app.task(track_started=True, name="perform_detection")
 def perform_detection(task_id):
-    start = get_task(task_id)
-    if start.started:
+    dt = get_and_check_task(task_id)
+    if dt.started:
         return 0  # to handle celery bug with ACK in SOLO mode
-    elif start.queue.startswith(settings.GLOBAL_MODEL) and global_model_retriever.defer(start):
+    elif dt.queue.startswith(settings.GLOBAL_MODEL) and global_model_retriever.defer(dt):
         logging.info("rerouting...")
         return 0
     else:
-        start.started = True
-        start.save()
-    query_flow = ('target' in start.arguments and start.arguments['target'] == 'query')
-    if start.queue.startswith(settings.GLOBAL_MODEL):
+        dt.started = True
+        dt.save()
+    query_flow = ('target' in dt.arguments and dt.arguments['target'] == 'query')
+    if dt.queue.startswith(settings.GLOBAL_MODEL):
         logging.info("Running in new process")
-        global_model_retriever.run_task_in_model_specific_flask_server(start)
+        global_model_retriever.run_task_in_model_specific_flask_server(dt)
     else:
-        task_handlers.handle_perform_detection(start)
-    launched = process_next(start)
-    mark_as_completed(start)
+        task_handlers.handle_perform_detection(dt)
+    launched = process_next(dt)
+    mark_as_completed(dt)
     if query_flow:
         return launched
     else:
@@ -287,79 +275,67 @@ def perform_detection(task_id):
 
 @app.task(track_started=True, name="perform_analysis")
 def perform_analysis(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    task_handlers.handle_perform_analysis(start)
-    process_next(start)
-    mark_as_completed(start)
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    task_handlers.handle_perform_analysis(dt)
+    process_next(dt)
+    mark_as_completed(dt)
     return 0
 
 
 @app.task(track_started=True, name="perform_export")
 def perform_export(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    video_id = start.video_id
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    video_id = dt.video_id
     dv = models.Video.objects.get(pk=video_id)
     if settings.DISABLE_NFS:
         fs.download_video_from_remote_to_local(dv)
-    destination = start.arguments['destination']
+    destination = dt.arguments['destination']
     try:
         if destination == "FILE":
-            file_name = task_shared.export_file(dv, export_event_pk=start.pk)
-            start.arguments['file_name'] = file_name
+            file_name = task_shared.export_file(dv, export_event_pk=dt.pk)
+            dt.arguments['file_name'] = file_name
         elif destination == "S3":
-            path = start.arguments['path']
-            returncode = task_shared.perform_s3_export(dv, path, export_event_pk=start.pk)
+            path = dt.arguments['path']
+            returncode = task_shared.perform_s3_export(dv, path, export_event_pk=dt.pk)
             if returncode != 0:
                 raise ValueError("return code != 0")
     except:
-        start.errored = True
-        start.error_message = "Could not export"
-        start.duration = (timezone.now() - start.start_ts).total_seconds()
-        start.save()
+        dt.errored = True
+        dt.error_message = "Could not export"
+        dt.duration = (timezone.now() - dt.start_ts).total_seconds()
+        dt.save()
         exc_info = sys.exc_info()
         raise exc_info[0], exc_info[1], exc_info[2]
-    mark_as_completed(start)
+    mark_as_completed(dt)
 
 
 @app.task(track_started=True, name="perform_model_import")
 def perform_model_import(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    args = start.arguments
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    args = dt.arguments
     dm = models.TrainedModel.objects.get(pk=args['pk'])
     dm.download()
-    process_next(start)
-    mark_as_completed(start)
+    process_next(dt)
+    mark_as_completed(dt)
 
 
 @app.task(track_started=True, name="perform_import")
 def perform_import(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    dv = start.video
-    path = start.video.url
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    dv = dt.video
+    path = dt.video.url
     youtube_dl_download = False
     if path.startswith('http'):
         u = urlparse(path)
-        if u.hostname == 'www.youtube.com' or start.arguments.get('force_youtube_dl', False):
+        if u.hostname == 'www.youtube.com' or dt.arguments.get('force_youtube_dl', False):
             youtube_dl_download = True
     export_file = path.split('?')[0].endswith('.dva_export.zip')
     framelist_file = path.split('?')[0].endswith('.json') or path.split('?')[0].endswith('.gz')
@@ -384,20 +360,17 @@ def perform_import(task_id):
     else:
         task_shared.import_path(dv, path)
     dv.save()
-    process_next(start)
-    mark_as_completed(start)
+    process_next(dt)
+    mark_as_completed(dt)
 
 
 @app.task(track_started=True, name="perform_region_import")
 def perform_region_import(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    path = start.arguments.get('path', None)
-    dv = start.video
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    path = dt.arguments.get('path', None)
+    dv = dt.video
     tempdirname = tempfile.mkdtemp()
     temp_filename = ""
     try:
@@ -413,60 +386,51 @@ def perform_region_import(task_id):
         raise ValueError("{}".format(temp_filename))
     task_shared.import_frame_regions_json(j, dv, task_id)
     dv.save()
-    process_next(start)
+    process_next(dt)
     os.remove(temp_filename)
-    mark_as_completed(start)
+    mark_as_completed(dt)
 
 
 @app.task(track_started=True, name="perform_frame_download")
 def perform_frame_download(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    dv = start.video
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    dv = dt.video
     if dv.metadata.endswith('.gz'):
         fs.ensure('/{}/framelist.gz'.format(dv.pk), safe=True, event_id=task_id)
     else:
         fs.ensure('/{}/framelist.json'.format(dv.pk), safe=True, event_id=task_id)
-    filters = start.arguments['filters']
+    filters = dt.arguments['filters']
     dv.create_directory(create_subdirs=True)
-    task_shared.load_frame_list(dv, start.pk, frame_index__gte=filters['frame_index__gte'],
+    task_shared.load_frame_list(dv, dt.pk, frame_index__gte=filters['frame_index__gte'],
                                 frame_index__lt=filters.get('frame_index__lt', -1))
-    process_next(start)
-    mark_as_completed(start)
+    process_next(dt)
+    mark_as_completed(dt)
 
 
 @app.task(track_started=True, name="perform_sync")
 def perform_sync(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    args = start.arguments
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    args = dt.arguments
     if settings.MEDIA_BUCKET:
         dirname = args.get('dirname', None)
-        task_shared.upload(dirname, start.parent_id, start.video_id)
+        task_shared.upload(dirname, dt.parent_id, dt.video_id)
     else:
         logging.info("Media bucket name not specified, nothing was synced.")
-        start.error_message = "Media bucket name is empty".format(settings.MEDIA_BUCKET)
-    mark_as_completed(start)
+        dt.error_message = "Media bucket name is empty".format(settings.MEDIA_BUCKET)
+    mark_as_completed(dt)
     return
 
 
 @app.task(track_started=True, name="perform_deletion")
 def perform_deletion(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    args = start.arguments
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    args = dt.arguments
     video_pk = int(args['video_pk'])
     deleter_pk = args.get('deleter_pk', None)
     video = models.Video.objects.get(pk=video_pk)
@@ -485,9 +449,9 @@ def perform_deletion(task_id):
     deleter = subprocess.Popen(args)
     deleter.wait()
     if deleter.returncode != 0:
-        start.errored = True
-        start.error_message = "Error while executing : {}".format(command)
-        start.save()
+        dt.errored = True
+        dt.error_message = "Error while executing : {}".format(command)
+        dt.save()
         return
     if settings.MEDIA_BUCKET:
         dest = 's3://{}/{}/'.format(settings.MEDIA_BUCKET, int(video_pk))
@@ -496,42 +460,36 @@ def perform_deletion(task_id):
         syncer = subprocess.Popen(args)
         syncer.wait()
         if syncer.returncode != 0:
-            start.errored = True
-            start.error_message = "Error while executing : {}".format(command)
-            start.save()
+            dt.errored = True
+            dt.error_message = "Error while executing : {}".format(command)
+            dt.save()
             return
     else:
         logging.info("Media bucket name not specified, nothing was synced.")
-        start.error_message = "Media bucket name is empty".format(settings.MEDIA_BUCKET)
-    mark_as_completed(start)
+        dt.error_message = "Media bucket name is empty".format(settings.MEDIA_BUCKET)
+    mark_as_completed(dt)
     return
 
 
 @app.task(track_started=True, name="perform_stream_capture")
 def perform_stream_capture(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    l = LivestreamCapture(start.video,start)
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    l = LivestreamCapture(dt.video,dt)
     l.start_process()
     l.poll()
     l.finalize()
-    mark_as_completed(start)
+    mark_as_completed(dt)
     return
 
 
 @app.task(track_started=True, name="perform_training_set_creation")
 def perform_training_set_creation(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    args = start.arguments
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    args = dt.arguments
     if 'training_set_pk'in args:
         dt = models.TrainingSet.objects.get(pk=args['training_set_pk'])
     elif 'training_set_selector'in args:
@@ -556,39 +514,36 @@ def perform_training_set_creation(task_id):
         dt.built = True
         dt.count = total_count
         dt.files = file_list
-        dt.event = start
+        dt.event = dt
         dt.save()
     else:
         raise NotImplementedError
-    process_next(start)
-    mark_as_completed(start)
+    process_next(dt)
+    mark_as_completed(dt)
     return 0
 
 
 @app.task(track_started=True, name="perform_training")
 def perform_training(task_id):
-    start = get_task(task_id)
-    if start.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    else:
-        start.started = True
-        start.save()
-    args = start.arguments
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    args = dt.arguments
     trainer = args['trainer']
     if trainer == 'LOPQ':
-        train_lopq(start,args)
+        train_lopq(dt,args)
     elif trainer == 'YOLO':
-        train_detector = subprocess.Popen(['fab', 'train_yolo:{}'.format(start.pk)],
+        train_detector = subprocess.Popen(['fab', 'train_yolo:{}'.format(dt.pk)],
                                           cwd=os.path.join(os.path.abspath(__file__).split('tasks.py')[0], '../'))
         train_detector.wait()
         if train_detector.returncode != 0:
-            start.errored = True
-            start.error_message = "fab train_yolo:{} failed with return code {}".format(start.pk, train_detector.returncode)
-            start.duration = (timezone.now() - start.start_ts).total_seconds()
-            start.save()
-            raise ValueError(start.error_message)
-    process_next(start)
-    mark_as_completed(start)
+            dt.errored = True
+            dt.error_message = "fab train_yolo:{} failed with return code {}".format(dt.pk, train_detector.returncode)
+            dt.duration = (timezone.now() - dt.start_ts).total_seconds()
+            dt.save()
+            raise ValueError(dt.error_message)
+    process_next(dt)
+    mark_as_completed(dt)
     return 0
 
 
