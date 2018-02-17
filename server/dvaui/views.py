@@ -612,7 +612,6 @@ def yt(request):
                             'name': name,
                             'uploader_id': user.pk if user else None,
                             'url': path,
-                            'youtube_video': True,
                             'created': '__timezone.now__'
                         },
                         'MODEL': 'Video',
