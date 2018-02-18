@@ -64,12 +64,15 @@ def get_and_check_task(task_id):
         logging.warning("Task {} not found in cache querying DB ".format(task_id))
         TASK_ID_TO_OBJECT[task_id] = models.TEvent.objects.get(pk=task_id)
         dt = TASK_ID_TO_OBJECT[task_id]
-    if not dt.started:
+    if dt.started:
+        return None
+    elif dt.queue.startswith(settings.GLOBAL_MODEL) and global_model_retriever.defer(dt):
+        logging.info("rerouting...")
+        return None
+    else:
         dt.started = True
         dt.save()
         return dt
-    else:
-        return None
 
 
 @app.task(track_started=True, name="perform_reduce")
@@ -251,14 +254,8 @@ def perform_video_decode(task_id):
 @app.task(track_started=True, name="perform_detection")
 def perform_detection(task_id):
     dt = get_and_check_task(task_id)
-    if dt.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    elif dt.queue.startswith(settings.GLOBAL_MODEL) and global_model_retriever.defer(dt):
-        logging.info("rerouting...")
+    if dt is None:
         return 0
-    else:
-        dt.started = True
-        dt.save()
     query_flow = ('target' in dt.arguments and dt.arguments['target'] == 'query')
     if dt.queue.startswith(settings.GLOBAL_MODEL):
         logging.info("Running in new process")
