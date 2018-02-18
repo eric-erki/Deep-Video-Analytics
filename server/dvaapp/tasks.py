@@ -69,6 +69,9 @@ def get_and_check_task(task_id):
     elif dt.queue.startswith(settings.GLOBAL_MODEL) and global_model_retriever.defer(dt):
         logging.info("rerouting...")
         return None
+    elif dt.queue.startswith(settings.GLOBAL_RETRIEVER) and global_model_retriever.defer(dt):
+        logging.info("rerouting...")
+        return None
     else:
         dt.started = True
         dt.save()
@@ -150,14 +153,8 @@ def perform_transformation(task_id):
 @app.task(track_started=True, name="perform_retrieval")
 def perform_retrieval(task_id):
     dt = get_and_check_task(task_id)
-    if dt.started:
-        return 0  # to handle celery bug with ACK in SOLO mode
-    elif dt.queue.startswith(settings.GLOBAL_RETRIEVER) and global_model_retriever.defer(dt):
-        logging.info("rerouting...")
+    if dt is None:
         return 0
-    else:
-        dt.started = True
-        dt.save()
     args = dt.arguments
     target = args.get('target', 'query')  # by default target is query
     if target == 'query':
