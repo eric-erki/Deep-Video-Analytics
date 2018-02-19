@@ -9,4 +9,8 @@ setup(name='DeepVideoAnalyticsClient',
       author_email='dvaclient@deepvideoanalytics.com',
       url='https://www.deepvideoanalytics.com/',
       packages=['dvaclient'],
-     )
+      install_requires=[
+            'jsonschema',
+            'requests'
+      ],
+      )
