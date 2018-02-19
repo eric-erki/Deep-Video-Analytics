@@ -49,6 +49,17 @@ class Waiter(object):
                 return False
         return True
 
+    def is_complete_root_filtered(self):
+        for t in TEvent.objects.filter(parent_id=self.task.parent_id):
+            # Don't wait on perform_reduce for the root to prevent deadlock (i.e. one task waiting on another)
+            if t.task_group_id in self.filter_set:
+                if not (t.completed or t.errored) and t.operation != 'perform_reduce':
+                    logging.info(
+                        "Returning false {} running {} on {} has not yet completed/failed".format(t.pk, t.operation,
+                                                                                                  t.queue))
+                    return False
+        return True
+
     def is_complete_all(self):
         if self.is_complete_root():
             for t in TEvent.objects.filter(parent_id=self.task.parent_id):
@@ -60,7 +71,7 @@ class Waiter(object):
         return True
 
     def is_complete_filtered(self):
-        if self.is_complete_root():
+        if self.is_complete_root_filtered():
             for t in TEvent.objects.filter(parent_id=self.task.parent_id):
                 if t.operation != 'perform_reduce':  # Don't wait on perform_reduce child_tasks to prevent deadlock
                     if not self.check_if_task_children_are_complete_recursive_filtered(t.pk):

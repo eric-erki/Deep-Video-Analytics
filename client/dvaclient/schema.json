@@ -1,0 +1,121 @@
+{
+  "id": "http://www.visualdata.network/schema",
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "description": "A DVAPQL script",
+  "definitions": {
+    "task_arguments": {
+      "description": "task_arguments",
+      "type": "object",
+      "properties": {
+        "map": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/task"
+          }
+        },
+        "reduce": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/reduce_task"
+          }
+        }
+      }
+    },
+    "reduce_task_arguments": {
+      "description": "task_arguments",
+      "type": "object",
+      "properties": {
+        "map": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/task"
+          }
+        },
+        "reduce_target": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "reduce_target"
+      ]
+    },
+    "task": {
+      "description": "A task",
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string"
+        },
+        "arguments": {
+          "$ref": "#/definitions/task_arguments"
+        }
+      },
+      "required": [
+        "operation",
+        "arguments"
+      ]
+    },
+    "reduce_task": {
+      "description": "A reduce task",
+      "type": "object",
+      "properties": {
+        "arguments": {
+          "$ref": "#/definitions/reduce_task_arguments"
+        }
+      },
+      "required": [
+        "arguments"
+      ]
+    },
+    "create": {
+      "description": "A spec for creating an object and task",
+      "type": "object",
+      "properties": {
+        "spec": {},
+        "MODEL": {
+          "type": "string"
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/task"
+          }
+        }
+      },
+      "required": [
+        "spec",
+        "MODEL"
+      ]
+    },
+    "delete": {}
+  },
+  "properties": {
+    "description": {
+      "type": "string"
+    },
+    "image_data_b64": {
+      "type": "string"
+    },
+    "process_type": {
+      "type": "string"
+    },
+    "create": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/create"
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/task"
+      }
+    },
+    "delete": {
+      "type": "array"
+    }
+  },
+  "required": [
+    "process_type"
+  ]
+}

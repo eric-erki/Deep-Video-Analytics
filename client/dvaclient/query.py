@@ -1,12 +1,13 @@
 import base64, logging, time
 from collections import defaultdict
-from . import constants, visual_search_results
+from . import constants, visual_search_results, schema
 
 
 class DVAQuery(object):
 
     def __init__(self, query_id=None, context=None):
         self.query_json = {}
+        self.validator = schema.Validator(self.query_json)
         self.query_request = None
         self.context = context
         self.results = None
@@ -14,6 +15,7 @@ class DVAQuery(object):
         self.search_results = []
 
     def execute(self, context=None):
+        self.validator.validate()
         if self.context is None:
             self.context = context
         if self.query_request is None:
@@ -50,7 +52,7 @@ class DVAQuery(object):
         return self.results['completed']
 
     def gather_search_results(self):
-        if self.query_json['process_type'] != constants.TYPE_QUERY_CONSTANT:
+        if self.query_json['process_type'] != constants.QUERY:
             raise ValueError("Process is not of type query")
         else:
             for t in self.results['tasks']:
@@ -64,7 +66,7 @@ class ProcessVideoURL(DVAQuery):
         self.url = url
         self.name = name
         self.query_json = {
-            "process_type": constants.TYPE_PROCESSING_CONSTANT,
+            "process_type": constants.PROCESS,
             "create": [
 
                 {"MODEL": "Video",
@@ -77,7 +79,6 @@ class ProcessVideoURL(DVAQuery):
                      "operation": "perform_import",
                      "video_id": "__pk__",
                      "arguments": {
-                         "path": self.url,
                          "name": self.name,
                          "map": [
                              {
@@ -159,7 +160,7 @@ class FindSimilarImages(DVAQuery):
         super(FindSimilarImages, self).__init__()
         self.query_image_path = query_image_path
         self.query_json = {
-            'process_type': constants.TYPE_QUERY_CONSTANT,
+            'process_type': constants.QUERY,
             'image_data_b64': base64.encodestring(file(self.query_image_path).read()),
             'tasks': [
                 {
@@ -185,7 +186,7 @@ class DetectAndFindSimilarImages(DVAQuery):
         super(DetectAndFindSimilarImages, self).__init__()
         self.query_image_path = query_image_path
         self.query_json = {
-            'process_type': constants.TYPE_QUERY_CONSTANT,
+            'process_type': constants.QUERY,
             'image_data_b64': base64.encodestring(file(self.query_image_path).read()),
             'tasks': [
                 {'operation': 'perform_detection',

@@ -1,20 +1,12 @@
-import jsonschema
+import jsonschema, json, os
 
-PROCESS_SCHEMA = {
-
-}
-
-TASK_SCHEMA = {
-
-
-}
+SCHEMA = json.load(file(os.path.join(os.path.dirname(__file__),'schema.json')))
 
 
 class Validator(object):
 
     def __init__(self,script):
-        self.script = None
+        self.script = script
 
     def validate(self):
-        pass
-
+        jsonschema.validate(self.script,SCHEMA)
