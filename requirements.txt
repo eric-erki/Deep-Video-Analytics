@@ -34,3 +34,4 @@ redis
 hiredis
 streamlink
 psutil
+jsonschema
