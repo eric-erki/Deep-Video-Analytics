@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
 import os, json, gzip, sys, shutil, zipfile, uuid
+sys.path.append("../../client/") # This ensures that the constants are same between client and server
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.conf import settings
 from django.utils import timezone
+from dvaclient import constants
 from . import fs
 try:
     import numpy as np
@@ -32,9 +34,9 @@ class Worker(models.Model):
 
 
 class DVAPQL(models.Model):
-    SCHEDULE = 'S'
-    PROCESS = 'V'
-    QUERY = 'Q'
+    SCHEDULE = constants.SCHEDULE
+    PROCESS = constants.PROCESS
+    QUERY = constants.QUERY
     TYPE_CHOICES = ((SCHEDULE, 'Schedule'), (PROCESS, 'Process'), (QUERY, 'Query'))
     process_type = models.CharField(max_length=1, choices=TYPE_CHOICES, default=QUERY, )
     created = models.DateTimeField('date created', auto_now_add=True)
@@ -144,23 +146,23 @@ class TEvent(models.Model):
 
 
 class TrainingSet(models.Model):
-    DETECTION = 'D'
-    INDEXING = 'I'
-    LOPQINDEX = 'A'
-    CLASSIFICATION = 'C'
+    DETECTION = constants.DETECTION
+    INDEXING = constants.INDEXING
+    LOPQINDEX = constants.LOPQINDEX
+    CLASSIFICATION = constants.CLASSIFICATION
+    IMAGES = constants.IMAGES
+    VIDEOS = constants.VIDEOS
+    INDEX = constants.INDEX
+    INSTANCE_TYPES = (
+        (IMAGES, 'images'),
+        (INDEX, 'index'),
+        (VIDEOS, 'videos'),
+    )
     TRAIN_TASK_TYPES = (
         (DETECTION, 'Detection'),
         (INDEXING, 'Indexing'),
         (LOPQINDEX, 'LOPQ Approximation'),
         (CLASSIFICATION, 'Classification')
-    )
-    IMAGES = 'I'
-    VIDEOS = 'V'
-    INDEX = 'X'
-    INSTANCE_TYPES = (
-        (IMAGES, 'images'),
-        (INDEX, 'index'),
-        (VIDEOS, 'videos'),
     )
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     event = models.ForeignKey(TEvent,null=True)
@@ -178,11 +180,22 @@ class TrainedModel(models.Model):
     """
     A model Model
     """
-    TENSORFLOW = 'T'
-    CAFFE = 'C'
-    PYTORCH = 'P'
-    OPENCV = 'O'
-    MXNET = 'M'
+    TENSORFLOW = constants.TENSORFLOW
+    CAFFE = constants.CAFFE
+    PYTORCH = constants.PYTORCH
+    OPENCV = constants.OPENCV
+    MXNET = constants.MXNET
+    INDEXER = constants.INDEXER
+    APPROXIMATOR = constants.APPROXIMATOR
+    DETECTOR = constants.DETECTOR
+    ANALYZER = constants.ANALYZER
+    SEGMENTER = constants.SEGMENTER
+    YOLO = constants.YOLO
+    TFD = constants.TFD
+    DETECTOR_TYPES = (
+        (TFD, 'Tensorflow'),
+        (YOLO, 'YOLO V2'),
+    )
     MODES = (
         (TENSORFLOW, 'Tensorflow'),
         (CAFFE, 'Caffe'),
@@ -190,23 +203,12 @@ class TrainedModel(models.Model):
         (OPENCV, 'OpenCV'),
         (MXNET, 'MXNet'),
     )
-    INDEXER = 'I'
-    APPROXIMATOR = 'P'
-    DETECTOR = 'D'
-    ANALYZER = 'A'
-    SEGMENTER = 'S'
     MTYPE = (
         (APPROXIMATOR, 'Approximator'),
         (INDEXER, 'Indexer'),
         (DETECTOR, 'Detector'),
         (ANALYZER, 'Analyzer'),
         (SEGMENTER, 'Segmenter'),
-    )
-    YOLO = "Y"
-    TFD = "T"
-    DETECTOR_TYPES = (
-        (TFD, 'Tensorflow'),
-        (YOLO, 'YOLO V2'),
     )
     detector_type = models.CharField(max_length=1,choices=DETECTOR_TYPES,db_index=True,null=True)
     mode = models.CharField(max_length=1,choices=MODES,db_index=True,default=TENSORFLOW)
@@ -390,11 +392,11 @@ class Region(models.Model):
     Any 2D region over an image.
     Detections & Transforms have an associated image data.
     """
-    ANNOTATION = 'A'
-    DETECTION = 'D'
-    SEGMENTATION = 'S'
-    TRANSFORM = 'T'
-    POLYGON = 'P'
+    ANNOTATION = constants.ANNOTATION
+    DETECTION = constants.DETECTION
+    SEGMENTATION = constants.SEGMENTATION
+    TRANSFORM = constants.TRANSFORM
+    POLYGON = constants.POLYGON
     REGION_TYPES = (
         (ANNOTATION, 'Annotation'),
         (DETECTION, 'Detection'),
@@ -455,11 +457,11 @@ class QueryRegion(models.Model):
     """
     Any 2D region over a query image.
     """
-    ANNOTATION = 'A'
-    DETECTION = 'D'
-    SEGMENTATION = 'S'
-    TRANSFORM = 'T'
-    POLYGON = 'P'
+    ANNOTATION = constants.ANNOTATION
+    DETECTION = constants.DETECTION
+    SEGMENTATION = constants.SEGMENTATION
+    TRANSFORM = constants.TRANSFORM
+    POLYGON = constants.POLYGON
     REGION_TYPES = (
         (ANNOTATION, 'Annotation'),
         (DETECTION, 'Detection'),
