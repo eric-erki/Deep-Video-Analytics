@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-setup(name='DeepVideoAnalyticsClient',
+setup(name='dvaclient',
       version='1.0',
       description='Deep Video Analytics Client',
       author='Akshay Bhat',
