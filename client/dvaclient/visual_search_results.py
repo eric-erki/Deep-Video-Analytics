@@ -1,12 +1,10 @@
 from collections import namedtuple
 import logging
 import base64
-import tempfile
-from PIL import Image as PImage
 import requests
-import cStringIO
 
 try:
+    from PIL import Image as PImage
     from IPython.display import Image, display
 except:
     logging.warning("Cannot import IPython display")
