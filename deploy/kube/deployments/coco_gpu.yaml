@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: coco_gpu
+  name: cocogpu
   labels:
-    name: coco_gpu
+    name: cocogpu
 spec:
   replicas: 1
   progressDeadlineSeconds: 600
@@ -12,12 +12,12 @@ spec:
   template:
     metadata:
       labels:
-        name: coco_gpu
+        name: cocogpu
     spec:
       containers:
       - image: akshayubhat/dva-auto:gpu
         imagePullPolicy: "IfNotPresent"
-        name: coco_gpu
+        name: cocogpu
         resources:
           limits:
            nvidia.com/gpu: 1
