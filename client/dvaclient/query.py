@@ -1,5 +1,4 @@
 import base64, logging, time
-from collections import defaultdict
 from dvaclient import constants, visual_search_results, schema
 
 
@@ -7,7 +6,6 @@ class DVAQuery(object):
 
     def __init__(self, query_id=None, context=None):
         self.query_json = {}
-        self.validator = schema.Validator(self.query_json)
         self.query_request = None
         self.context = context
         self.results = None
@@ -15,10 +13,11 @@ class DVAQuery(object):
         self.search_results = []
 
     def execute(self, context=None):
-        self.validator.validate()
         if self.context is None:
             self.context = context
         if self.query_request is None:
+            validator = schema.Validator(self.query_json)
+            validator.validate()
             self.query_request = context.execute_query(self.query_json)
             self.query_id = self.query_request['id']
             self.context = context
@@ -28,12 +27,13 @@ class DVAQuery(object):
     def wait(self, timeout=3, max_attempts=60, verbose=False):
         i_timeout, i_max_attempts = timeout, max_attempts
         while not self.completed() and max_attempts > 0:
-            msg = "\n\nQuery {qid} not completed, sleeping for {timeout} seconds and {attempts} attempts remaining\n".format(qid=self.query_id, timeout=timeout, attempts=max_attempts)
+            msg = "\n\nQuery {qid} not completed, sleeping for {timeout} seconds and {attempts} attempts remaining\n".format(
+                qid=self.query_id, timeout=timeout, attempts=max_attempts)
             logging.info(msg)
             if verbose:
                 print msg
                 print "Running/Pending/Completed tasks"
-                self.context.list_events(verbose=True,query_id=self.query_id)
+                self.context.list_events(verbose=True, query_id=self.query_id)
             max_attempts -= 1
             time.sleep(timeout)
         if max_attempts == 0:
