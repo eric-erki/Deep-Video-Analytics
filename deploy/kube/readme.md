@@ -1,6 +1,15 @@
 Deployment with Kubernetes on Google Cloud Engine 
 ===
 
+Organization:
+
+- deployments/
+- launch.sh
+- launch_gpu.sh
+
+
+### Instructions for GPU using GKE Beta:
+
 ## Deployment steps:
 
 ####  0: Ensure that GKE cluster is setup and connect by following instructions from GCP web console.
@@ -46,10 +55,8 @@ using gsutil.
 Ensure that the cluster is shutdown, so that you don't end up getting charged
 for the GCE nodes. 
 
-## TODO:    
+## TODO:
 
 [ ] Ensure that Postgres and RabbitMQ are "Stateful sets" / consider reusing a Helm Chart. 
-   
-[ ] Enable GPU containters.
-     
+
 [ ] Enable / add example for HTTP/HTTPS ingress and create seperate multi-region bucket to serve static files.   

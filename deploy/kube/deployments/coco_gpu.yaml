@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: scheduler
+  name: coco_gpu
   labels:
-    name: scheduler
+    name: coco_gpu
 spec:
   replicas: 1
   progressDeadlineSeconds: 600
@@ -12,14 +12,17 @@ spec:
   template:
     metadata:
       labels:
-        name: scheduler
+        name: coco_gpu
     spec:
       containers:
-      - image: akshayubhat/dva-auto:latest
+      - image: akshayubhat/dva-auto:gpu
         imagePullPolicy: "IfNotPresent"
-        name: scheduler
+        name: coco_gpu
+        resources:
+          limits:
+           nvidia.com/gpu: 1
         env:
-        - name: LAUNCH_SCHEDULER
+        - name: LAUNCH_BY_NAME_detector_coco
           value: "1"
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
@@ -37,6 +40,12 @@ spec:
           value: postgres
         - name: DISABLE_DEBUG
           value: "1"
+        - name: GPU_MEMORY
+          value: "0.95"
+        - name: GPU_AVAILABLE
+          value: "1"
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "0"
         - name: DISABLE_NFS
           value: "1"
         - name: DOCKER_MODE

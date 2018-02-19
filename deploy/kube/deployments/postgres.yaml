@@ -26,7 +26,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: slow
+  storageClassName: standard
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet

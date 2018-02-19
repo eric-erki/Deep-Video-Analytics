@@ -8,7 +8,7 @@ kubectl create -f deployments/redis.yaml
 sleep 120
 kubectl create -f deployments/webserver.yaml
 sleep 60
-kubectl create -f deployments/coco.yaml
+kubectl create -f deployments/coco_gpu.yaml
 kubectl create -f deployments/extractor.yaml
 kubectl create -f deployments/face.yaml
 kubectl create -f deployments/facenet.yaml
