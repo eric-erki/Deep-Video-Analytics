@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, requests, subprocess, time, webbrowser
+import os, subprocess
 
 if __name__ == '__main__':
     print "Attempting to stop all containers and deleting volumes."
