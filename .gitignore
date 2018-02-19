@@ -34,6 +34,8 @@ docs/experiments/yolo/yolo_test.zip
 /repos/tf_ctpn_cpu/data/demo/test.jpg
 /repos/tf_ctpn_cpu/data/results/
 /client/build/
+/client/dist/
+/client/dvaclient.egg-info/
 /deploy/kube/secrets.yml
 /deploy/kube/config.py
 /deploy/gpu/aws/config.py
