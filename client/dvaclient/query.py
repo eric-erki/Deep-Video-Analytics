@@ -1,6 +1,6 @@
 import base64, logging, time
 from collections import defaultdict
-from . import constants, visual_search_results, schema
+from dvaclient import constants, visual_search_results, schema
 
 
 class DVAQuery(object):
