@@ -277,67 +277,6 @@ def create_annotation(form, object_name, labels, frame):
             rl.save()
 
 
-def import_vdn_dataset_url(server, url, user, cached_response):
-    response = None
-    try:
-        r = requests.get(url)
-        response = r.json()
-    except:
-        pass
-    if not response:
-        response = cached_response
-    p = processing.DVAPQLProcess()
-    query = {
-        'process_type': DVAPQL.PROCESS,
-        'create': [
-            {
-                'spec': {
-                    'name': response['name'],
-                    'uploader_id': user.pk if user else None,
-                    'url': response['path'],
-                    'created': '__timezone.now__',
-                    'description':"import from {} : {} ".format(server.url,response['description'])
-                },
-                'MODEL': 'Video',
-                'tasks': [
-                    {
-                        'arguments': {},
-                        'video_id': '__pk__',
-                        'operation': 'perform_import',
-                    }
-                ]
-            },
-        ],
-    }
-    p.create_from_json(j=query, user=user)
-    p.launch()
-
-
-def import_vdn_detector_url(server, url, user, cached_response):
-    response = None
-    try:
-        r = requests.get(url)
-        response = r.json()
-    except:
-        pass
-    if not response:
-        response = cached_response
-    p = processing.DVAPQLProcess()
-    query = {
-        'process_type': DVAPQL.PROCESS,
-        'create':[{'MODEL': 'TrainedModel',
-                   'spec':{'name': response['name'],'detector_type':TrainedModel.DETECTOR},
-                   'tasks':[{'operation': 'perform_detector_import',
-                             'arguments': {'path': response['path'],
-                                           'detector_pk' : '__pk__'
-                                           },
-                             },]}
-                  ]
-        }
-    p.create_from_json(j=query, user=user)
-    p.launch()
-
-
 def create_detector_dataset(object_names, labels):
     class_distribution = defaultdict(int)
     rboxes = defaultdict(list)

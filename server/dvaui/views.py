@@ -805,29 +805,6 @@ def expire_token(request):
 
 
 @user_passes_test(user_check)
-def import_dataset(request):
-    if request.method == 'POST':
-        url = request.POST.get('dataset_url')
-        user = request.user if request.user.is_authenticated else None
-        view_shared.import_vdn_dataset_url(None, url, user, None)
-    else:
-        raise NotImplementedError
-    return redirect('video_list')
-
-
-@user_passes_test(user_check)
-def import_detector(request):
-    if request.method == 'POST':
-        url = request.POST.get('detector_url')
-        user = request.user if request.user.is_authenticated else None
-        cached_response = None # last_response_detectors[int(request.POST.get('dindex'))]
-        view_shared.import_vdn_detector_url(None, url, user, None)
-    else:
-        raise NotImplementedError
-    return redirect('models')
-
-
-@user_passes_test(user_check)
 def import_s3(request):
     if request.method == 'POST':
         keys = request.POST.get('key')
