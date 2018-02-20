@@ -9,7 +9,6 @@
 <div class="row">
     <div class="box box-info">
         <div class="box-header">
-           {% if object.parent_id %} <a class="btn btn-primary" style="float:right" href="/task_detail/{{ object.parent_id }}"> <i class="fa fa-arrow-up"></i> Parent task </a>{% endif %}
             <h3>Task {{ object.pk }} running {{ object.operation }} on {{ object.queue }} under <a href="/process/{{ object.parent_process_id }}"> process {{ object.parent_process_id }}</a></h3>
             <h4>Video: {% if object.video %}<a href="/videos/{{ object.video_id }}">{{ object.video.name }}</a>{% endif %}</h4>
         </div>
@@ -69,14 +68,69 @@
     {% endif %}
 </div>
 <div class="row">
+    {% if object.parent_id %}
+    <div class="col-lg-12">
+        <div class="box">
+            <div class="box-header with-border">
+                <h3>Parent task</h3>
+            </div>
+            <div class="box-body">
+                <table class="table dataTables">
+                    <thead>
+                    <tr>
+                        <th>Process</th>
+                        <th>Group</th>
+                        <th>Video</th>
+                        <th>Operation</th>
+                        <th>Queue</th>
+                        <th>created</th>
+                        <th>started</th>
+                        <th>created ts</th>
+                        <th>started ts</th>
+                        <th>duration</th>
+                        <th class="text-center">status</th>
+                        <th class="text-center">view details</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="/process/{{ object.parent.parent_process_id }}">{{ object.parent.parent_process_id }}</a></td>
+                            <td>{{ object.parent.task_group_id }}</td>
+                            <td>{% if object.parent.video %}<a href="/videos/{{ object.parent.video_id }}">{{ object.parent.video.name }}</a>{% endif %}</td>
+                            <td>{{ object.parent.operation }}</td>
+                            <td>{{ object.parent.queue }}</td>
+                            <td class="text-center">{{ object.parent.created|timesince}}</td>
+                            <td class="text-center">{{ object.parent.start_ts|timesince}}</td>
+                            <td class="text-center">{{ object.parent.created|date:"U" }}</td>
+                            <td class="text-center">{{ object.parent.start_ts|date:"U" }}</td>
+                            <td class="text-right">{{ object.parent.duration|floatformat }}</td>
+                            <td>
+                                {% if object.parent.errored %}
+                                    <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-danger btn-block">{% if object.parent.imported %}Imported{% endif %} Failed</a>
+                                {% elif object.parent.duration < 0 and not object.parent.started %}
+                                    <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-warning btn-block">{% if object.parent.imported %}Imported{% endif %} Pending</a>
+                                {% elif object.parent.duration < 0 and object.parent.started and not object.parent.completed%}
+                                    <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-primary btn-block">{% if object.parent.imported %}Imported{% endif %} Running</a>
+                                {% elif object.parent.completed%}
+                                    <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-success btn-block">{% if object.parent.imported %}Imported{% endif %} Completed</a>
+                                {% else %}
+                                    <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-info btn-block">Unknown</a>
+                                {% endif %}
+                            </td>
+                            <td> <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-info btn-block">View details</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     <div class="col-lg-12">
         <div class="box">
             <div class="box-header with-border">
                 <h3>Child tasks</h3>
             </div>
             <div class="box-body">
-                <form method="post">
-                {% csrf_token %}
                 <table class="table dataTables">
                     <thead>
                     <tr>
@@ -125,7 +179,6 @@
                     {% endfor %}
                     </tbody>
                 </table>
-                </form>
             </div>
         </div>
     </div>

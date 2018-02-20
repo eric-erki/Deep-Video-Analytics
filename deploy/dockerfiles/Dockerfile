@@ -34,6 +34,11 @@ WORKDIR "/root/DVA/repos/tf_ctpn_cpu/lib/utils/"
 RUN ./make.sh
 WORKDIR "/root/"
 RUN mkdir media
+RUN apt-get install -y cmake
+RUN mkdir thirdparty
+WORKDIR "/root/thirdparty/"
+RUN git clone --recursive https://github.com/DeepVideoAnalytics/pqkmeans.git
+RUN cd pqkmeans && python setup.py install
 WORKDIR "/root/DVA/server/"
 VOLUME ["/root/DVA/dva/media","/root/DVA/configs/custom_defaults"]
 EXPOSE 80
