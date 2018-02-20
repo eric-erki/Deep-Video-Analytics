@@ -56,7 +56,7 @@ def start_task(task_id, task, args, **kwargs):
         dt.save()
 
 
-def get_and_check_task(task_id):
+def get_and_check_task(task_id,skip_started_check=False):
     global TASK_ID_TO_OBJECT
     if task_id in TASK_ID_TO_OBJECT:
         dt = TASK_ID_TO_OBJECT[task_id]
@@ -65,7 +65,10 @@ def get_and_check_task(task_id):
         TASK_ID_TO_OBJECT[task_id] = models.TEvent.objects.get(pk=task_id)
         dt = TASK_ID_TO_OBJECT[task_id]
     if dt.started:
-        return None
+        if skip_started_check:
+            return dt
+        else:
+            return None
     elif dt.queue.startswith(settings.GLOBAL_MODEL) and global_model_retriever.defer(dt):
         logging.info("rerouting...")
         return None
@@ -80,9 +83,9 @@ def get_and_check_task(task_id):
 
 @app.task(track_started=True, name="perform_reduce")
 def perform_reduce(task_id):
-    dt = get_and_check_task(task_id)
+    dt = get_and_check_task(task_id,skip_started_check=True)
     if dt is None:
-        return 0
+        raise ValueError("task is None")
     timeout_seconds = dt.arguments.get('timeout',settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
     reduce_waiter = Waiter(dt)
     if reduce_waiter.is_complete():
