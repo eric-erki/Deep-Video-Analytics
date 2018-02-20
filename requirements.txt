@@ -24,7 +24,7 @@ cffi
 uwsgi
 lmdb
 gunicorn
-django-celery-beat=1.1.0
+django-celery-beat==1.1.0
 cython
 easydict
 google-cloud-storage
