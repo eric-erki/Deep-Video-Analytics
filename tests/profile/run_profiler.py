@@ -15,13 +15,18 @@ def store_token_for_testing():
 
 
 if __name__ == '__main__':
-    port = 80
+    if len(sys.argv) > 1:
+        server = sys.argv[-1]
+        print "using server {}".format(server)
+    else:
+        server = "http://localhost/"
+        print "Using default server {}".format(server)
     if not os.path.isfile('creds.json'):
         store_token_for_testing()
     token = json.loads(file('creds.json').read())['token']
-    context = context.DVAContext(token=token)
+    context = context.DVAContext(server=server,token=token)
     queries = []
-    for fname in glob.glob('procesess/*.json'):
+    for fname in glob.glob('processes/*.json'):
         q = query.DVAQuery(json.load(file(fname)))
         q.execute(context)
         queries.append(q)
