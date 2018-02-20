@@ -29,7 +29,7 @@ We provide instructions for deploying DVA in three scenarios.
 
 2. [deploy/gpu](/deploy/gpu) contains docker-compose files for GPU single machine deployments on GCP, AWS etc.
 
-3. [deploy/kube](/deploy/kube) contains files used for launching DVA in a scalable GKE + GCS setup
+3. [deploy/kube](/deploy/kube) contains files used for launching DVA in a scalable GKE + GCS setup, with and without GPUs.
 
 
 ### Development
