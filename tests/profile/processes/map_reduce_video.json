@@ -1,0 +1,163 @@
+{
+  "process_type": "V",
+  "description": "Example of a map-reduce video processing job.",
+  "create": [
+    {
+      "MODEL": "Video",
+      "spec": {
+        "name": "video_map_reduce",
+        "url": "https://www.youtube.com/watch?v=z4UDNzXD3qA"
+      },
+      "tasks": [
+        {
+          "operation": "perform_import",
+          "video_id": "__pk__",
+          "arguments": {
+            "map": [
+              {
+                "operation": "perform_video_segmentation",
+                "arguments": {
+                  "map": [
+                    {
+                      "operation": "perform_video_decode",
+                      "arguments": {
+                        "segments_batch_size": 10,
+                        "rate": 30,
+                        "rescale": 0,
+                        "map": [
+                          {
+                            "operation": "perform_detection",
+                            "arguments": {
+                              "task_group_name": "coco_detection",
+                              "filters": "__parent__",
+                              "detector": "coco",
+                              "map": [
+                                {
+                                  "operation": "perform_indexing",
+                                  "arguments": {
+                                    "index": "inception",
+                                    "target": "regions",
+                                    "filters": {
+                                      "event_id": "__parent_event__",
+                                      "w__gte": 50,
+                                      "h__gte": 50
+                                    },
+                                    "map": [
+                                      {
+                                        "operation": "perform_index_approximation",
+                                        "arguments": {
+                                          "target": "index_entries",
+                                          "approximator_shasum": "86689432ac09d86dd95d7d3ed57227d27eb09c81",
+                                          "filters": {
+                                            "event_id": "__parent_event__"
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          {
+                            "operation": "perform_analysis",
+                            "arguments": {
+                              "task_group_name": "tagging",
+                              "analyzer": "tagger",
+                              "target": "frames",
+                              "filters": "__parent__"
+                            }
+                          },
+                          {
+                            "operation": "perform_detection",
+                            "arguments": {
+                              "filters": "__parent__",
+                              "detector": "textbox",
+                              "target": "frames",
+                              "map": [
+                                {
+                                  "operation": "perform_analysis",
+                                  "arguments": {
+                                    "analyzer": "crnn",
+                                    "target": "regions",
+                                    "filters": {
+                                      "event_id": "__parent_event__"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          {
+                            "operation": "perform_indexing",
+                            "arguments": {
+                              "index": "inception",
+                              "target": "frames",
+                              "filters": "__parent__"
+                            }
+                          },
+                          {
+                            "operation": "perform_detection",
+                            "arguments": {
+                              "filters": "__parent__",
+                              "detector": "face",
+                              "map": [
+                                {
+                                  "operation": "perform_indexing",
+                                  "arguments": {
+                                    "task_group_name": "facenet_index",
+                                    "index": "facenet",
+                                    "target": "regions",
+                                    "filters": {
+                                      "event_id": "__parent_event__"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "reduce": [
+                    {
+                      "arguments": {
+                        "reduce_target": "all",
+                        "map": []
+                      }
+                    },
+                    {
+                      "arguments": {
+                        "reduce_target": "root",
+                        "map": []
+                      }
+                    },
+                    {
+                      "arguments": {
+                        "reduce_target": "filter",
+                        "reduce_filter": [
+                          "facenet_index"
+                        ],
+                        "map": []
+                      }
+                    },
+                    {
+                      "arguments": {
+                        "reduce_target": "filter",
+                        "reduce_filter": [
+                          "tagging","coco_detection"
+                        ],
+                        "map": []
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

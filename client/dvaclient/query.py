@@ -4,8 +4,11 @@ from dvaclient import constants, visual_search_results, schema
 
 class DVAQuery(object):
 
-    def __init__(self, query_id=None, context=None):
-        self.query_json = {}
+    def __init__(self, query_json=None, query_id=None, context=None):
+        if query_json is None:
+            self.query_json = {}
+        else:
+            self.query_json = query_json
         self.query_request = None
         self.context = context
         self.results = None

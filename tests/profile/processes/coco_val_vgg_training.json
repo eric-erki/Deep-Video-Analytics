@@ -1,0 +1,76 @@
+{
+  "name": "MSCOCO_2017_Validation",
+  "description": "2017 MSCOCO validation set",
+  "process_type": "V",
+  "create": [
+    {
+      "MODEL": "TrainedModel",
+      "tasks": [
+        {
+          "operation": "perform_model_import",
+          "arguments": {
+            "pk": "__pk__"
+          }
+        }
+      ],
+      "spec": {
+        "files": [
+          {
+            "url": "https://www.dropbox.com/s/3yzonc9nzo9xanv/vgg.pb",
+            "filename": "vgg.pb"
+          }
+        ],
+        "arguments": {
+        },
+        "name": "VGG conv layer indexer",
+        "algorithm": "vgg",
+        "mode": "T",
+        "model_type": "I",
+        "shasum": "52723231e796dd06fafd190957c8a3b5a69e009c"
+      }
+    },
+    {
+      "MODEL": "Video",
+      "spec": {
+        "name": "MSCOCO_2017_validation",
+        "url": "http://images.cocodataset.org/zips/val2017.zip",
+        "dataset": true
+      },
+      "tasks": [
+        {
+          "operation": "perform_import",
+          "video_id": "__pk__",
+          "arguments": {
+            "map": [
+              {
+                "operation": "perform_dataset_extraction",
+                "arguments": {
+                  "map": [
+                    {
+                      "operation": "perform_region_import",
+                      "arguments": {
+                        "path": "https://www.dropbox.com/s/6hnbh5bhgeeoswd/coco_val2017_keypoints_regions.gz"
+                      }
+                    },
+                    {
+                      "operation": "perform_region_import",
+                      "arguments": {
+                        "path": "https://www.dropbox.com/s/ev6dlts686xskx4/coco_val2017_instances_regions.gz"
+                      }
+                    },
+                    {
+                      "operation": "perform_region_import",
+                      "arguments": {
+                        "path": "https://www.dropbox.com/s/tbf96ibf0iqhvt3/coco_val2017_captions_regions.gz"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
