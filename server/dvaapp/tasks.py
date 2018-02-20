@@ -488,16 +488,16 @@ def perform_training_set_creation(task_id):
         return 0
     args = dt.arguments
     if 'training_set_pk'in args:
-        dt = models.TrainingSet.objects.get(pk=args['training_set_pk'])
+        train_set = models.TrainingSet.objects.get(pk=args['training_set_pk'])
     elif 'training_set_selector'in args:
-        dt = models.TrainingSet.objects.get(**args['training_set_selector'])
+        train_set = models.TrainingSet.objects.get(**args['training_set_selector'])
     else:
         raise ValueError("Could not find training set {}".format(args))
-    if dt.event:
+    if train_set.event:
         raise ValueError("Training set has been already built or failed to build, please clone instead of rebuilding.")
-    if dt.training_task_type == models.TrainingSet.LOPQINDEX:
+    if train_set.training_task_type == models.TrainingSet.LOPQINDEX:
         file_list = []
-        filters = copy.deepcopy(dt.source_filters)
+        filters = copy.deepcopy(train_set.source_filters)
         filters['approximate'] = False
         queryset, target = task_shared.build_queryset(args=args,target="index_entries",filters=filters)
         total_count = 0
@@ -508,11 +508,11 @@ def perform_training_set_creation(task_id):
                 "pk": di.pk
             })
             total_count += di.count
-        dt.built = True
-        dt.count = total_count
-        dt.files = file_list
-        dt.event = dt
-        dt.save()
+        train_set.built = True
+        train_set.count = total_count
+        train_set.files = file_list
+        train_set.event = dt
+        train_set.save()
     else:
         raise NotImplementedError
     process_next(dt)
