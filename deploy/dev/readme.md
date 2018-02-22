@@ -6,3 +6,5 @@
 - You can then use your favorite IDE on your host OS to edit files.
 
 - I develop DVA on powerful cloud-instances using PyCharm with its auto-upload on save via SFTP/SCP feature.
+
+- To test distributed non-NFS setup docker-compose-non-nfs.yml is used where S3/GCS is used for storing data instead.
