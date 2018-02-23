@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:1.4.0
+FROM tensorflow/tensorflow:1.6.0-rc1
 MAINTAINER Akshay Bhat <akshayubhat@gmail.com>
 RUN apt-get update -q && apt-get install -y wget xz-utils
 WORKDIR "/bin/"
@@ -22,7 +22,7 @@ RUN pip install --upgrade cffi
 RUN pip install --no-deps keras
 RUN pip install -r requirements.txt
 RUN pip install pip --upgrade
-RUN pip install --no-cache-dir http://download.pytorch.org/whl/cu75/torch-0.1.12.post2-cp27-none-linux_x86_64.whl
+RUN pip install --no-cache-dir http://download.pytorch.org/whl/cpu/torch-0.3.1-cp27-cp27mu-linux_x86_64.whl
 RUN pip install --no-cache-dir mxnet==0.11.0
 RUN pip install torchvision
 RUN apt-get install -y libhdf5-dev
