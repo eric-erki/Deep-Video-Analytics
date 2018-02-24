@@ -113,7 +113,7 @@
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES=1
-       - GPU_MEMORY=0.2
+       - GPU_MEMORY=0.5
        - LAUNCH_BY_NAME_detector_textbox=1
      command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
@@ -129,7 +129,7 @@
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES=1
-       - GPU_MEMORY=0.3
+       - GPU_MEMORY=0.19
        - LAUNCH_BY_NAME_detector_face=1
      command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
@@ -145,7 +145,7 @@
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES=1
-       - GPU_MEMORY=0.25
+       - GPU_MEMORY=0.15
        - LAUNCH_BY_NAME_indexer_facenet=1
      command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:
@@ -161,7 +161,7 @@
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES=1
-       - GPU_MEMORY=0.25
+       - GPU_MEMORY=0.15
        - LAUNCH_BY_NAME_analyzer_tagger=1
      command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
      depends_on:

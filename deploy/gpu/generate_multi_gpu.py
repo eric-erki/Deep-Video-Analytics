@@ -106,10 +106,10 @@ config = {
                                       [(0,0.25,"LAUNCH_BY_NAME_indexer_inception","inception"),
                                        (0,0.2,"LAUNCH_BY_NAME_analyzer_crnn","crnn"),
                                        (0,0.5,"LAUNCH_BY_NAME_detector_coco","coco"),
-                                       (1,0.2,"LAUNCH_BY_NAME_detector_textbox","textbox"),
-                                       (1,0.3,"LAUNCH_BY_NAME_detector_face","face"),
-                                       (1,0.25,"LAUNCH_BY_NAME_indexer_facenet","facenet"),
-                                       (1,0.25,"LAUNCH_BY_NAME_analyzer_tagger","tagger")]
+                                       (1,0.5,"LAUNCH_BY_NAME_detector_textbox","textbox"),
+                                       (1,0.19,"LAUNCH_BY_NAME_detector_face","face"),
+                                       (1,0.15,"LAUNCH_BY_NAME_indexer_facenet","facenet"),
+                                       (1,0.15,"LAUNCH_BY_NAME_analyzer_tagger","tagger")]
                                   },
     "docker-compose-4-gpus.yml": {"global_model_gpu_id": 2,
                                   "global_model_memory_fraction": 0.29,
