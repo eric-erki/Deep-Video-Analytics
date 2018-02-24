@@ -11,8 +11,8 @@ elif os.environ.get('CAFFE_MODE', False):
 else:
     try:
         from tensorflow.python.platform import gfile
-        from facenet import facenet
         import tensorflow as tf
+        from facenet import facenet
     except ImportError:
         logging.warning("Could not import Tensorflow assuming operating in either frontend or caffe/pytorch mode")
 
