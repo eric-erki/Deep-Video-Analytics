@@ -9,10 +9,11 @@ import logging
 import numpy as np
 from .base_analyzer import BaseAnnotator
 from collections import namedtuple
+sys.path.append("/root/DVA/repos/")
 
 if os.environ.get('PYTORCH_MODE',False):
-    import dvalib.crnn.utils as utils
-    import dvalib.crnn.dataset as dataset
+    import crnn.utils as utils
+    import crnn.dataset as dataset
     import torch
     from torch.autograd import Variable
     import dvalib.crnn.models.crnn as crnn

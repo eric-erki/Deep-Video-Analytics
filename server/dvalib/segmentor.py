@@ -1,4 +1,4 @@
-import os, logging
+import os, logging, sys
 from PIL import Image
 import numpy as np
 
@@ -7,7 +7,8 @@ if os.environ.get('PYTORCH_MODE',False):
 elif os.environ.get('CAFFE_MODE',False):
     pass
 else:
-    from .crfasrnn.crfrnn_model import get_crfrnn_model_def
+    sys.path.append("/root/DVA/repos/")
+    from crfasrnn.crfrnn_model import get_crfrnn_model_def
 
 
 class BaseSegmentor(object):

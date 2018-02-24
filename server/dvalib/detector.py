@@ -15,10 +15,11 @@ else:
     try:
         import cv2
         import tensorflow as tf
+        sys.path.append("/root/DVA/repos/")
         sys.path.append('/root/DVA/repos/tf_ctpn_cpu/')
-        from dvalib.yolo import trainer
-        from .facenet import facenet
-        from .facenet.align import detect_face
+        from yolo import trainer
+        from facenet import facenet
+        from facenet.align import detect_face
         from lib.networks.factory import get_network
         from lib.fast_rcnn.config import cfg, cfg_from_file
         from lib.fast_rcnn.test import test_ctpn
@@ -231,7 +232,7 @@ class TextBoxDetector():
 
     def load(self):
         logging.info('Creating networks and loading parameters')
-        cfg_from_file(os.path.join(os.path.dirname(__file__),'ctpn/text.yml'))
+        cfg_from_file(os.path.join(os.path.dirname(__file__),'text.yml'))
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=self.gpu_fraction)
         config = tf.ConfigProto(allow_soft_placement=True,gpu_options=gpu_options)
         self.session = tf.Session(config=config)

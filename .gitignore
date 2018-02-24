@@ -23,8 +23,8 @@ docs/experiments/yolo/yolo_test.zip
 /server/dva/staticfiles/
 /server/dvap/
 /shared/
-/server/dvalib/crfasrnn/crfrnn_keras_model.h5
-/server/dvalib/crfasrnn/cpp/high_dim_filter.so
+/repos/crfasrnn/crfrnn_keras_model.h5
+/repos/crfasrnn/cpp/high_dim_filter.so
 /server/celerybeat.pid
 /tests/debug/tensorflow_dataset.ipynb
 /repos/tf_ctpn_cpu/checkpoints/
