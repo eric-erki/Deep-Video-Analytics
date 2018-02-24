@@ -9,7 +9,7 @@ import logging
 import numpy as np
 from .base_analyzer import BaseAnnotator
 from collections import namedtuple
-sys.path.append("/root/DVA/repos/")
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../repos/"))
 
 if os.environ.get('PYTORCH_MODE',False):
     import crnn.utils as utils

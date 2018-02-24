@@ -6,6 +6,8 @@ try:
 except:
     pass
 from .base_detector import BaseDetector
+sys.path.append(os.path.join(os.path.dirname(__file__),"../../repos/"))
+sys.path.append(os.path.join(os.path.dirname(__file__),"../../repos/tf_ctpn_cpu/"))
 
 if os.environ.get('PYTORCH_MODE',False):
     pass
@@ -15,8 +17,10 @@ else:
     try:
         import cv2
         import tensorflow as tf
-        sys.path.append("/root/DVA/repos/")
-        sys.path.append('/root/DVA/repos/tf_ctpn_cpu/')
+    except:
+        logging.info("Could not import TensorFlow assuming front-end mode")
+    else:
+        from yolo import trainer
         from yolo import trainer
         from facenet import facenet
         from facenet.align import detect_face
@@ -25,8 +29,6 @@ else:
         from lib.fast_rcnn.test import test_ctpn
         from lib.text_connector.detectors import TextDetector
         from lib.text_connector.text_connect_cfg import Config as TextLineCfg
-    except:
-        logging.info("Could not import TensorFlow assuming front-end mode")
 
 
 def _parse_function(filename):
