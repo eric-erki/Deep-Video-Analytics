@@ -16,7 +16,7 @@ RUN pip install --upgrade matplotlib
 RUN wget https://yt-dl.org/downloads/latest/youtube-dl -O /bin/youtube-dl
 RUN chmod a+rx /bin/youtube-dl
 RUN youtube-dl -U
-RUN git clone https://github.com/akshayubhat/DeepVideoAnalytics /root/DVA
+RUN git clone -b stable https://github.com/akshayubhat/DeepVideoAnalytics /root/DVA
 WORKDIR "/root/DVA"
 RUN pip install --upgrade cffi
 RUN pip install --no-deps keras
