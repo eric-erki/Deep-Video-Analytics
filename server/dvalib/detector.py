@@ -6,8 +6,8 @@ try:
 except:
     pass
 from .base_detector import BaseDetector
-sys.path.append(os.path.join(os.path.dirname(__file__),"../../repos/"))
-sys.path.append(os.path.join(os.path.dirname(__file__),"../../repos/tf_ctpn_cpu/"))
+sys.path.append(os.path.join(os.path.dirname(__file__),"../../repos/"))  # remove once container is rebuilt
+sys.path.append(os.path.join(os.path.dirname(__file__),"../../repos/tf_ctpn_cpu/"))  # remove once container is rebuilt
 
 if os.environ.get('PYTORCH_MODE',False):
     pass

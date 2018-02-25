@@ -39,6 +39,17 @@ RUN mkdir thirdparty
 WORKDIR "/root/thirdparty/"
 RUN git clone --recursive https://github.com/DeepVideoAnalytics/pqkmeans.git
 RUN cd pqkmeans && python setup.py install
+WORKDIR "/root/thirdparty/"
+RUN git clone --recursive https://github.com/DeepVideoAnalytics/faiss
+WORKDIR "/root/thirdparty/faiss"
+RUN apt-get install -y libopenblas-dev swig
+ENV BLASLDFLAGS /usr/lib/libopenblas.so.0
+RUN mv example_makefiles/makefile.inc.Linux ./makefile.inc
+RUN make tests/test_blas -j $(nproc) && make -j $(nproc) && make py
+#RUN cd tests && ./run_tests.sh && cd ..
+ENV PYTHONPATH /root/DVA/repos/:$PYTHONPATH
+ENV PYTHONPATH /root/DVA/repos/tf_ctpn_cpu/:$PYTHONPATH
+ENV PYTHONPATH /root/thirdparty/faiss:$PYTHONPATH
 WORKDIR "/root/DVA/server/"
 VOLUME ["/root/DVA/dva/media","/root/DVA/configs/custom_defaults"]
 EXPOSE 80

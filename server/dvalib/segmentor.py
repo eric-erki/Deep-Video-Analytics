@@ -7,7 +7,7 @@ if os.environ.get('PYTORCH_MODE',False):
 elif os.environ.get('CAFFE_MODE',False):
     pass
 else:
-    sys.path.append("/root/DVA/repos/")
+    sys.path.append("/root/DVA/repos/")  # remove once container is rebuilt
     from crfasrnn.crfrnn_model import get_crfrnn_model_def
 
 

@@ -48,7 +48,7 @@ We provide instructions for deploying DVA in three scenarios.
 - /server : dvalib + django server contains contains bulk of the code for UI, App and models.
 - /logs : Empty dir for storing logs
 
-### Libraries modified in code and their licenses
+### Libraries present in this repository and their licenses
 
 | Library  | Link to the license | 
 | -------- | ------------------- |
@@ -75,6 +75,13 @@ We provide instructions for deploying DVA in three scenarios.
 | LOPQ   |  [Apache 2.0](https://github.com/yahoo/lopq/blob/master/LICENSE)  | 
 | Open Images Pre-trained network  |  [Apache 2.0](https://github.com/openimages/dataset/blob/master/LICENSE) |
 
+### Libraries present in container (/root/thirdparty/)
+
+| Library  | Link to the license |
+| -------- | ------------------- |
+| pqkmeans |  [MIT License](https://github.com/DwangoMediaVillage/pqkmeans/blob/master/LICENSE) |
+| faiss | [BSD + PATENTS License](https://github.com/facebookresearch/faiss/blob/master/LICENSE) |
+
 
 ### Additional libraries & frameworks
 
@@ -87,7 +94,7 @@ We provide instructions for deploying DVA in three scenarios.
 * Nvidia-docker
 * Docker-compose
 * All packages in [requirements.txt](/requirements.txt)
-* All dependancies in [Dockerfile](/deploy/dockerfiles/Dockerfile)
+* All dependancies installed in [CPU Dockerfile](/deploy/dockerfiles/Dockerfile) & [GPU Dockerfile](/deploy/dockerfiles/Dockerfile.gpu)
 
 
 

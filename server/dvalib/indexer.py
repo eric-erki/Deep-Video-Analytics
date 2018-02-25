@@ -2,7 +2,7 @@ import os, logging, sys
 import numpy as np
 from collections import namedtuple
 from .base_indexer import BaseIndexer
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../repos/"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../repos/"))  # remove once container is rebuilt
 
 if os.environ.get('PYTORCH_MODE', False):
     pass

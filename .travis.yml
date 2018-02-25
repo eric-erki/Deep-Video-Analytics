@@ -49,6 +49,8 @@ install: "pip install -q -r requirements.txt > /dev/null"
 
 before_script:
   - mkdir ~/media
+  - export PYTHONPATH="${PYTHONPATH}:repos/"
+  - export PYTHONPATH="${PYTHONPATH}:repos/tf_ctpn_cpu/"
   - cd repos/lopq/python && python setup.py install && cd ../../..
   - cd repos/tf_ctpn_cpu/lib/utils && ./make.sh && cd ../../../..
   - cd server && python manage.py migrate && cd ..
