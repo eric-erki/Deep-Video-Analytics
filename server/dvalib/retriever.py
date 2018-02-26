@@ -12,8 +12,14 @@ try:
     from lopq.eval import compute_all_neighbors, get_recall
     from lopq.model import eigenvalue_allocation
     from lopq.utils import compute_codes_parallel
-except:
-    pass
+except ImportError:
+    logging.warning("Could not import lopq")
+
+
+try:
+    import faiss
+except ImportError:
+    logging.warning("could not import FAISS")
 
 
 IndexRange = namedtuple('IndexRange',['start','end'])
@@ -92,3 +98,15 @@ class LOPQRetriever(BaseRetriever):
         for r in results_indexes:
             results.append(self.entries[r.id])
         return results
+
+
+class FaissRetriever(BaseRetriever):
+
+    def __init__(self,name, approximator):
+        super(FaissRetriever, self).__init__(name=name, approximator=approximator, algorithm="FAISS")
+
+    def load_index(self,numpy_matrix,entries):
+        pass
+
+    def nearest(self, vector=None, n=12):
+        pass
