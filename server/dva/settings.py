@@ -34,13 +34,8 @@ INTERNAL_IPS = ['localhost','127.0.0.1']
 # SECURITY WARNING: don't run with debug turned on in production!
 if 'ENABLE_DEBUG' in os.environ:
     DEBUG = True
-    DEV_ENV = False
-elif sys.platform == 'darwin':
-    DEV_ENV = True
-    DEBUG = True
 else:
     DEBUG = False
-    DEV_ENV = False
 
 if 'ALLOWED_HOSTS' in os.environ:
     ALLOWED_HOSTS = [k.strip() for k in os.environ['ALLOWED_HOSTS'].split(',') if k.strip()]
@@ -79,7 +74,7 @@ INSTALLED_APPS = [
                      'crispy_forms',
                      'rest_framework.authtoken',
                      'django_celery_beat'
-                 ] + (['dvap', ] if DVA_PRIVATE_ENABLE else [])+ (['debug_toolbar'] if DEV_ENV and DEBUG else [])
+                 ] + (['dvap', ] if DVA_PRIVATE_ENABLE else [])+ (['debug_toolbar'] if DEBUG else [])
 
 
 MIDDLEWARE_CLASSES = [
@@ -94,7 +89,7 @@ MIDDLEWARE_CLASSES = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-if DEV_ENV and DEBUG:
+if DEBUG:
     MIDDLEWARE_CLASSES = ['debug_toolbar.middleware.DebugToolbarMiddleware',] +MIDDLEWARE_CLASSES
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_METHODS = ('POST', 'GET',)
@@ -138,8 +133,6 @@ TEMPLATES = [
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 if 'BROKER_URL' in os.environ:
     BROKER_URL = os.environ['BROKER_URL']
-elif DEV_ENV:
-    BROKER_URL = 'amqp://{}:{}@localhost//'.format('dvauser', 'localpass')
 elif 'CONTINUOUS_INTEGRATION' in os.environ:
     BROKER_URL = 'amqp://{}:{}@localhost//'.format('guest', 'guest')
 else:
@@ -151,17 +144,6 @@ if 'DATABASE_URL' in os.environ:
     DATABASES = {}
     db_from_env = dj_database_url.config(conn_max_age=500)
     DATABASES['default'] = db_from_env
-elif DEV_ENV:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'postgres',
-            'USER': 'postgres',
-            'PASSWORD': '',
-            'HOST': 'localhost',
-            'PORT': '',
-        }
-    }
 elif 'CONTINUOUS_INTEGRATION' in os.environ:
     DATABASES = {
         'default': {
