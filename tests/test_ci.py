@@ -18,7 +18,7 @@ if __name__ == '__main__':
         name = fname.split('/')[-1].split('.')[0]
         f = SimpleUploadedFile(fname, file(fname).read(), content_type="video/mp4")
         handle_uploaded_file(f, name)
-    if settings.DEV_ENV:
+    if settings.DEBUG:
         for fname in glob.glob('ci/*.zip'):
             name = fname.split('/')[-1].split('.')[0]
             f = SimpleUploadedFile(fname, file(fname).read(), content_type="application/zip")
