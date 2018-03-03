@@ -24,6 +24,7 @@ skeleton = """
        - dvaredis:/bitnami       
    webserver:
      image: akshayubhat/dva-auto:gpu
+     container_name: webserver
      env_file:
        - ../common.env
      environment:
