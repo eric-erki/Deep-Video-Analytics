@@ -30,6 +30,7 @@ SYNC_TASKS = {
     'perform_training':[],
     'perform_stream_capture':[],
     'perform_reduce':[],
+    'perform_test':[],
     'perform_detector_import':[],
 }
 
@@ -141,7 +142,9 @@ def get_model_pk_from_args(operation,args):
 
 def get_queue_name_and_operation(operation,args):
     global CURRENT_QUEUES
-    if operation in settings.TASK_NAMES_TO_QUEUE:
+    if operation == 'perform_test':
+        return args['queue'], operation
+    elif operation in settings.TASK_NAMES_TO_QUEUE:
         # Here we return directly since queue name is not per model
         return settings.TASK_NAMES_TO_QUEUE[operation], operation
     else:
