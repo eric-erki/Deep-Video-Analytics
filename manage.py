@@ -58,7 +58,11 @@ def start(deployment_type, gpu_count):
     compose_process.wait()
 
 
-def stop(deployment_type, gpu_count):
+def stop(deployment_type, gpu_count, clean=False):
+    if clean:
+        extra_args = ['-v',]
+    else:
+        extra_args = []
     if deployment_type == 'gpu':
         if gpu_count == 1:
             fname = 'docker-compose-gpu.yml'
@@ -68,7 +72,7 @@ def stop(deployment_type, gpu_count):
         fname = 'docker-compose.yml'
     print "Stopping deploy/{}/{}".format(deployment_type, fname)
     try:
-        subprocess.check_call(["docker-compose", '-f', fname, 'down'],
+        subprocess.check_call(["docker-compose", '-f', fname, 'down']+extra_args,
                               cwd=os.path.join(os.path.dirname(__file__), 'deploy/{}'.format(deployment_type)))
     except:
         raise SystemError("Could not stop containers")
@@ -89,16 +93,25 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
                         help="Select action out of { start | stop | clean | clean_restart "
-                             "| jupyter (view jupyter URL) | wsgi (view logs }")
-    parser.add_argument("--type", help="select deployment type { dev | cpu | gpu } . default is cpu", default="cpu")
+                             "| jupyter (view jupyter URL) | wsgi (view logs) }")
+    parser.add_argument("type", nargs='?', help="select deployment type { dev | cpu | gpu }. If unsure choose cpu. Only"
+                                                " required with start, stop, clean, restart, clean_restart")
     parser.add_argument("--gpus", help="For GPU mode select number of P100 GPUs: 1, 2, 4. default is 1", default=1,
                         type=int)
     args = parser.parse_args()
-    if args.action == 'stop' or args.action == 'restart':
+    if args.action == 'stop':
         stop(args.type, args.gpus)
-    if args.action == 'start' or args.action == 'restart':
+    elif args.action == 'start':
         start(args.type, args.gpus)
-    if args.action == 'jupyter':
+    elif args.action == 'clean':
+        stop(args.type, args.gpus, clean=True)
+    elif args.action == 'restart':
+        stop(args.type, args.gpus)
+        start(args.type, args.gpus)
+    elif args.action == 'clean_restart':
+        stop(args.type, args.gpus, clean=True)
+        start(args.type, args.gpus)
+    elif args.action == 'jupyter':
         view_notebook_url()
-    if args.action == 'wsgi':
+    elif args.action == 'wsgi':
         view_uwsgi_logs()
