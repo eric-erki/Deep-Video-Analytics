@@ -88,7 +88,8 @@ def view_uwsgi_logs():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
-                        help="Select action out of { start | stop | restart | jupyter (view jupyter URL) | wsgi (view logs }")
+                        help="Select action out of { start | stop | clean | clean_restart "
+                             "| jupyter (view jupyter URL) | wsgi (view logs }")
     parser.add_argument("--type", help="select deployment type { dev | cpu | gpu } . default is cpu", default="cpu")
     parser.add_argument("--gpus", help="For GPU mode select number of P100 GPUs: 1, 2, 4. default is 1", default=1,
                         type=int)
