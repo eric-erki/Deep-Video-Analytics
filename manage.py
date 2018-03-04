@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import copy
 import subprocess
 import time
 import urllib2
@@ -7,7 +8,7 @@ import os
 import webbrowser
 
 
-def start(deployment_type, gpu_count):
+def start(deployment_type, gpu_count, init_process):
     print "Checking if docker-compose is available"
     max_minutes = 20
     if deployment_type == 'gpu':
@@ -35,8 +36,10 @@ def start(deployment_type, gpu_count):
     try:
         args = ["docker-compose", '-f', fname, 'up', '-d']
         print " ".join(args)
+        envs = copy.deepcopy(os.environ)
+        envs['INIT_PROCESS'] = init_process
         compose_process = subprocess.Popen(args, cwd=os.path.join(os.path.dirname(__file__),
-                                                                  'deploy/{}'.format(deployment_type)))
+                                                                  'deploy/{}'.format(deployment_type)),env=envs)
     except:
         raise SystemError("Could not start container")
     while max_minutes:
@@ -98,19 +101,21 @@ if __name__ == '__main__':
                                                 " required with start, stop, clean, restart, clean_restart")
     parser.add_argument("--gpus", help="For GPU mode select number of P100 GPUs: 1, 2, 4. default is 1", default=1,
                         type=int)
+    parser.add_argument("--init_process", help="Initial DVAPQL JSON path",
+                        default="/root/DVA/configs/custom_defaults/init_process.json")
     args = parser.parse_args()
     if args.action == 'stop':
         stop(args.type, args.gpus)
     elif args.action == 'start':
-        start(args.type, args.gpus)
+        start(args.type, args.gpus, args.init_process)
     elif args.action == 'clean':
         stop(args.type, args.gpus, clean=True)
     elif args.action == 'restart':
         stop(args.type, args.gpus)
-        start(args.type, args.gpus)
+        start(args.type, args.gpus, args.init_process)
     elif args.action == 'clean_restart':
         stop(args.type, args.gpus, clean=True)
-        start(args.type, args.gpus)
+        start(args.type, args.gpus, args.init_process)
     elif args.action == 'jupyter':
         view_notebook_url()
     elif args.action == 'wsgi':

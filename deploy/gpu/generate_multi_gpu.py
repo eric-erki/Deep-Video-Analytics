@@ -30,7 +30,7 @@ skeleton = """
      environment:
        - LAUNCH_SERVER_NGINX=1
        - LAUNCH_NOTEBOOK=1
-       - INIT_PROCESS=/root/DVA/configs/custom_defaults/init_process.json
+       - INIT_PROCESS={INIT_PROCESS}
      command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80"
@@ -136,4 +136,5 @@ if __name__ == '__main__':
         with open(fname, 'w') as out:
             out.write(skeleton.format(gpu_workers="\n".join(blocks),
                                       global_model_gpu_id=config[fname]['global_model_gpu_id'],
-                                      global_model_memory_fraction=config[fname]['global_model_memory_fraction']))
+                                      global_model_memory_fraction=config[fname]['global_model_memory_fraction'],
+                                      INIT_PROCESS='${INIT_PROCESS}'))
