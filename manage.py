@@ -115,3 +115,5 @@ if __name__ == '__main__':
         view_notebook_url()
     elif args.action == 'wsgi':
         view_uwsgi_logs()
+    else:
+        raise NotImplementedError("{} and {}".format(args.action,args.type))

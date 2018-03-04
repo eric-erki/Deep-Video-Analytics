@@ -51,5 +51,5 @@ ENV PYTHONPATH /root/DVA/repos/:$PYTHONPATH
 ENV PYTHONPATH /root/DVA/repos/tf_ctpn_cpu/:$PYTHONPATH
 ENV PYTHONPATH /root/thirdparty/faiss:$PYTHONPATH
 WORKDIR "/root/DVA/server/"
-VOLUME ["/root/DVA/dva/media","/root/DVA/configs/custom_defaults"]
+VOLUME ["/root/media","/root/DVA/configs/custom_defaults"]
 EXPOSE 80
