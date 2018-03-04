@@ -313,9 +313,11 @@ class Retriever(models.Model):
     """
     EXACT = 'E'
     LOPQ = 'L'
+    FAISS = 'F'
     MODES = (
         (LOPQ, 'LOPQ'),
         (EXACT, 'Exact'),
+        (FAISS, 'FAISS'),
     )
     algorithm = models.CharField(max_length=1,choices=MODES,db_index=True,default=EXACT)
     name = models.CharField(max_length=200,default="")

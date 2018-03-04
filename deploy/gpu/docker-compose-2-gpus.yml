@@ -24,12 +24,13 @@
        - dvaredis:/bitnami       
    webserver:
      image: akshayubhat/dva-auto:gpu
+     container_name: webserver
      env_file:
        - ../common.env
      environment:
        - LAUNCH_SERVER_NGINX=1
        - LAUNCH_NOTEBOOK=1
-       - INIT_PROCESS=/root/DVA/configs/custom_defaults/init_process.json
+       - INIT_PROCESS=${INIT_PROCESS}
      command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80"

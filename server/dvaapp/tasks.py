@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-import subprocess, os, logging, io, sys, json, tempfile, gzip, copy
+import subprocess, os, logging, io, sys, json, tempfile, gzip, copy, time
 from urlparse import urlparse
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -56,7 +56,7 @@ def start_task(task_id, task, args, **kwargs):
         dt.save()
 
 
-def get_and_check_task(task_id,skip_started_check=False):
+def get_and_check_task(task_id, skip_started_check=False):
     global TASK_ID_TO_OBJECT
     if task_id in TASK_ID_TO_OBJECT:
         dt = TASK_ID_TO_OBJECT[task_id]
@@ -83,10 +83,10 @@ def get_and_check_task(task_id,skip_started_check=False):
 
 @app.task(track_started=True, name="perform_reduce")
 def perform_reduce(task_id):
-    dt = get_and_check_task(task_id,skip_started_check=True)
+    dt = get_and_check_task(task_id, skip_started_check=True)
     if dt is None:
         raise ValueError("task is None")
-    timeout_seconds = dt.arguments.get('timeout',settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
+    timeout_seconds = dt.arguments.get('timeout', settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
     reduce_waiter = Waiter(dt)
     if reduce_waiter.is_complete():
         next_ids = process_next(dt)
@@ -168,7 +168,7 @@ def perform_retrieval(task_id):
         for dr in queryset:
             vector = np.load(io.BytesIO(dr.vector))
             Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20),
-                                       region=dr.query_region)
+                                region=dr.query_region)
     else:
         raise NotImplementedError(target)
     mark_as_completed(dt)
@@ -217,7 +217,8 @@ def perform_video_segmentation(task_id):
     v.segment_video(task_id)
     if args.get('sync', False):
         next_args = {'rescale': args['rescale'], 'rate': args['rate']}
-        next_task = models.TEvent.objects.create(video=dv, operation='perform_video_decode', arguments=next_args, parent=dt)
+        next_task = models.TEvent.objects.create(video=dv, operation='perform_video_decode', arguments=next_args,
+                                                 parent=dt)
         perform_video_decode(next_task.pk)  # decode it synchronously for testing in Travis
         process_next(dt, sync=True, launch_next=False)
     else:
@@ -473,7 +474,7 @@ def perform_stream_capture(task_id):
     dt = get_and_check_task(task_id)
     if dt is None:
         return 0
-    l = LivestreamCapture(dt.video,dt)
+    l = LivestreamCapture(dt.video, dt)
     l.start_process()
     l.poll()
     l.finalize()
@@ -487,9 +488,9 @@ def perform_training_set_creation(task_id):
     if dt is None:
         return 0
     args = dt.arguments
-    if 'training_set_pk'in args:
+    if 'training_set_pk' in args:
         train_set = models.TrainingSet.objects.get(pk=args['training_set_pk'])
-    elif 'training_set_selector'in args:
+    elif 'training_set_selector' in args:
         train_set = models.TrainingSet.objects.get(**args['training_set_selector'])
     else:
         raise ValueError("Could not find training set {}".format(args))
@@ -499,7 +500,7 @@ def perform_training_set_creation(task_id):
         file_list = []
         filters = copy.deepcopy(train_set.source_filters)
         filters['approximate'] = False
-        queryset, target = task_shared.build_queryset(args=args,target="index_entries",filters=filters)
+        queryset, target = task_shared.build_queryset(args=args, target="index_entries", filters=filters)
         total_count = 0
         for di in queryset:
             file_list.append({
@@ -528,7 +529,7 @@ def perform_training(task_id):
     args = dt.arguments
     trainer = args['trainer']
     if trainer == 'LOPQ':
-        train_lopq(dt,args)
+        train_lopq(dt, args)
     elif trainer == 'YOLO':
         train_detector = subprocess.Popen(['fab', 'train_yolo:{}'.format(dt.pk)],
                                           cwd=os.path.join(os.path.abspath(__file__).split('tasks.py')[0], '../'))
@@ -539,6 +540,19 @@ def perform_training(task_id):
             dt.duration = (timezone.now() - dt.start_ts).total_seconds()
             dt.save()
             raise ValueError(dt.error_message)
+    process_next(dt)
+    mark_as_completed(dt)
+    return 0
+
+
+@app.task(track_started=True, name="perform_test")
+def perform_test(task_id):
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    args = dt.arguments
+    if 'sleep_seconds' in args:
+        time.sleep(args['sleep_seconds'])
     process_next(dt)
     mark_as_completed(dt)
     return 0

@@ -58,15 +58,16 @@ if __name__ == "__main__":
             if created:
                 dm.download()
     if 'INIT_PROCESS' in os.environ and DVAPQL.objects.count() == 0:
-        path = os.environ.get('INIT_PROCESS')
+        path = os.environ.get('INIT_PROCESS',None)
         p = DVAPQLProcess()
-        if not path.startswith('/root/DVA/configs/custom_defaults/'):
-            get_path_to_file(path,"temp.json")
-            path = 'temp.json'
-        try:
-            jspec = json.load(file(path))
-        except:
-            logging.exception("could not load : {}".format(path))
-        else:
-            p.create_from_json(jspec)
-            p.launch()
+        if path and path.strip():
+            if not path.startswith('/root/DVA/configs/custom_defaults/'):
+                get_path_to_file(path,"temp.json")
+                path = 'temp.json'
+            try:
+                jspec = json.load(file(path))
+            except:
+                logging.exception("could not load : {}".format(path))
+            else:
+                p.create_from_json(jspec)
+                p.launch()

@@ -10,6 +10,8 @@ logging.basicConfig(level=logging.INFO,
 
 
 if __name__ == '__main__':
+    if os.environ.get('ENABLE_DEBUG'):
+        subprocess.check_call(['pip','install','django-debug-toolbar'])
     if 'LAUNCH_SERVER' in os.environ or 'LAUNCH_SERVER_NGINX' in os.environ:
         subprocess.check_call(['./migrate.sh',])
         subprocess.check_call(['./init_fs.py', ])
