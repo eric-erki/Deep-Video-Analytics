@@ -101,7 +101,7 @@ if __name__ == '__main__':
                                                 " required with start, stop, clean, restart, clean_restart")
     parser.add_argument("--gpus", help="For GPU mode select number of P100 GPUs: 1, 2, 4. default is 1", default=1,
                         type=int)
-    parser.add_argument("--init_process", help="Initial DVAPQL JSON path",
+    parser.add_argument("--init_process", help="Initial DVAPQL path default: configs/custom_defaults/init_process.json",
                         default="/root/DVA/configs/custom_defaults/init_process.json")
     args = parser.parse_args()
     if args.action == 'stop':
