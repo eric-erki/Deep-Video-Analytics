@@ -97,8 +97,8 @@ if __name__ == '__main__':
     parser.add_argument("action",
                         help="Select action out of { start | stop | clean | clean_restart "
                              "| jupyter (view jupyter URL) | wsgi (view logs) }")
-    parser.add_argument("type", nargs='?', help="select deployment type { dev | cpu | gpu }. If unsure choose cpu. Only"
-                                                " required with start, stop, clean, restart, clean_restart")
+    parser.add_argument("type", nargs='?', help="select deployment type { dev | test_rfs | cpu | gpu  }. If unsure "
+                                                "choose cpu. Required for start, stop, clean, restart, clean_restart")
     parser.add_argument("--gpus", help="For GPU mode select number of P100 GPUs: 1, 2, 4. default is 1", default=1,
                         type=int)
     parser.add_argument("--init_process", help="Initial DVAPQL path default: configs/custom_defaults/init_process.json",
