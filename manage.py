@@ -27,7 +27,12 @@ def start(deployment_type, gpu_count, init_process):
     print "Pulling/Refreshing container images, first time it might take a while to download the image"
     try:
         if deployment_type == 'gpu':
-            subprocess.check_call(["nvidia-smi", '-pm', '1'])
+            print "Trying to set persistence mode for GPU"
+            try:
+                subprocess.check_call(["sudo","nvidia-smi", '-pm', '1'])
+            except:
+                print "Error could not set persistence mode pleae manually run 'sudo nvidia-smi -pm 1'"
+                pass
             subprocess.check_call(["docker", 'pull', 'akshayubhat/dva-auto:gpu'])
         else:
             subprocess.check_call(["docker", 'pull', 'akshayubhat/dva-auto:latest'])
