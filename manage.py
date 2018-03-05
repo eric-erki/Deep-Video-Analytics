@@ -20,8 +20,9 @@ def start(deployment_type, gpu_count, init_process):
         fname = 'docker-compose.yml'
     print "Starting deploy/{}/{}".format(deployment_type, fname)
     try:
+        # Fixed to dev since deployment directory does not matters for checking if docker-compose exists.
         subprocess.check_call(["docker-compose", 'ps'],
-                              cwd=os.path.join(os.path.dirname(__file__), 'deploy/{}'.format(deployment_type)))
+                              cwd=os.path.join(os.path.dirname(__file__), 'deploy/dev'))
     except:
         raise SystemError("Docker-compose is not available")
     print "Pulling/Refreshing container images, first time it might take a while to download the image"
