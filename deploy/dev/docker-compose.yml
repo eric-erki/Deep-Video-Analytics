@@ -26,7 +26,6 @@
      container_name: webserver
      env_file:
        - ../common.env
-       - ~/aws.env  # Set this to a file containing AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or remove this line
      environment:
        - LAUNCH_NOTEBOOK=1
        - LAUNCH_SERVER_NGINX=1
@@ -48,6 +47,8 @@
        - LAUNCH_SERVER=1 # This supersedes NGINX and launches django development server with auto-reload
        - ENABLE_DEBUG=1 # Enables django debug mode
        - INIT_PROCESS=${INIT_PROCESS}
+       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
      command: bash -c "cd /root/DVA/repos/tf_ctpn_cpu/lib/utils/ && ./make.sh && cd /root/DVA/server/ && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80"
