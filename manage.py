@@ -27,6 +27,7 @@ def start(deployment_type, gpu_count, init_process):
     print "Pulling/Refreshing container images, first time it might take a while to download the image"
     try:
         if deployment_type == 'gpu':
+            subprocess.check_call(["nvidia-smi", '-pm', '1'])
             subprocess.check_call(["docker", 'pull', 'akshayubhat/dva-auto:gpu'])
         else:
             subprocess.check_call(["docker", 'pull', 'akshayubhat/dva-auto:latest'])
