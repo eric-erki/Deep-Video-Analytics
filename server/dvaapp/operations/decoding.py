@@ -110,7 +110,7 @@ class VideoDecoder(object):
             df = Frame()
             df.frame_index = int(frame_index+ds.start_index)
             df.video_id = self.dvideo.pk
-            df.keyframe = True if frame_data['type'] == 'I' else False
+            df.keyframe = frame_data[0] == 'I'
             df.t = frame_data['ts']
             df.segment_index = ds.segment_index
             df.h = frame_height
