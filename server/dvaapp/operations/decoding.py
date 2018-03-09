@@ -54,7 +54,7 @@ class VideoDecoder(object):
             if line.strip():
                 entries = line.strip().split(',')
                 if len(entries) == self.field_count:
-                    frames[findex] = {'type': entries[self.pict_type_index], 'ts': float(entries[self.time_index])}
+                    frames[findex] = (entries[self.pict_type_index],float(entries[self.time_index]))
                     findex += 1
                 else:
                     errro_message = "format used {} \n {} (expected) != {} entries in {} \n {} ".format(self.csv_format,self.field_count,len(entries),segment_id, line)
@@ -94,7 +94,7 @@ class VideoDecoder(object):
         except:
             raise ValueError,"for {} could not run {}".format(self.dvideo.name,command)
         segment_frames_dict = ds.framelist
-        ordered_frames = sorted([(k,v) for k,v in segment_frames_dict.iteritems() if k%denominator == 0 or v['type'] == 'I'])
+        ordered_frames = sorted([(int(k),v) for k,v in segment_frames_dict.iteritems() if int(k) % denominator == 0 or v[0] == 'I'])
         frame_width, frame_height = 0, 0
         for i,f_id in enumerate(ordered_frames):
             frame_index, frame_data = f_id
