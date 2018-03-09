@@ -111,7 +111,7 @@ class VideoDecoder(object):
             df.frame_index = int(frame_index+ds.start_index)
             df.video_id = self.dvideo.pk
             df.keyframe = frame_data[0] == 'I'
-            df.t = frame_data['ts']
+            df.t = float(frame_data[1])
             df.segment_index = ds.segment_index
             df.h = frame_height
             df.event_id = event_id
