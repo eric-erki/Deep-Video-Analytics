@@ -523,9 +523,6 @@ class IndexEntries(models.Model):
     created = models.DateTimeField('date created', auto_now_add=True)
     event = models.ForeignKey(TEvent, null=True)
 
-    class Meta:
-        unique_together = ('video', 'features_file_name',)
-
     def __unicode__(self):
         return "{} in {} index by {}".format(self.detection_name, self.algorithm, self.video.name)
 
