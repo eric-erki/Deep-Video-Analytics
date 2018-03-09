@@ -259,11 +259,9 @@ def ensure_files(queryset, target):
     elif target == 'segments':
         for k in queryset:
             ensure(k.path(media_root=''),dirnames)
-            ensure(k.framelist_path(media_root=''), dirnames)
     elif target == 'indexes':
         for k in queryset:
             ensure(k.npy_path(media_root=''), dirnames)
-            ensure(k.entries_path(media_root=''), dirnames)
     else:
         raise NotImplementedError
 
@@ -313,15 +311,13 @@ def import_frame_regions_json(regions_json,video,event_id):
 
 def get_sync_paths(dirname,task_id):
     if dirname == 'indexes':
-        f = [k.entries_path(media_root="") for k in IndexEntries.objects.filter(event_id=task_id) if k.entries_file_name]
-        f += [k.npy_path(media_root="") for k in IndexEntries.objects.filter(event_id=task_id) if k.features_file_name]
+        f = [k.npy_path(media_root="") for k in IndexEntries.objects.filter(event_id=task_id) if k.features_file_name]
     elif dirname == 'frames':
         f = [k.path(media_root="") for k in Frame.objects.filter(event_id=task_id)]
     elif dirname == 'segments':
         f = []
         for k in Segment.objects.filter(event_id=task_id):
             f.append(k.path(media_root=""))
-            f.append(k.framelist_path(media_root=""))
     elif dirname == 'regions':
         e = TEvent.objects.get(pk=task_id)
         if e.operation == 'perform_transformation': # TODO: transformation events merely materialize, fix this

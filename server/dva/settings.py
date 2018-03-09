@@ -153,7 +153,7 @@ if 'DATABASE_URL' in os.environ:
     DATABASES = {}
     db_from_env = dj_database_url.config(conn_max_age=500)
     DATABASES['default'] = db_from_env
-elif 'CONTINUOUS_INTEGRATION' in os.environ:
+elif 'CONTINUOUS_INTEGRATION' in os.environ or sys.platform == 'darwin':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',

@@ -559,6 +559,7 @@ class VideoImporter(object):
         ds.video_id = self.video.pk
         ds.segment_index = s.get('segment_index', '-1')
         ds.start_time = s.get('start_time', 0)
+        ds.framelist = s.get('framelist', {})
         ds.end_time = s.get('end_time', 0)
         ds.metadata = s.get('metadata', "")
         if s.get('event', None):
@@ -620,7 +621,7 @@ class VideoImporter(object):
             os.rename(temp_file, converted)
 
     def import_index_entries(self):
-        previous_transformed = set()
+        # previous_transformed = set()
         for i in self.json['index_entries_list']:
             di = IndexEntries()
             di.video = self.video
@@ -633,25 +634,26 @@ class VideoImporter(object):
             di.approximate = i['approximate']
             di.created = i['created']
             di.features_file_name = i['features_file_name']
-            di.entries_file_name = i['entries_file_name']
-            di.detection_name = i['detection_name']
-            signature = "{}".format(di.entries_file_name)
-            if signature in previous_transformed:
-                logging.warning("repeated index entries found, skipping {}".format(signature))
+            if 'entries_file_name' in i:
+                entries = json.load(file('{}/indexes/{}'.format(self.root, i['entries_file_name'])))
             else:
-                previous_transformed.add(signature)
-                entries = json.load(file('{}/indexes/{}'.format(self.root, di.entries_file_name)))
-                transformed = []
-                for entry in entries:
-                    entry['video_primary_key'] = self.video.pk
-                    if 'detection_primary_key' in entry:
-                        entry['detection_primary_key'] = self.region_to_pk[entry['detection_primary_key']]
-                    if 'frame_primary_key' in entry:
-                        entry['frame_primary_key'] = self.frame_to_pk[entry['frame_primary_key']]
-                    transformed.append(entry)
-                with open('{}/indexes/{}'.format(self.root, di.entries_file_name), 'w') as output:
-                    json.dump(transformed, output)
-                di.save()
+                entries = i['entries']
+            di.detection_name = i['detection_name']
+            # signature = "{}".format(di.features_file_name)
+            # if signature in previous_transformed:
+            #     logging.warning("repeated index entries found, skipping {}".format(signature))
+            # else:
+            #     previous_transformed.add(signature)
+            transformed = []
+            for entry in entries:
+                entry['video_primary_key'] = self.video.pk
+                if 'detection_primary_key' in entry:
+                    entry['detection_primary_key'] = self.region_to_pk[entry['detection_primary_key']]
+                if 'frame_primary_key' in entry:
+                    entry['frame_primary_key'] = self.frame_to_pk[entry['frame_primary_key']]
+                transformed.append(entry)
+            di.entries =transformed
+            di.save()
 
     def bulk_import_frames(self):
         frame_regions = defaultdict(list)

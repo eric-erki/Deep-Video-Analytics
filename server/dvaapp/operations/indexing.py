@@ -103,11 +103,8 @@ class Indexers(object):
                         logging.exception("error creating {}".format(dirname))
                         pass
             feat_fname = "{}/{}/indexes/{}.npy".format(settings.MEDIA_ROOT,event.video_id,uid)
-            entries_fname = "{}/{}/indexes/{}.json".format(settings.MEDIA_ROOT,event.video_id,uid)
             with open(feat_fname, 'w') as feats:
                 np.save(feats, np.array(features))
-            with open(entries_fname, 'w') as entryfile:
-                json.dump(entries, entryfile)
             i = IndexEntries()
             i.video_id = event.video_id
             i.count = len(entries)
@@ -117,7 +114,7 @@ class Indexers(object):
             i.algorithm = di.name
             i.indexer = di
             i.indexer_shasum = di.shasum
-            i.entries_file_name = entries_fname.split('/')[-1]
+            i.entries = entries
             i.features_file_name = feat_fname.split('/')[-1]
             i.event_id = event.pk
             i.source_filter_json = event.arguments

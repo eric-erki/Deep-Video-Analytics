@@ -114,8 +114,6 @@ class LivestreamCapture(object):
         command = 'ffprobe -show_frames -select_streams v:0 -print_format csv {}'.format(segment_file_name)
         # logging.info(command)
         framelist = sp.check_output(shlex.split(command), cwd=self.segments_dir)
-        with open("{}.txt".format(segment_file_name.split('.')[0]), 'w') as framesout:
-            framesout.write(framelist)
         self.segment_frames_dict[segment_index] = self.parse_segment_framelist(segment_index, framelist)
         start_time = 0.0
         end_time = 0.0
@@ -123,6 +121,7 @@ class LivestreamCapture(object):
         ds.segment_index = segment_index
         ds.start_time = start_time
         ds.start_index = self.start_index
+        ds.framelist = self.segment_frames_dict[segment_index]
         self.start_index += len(self.segment_frames_dict[segment_index])
         ds.frame_count = len(self.segment_frames_dict[segment_index])
         ds.end_time = end_time
@@ -133,7 +132,6 @@ class LivestreamCapture(object):
         self.last_processed_segment_index = segment_index
         if settings.DISABLE_NFS:
             upload_file_to_remote(ds.path(""))
-            upload_file_to_remote(ds.framelist_path(""))
         self.dv.segments = self.last_processed_segment_index + 1
         self.dv.save()
         self.segments_batch.add(segment_index)

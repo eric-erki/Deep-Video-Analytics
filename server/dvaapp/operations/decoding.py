@@ -93,8 +93,7 @@ class VideoDecoder(object):
             _ = sp.check_output(shlex.split(command), stderr=sp.STDOUT)
         except:
             raise ValueError,"for {} could not run {}".format(self.dvideo.name,command)
-        with open(ds.framelist_path()) as framelist:
-            segment_frames_dict = self.parse_segment_framelist(ds.segment_index, framelist.read())
+        segment_frames_dict = ds.framelist
         ordered_frames = sorted([(k,v) for k,v in segment_frames_dict.iteritems() if k%denominator == 0 or v['type'] == 'I'])
         frame_width, frame_height = 0, 0
         for i,f_id in enumerate(ordered_frames):
@@ -142,14 +141,13 @@ class VideoDecoder(object):
                 command = 'ffprobe -show_frames -select_streams v:0 -print_format csv {}'.format(segment_file_name)
                 # logging.info(command)
                 framelist= sp.check_output(shlex.split(command), cwd=segments_dir)
-                with open("{}/{}.txt".format(segments_dir,segment_file_name.split('.')[0]),'w') as framesout:
-                    framesout.write(framelist)
                 self.segment_frames_dict[segment_id] = self.parse_segment_framelist(segment_id,framelist)
                 logging.warning("Processing line {}".format(line))
                 start_time = float(start_time)
                 end_time = float(end_time)
                 ds = Segment()
                 ds.segment_index = segment_id
+                ds.framelist = self.segment_frames_dict[segment_id]
                 ds.start_time = start_time
                 ds.start_index = start_index
                 start_index += len(self.segment_frames_dict[segment_id])

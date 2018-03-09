@@ -367,6 +367,7 @@ class Segment(models.Model):
     metadata = models.TextField(default="{}")
     frame_count = models.IntegerField(default=0)
     start_index = models.IntegerField(default=0)
+    framelist = JSONField(blank=True,null=True)
     start_frame = models.ForeignKey(Frame,null=True,related_name="segment_start")
     end_frame = models.ForeignKey(Frame, null=True,related_name="segment_end")
 
@@ -381,12 +382,6 @@ class Segment(models.Model):
             return "{}/{}/segments/{}.mp4".format(media_root, self.video_id, self.segment_index)
         else:
             return "{}/{}/segments/{}.mp4".format(settings.MEDIA_ROOT, self.video_id, self.segment_index)
-
-    def framelist_path(self, media_root=None):
-        if not (media_root is None):
-            return "{}/{}/segments/{}.txt".format(media_root, self.video_id, self.segment_index)
-        else:
-            return "{}/{}/segments/{}.txt".format(settings.MEDIA_ROOT, self.video_id, self.segment_index)
 
 
 class Region(models.Model):
@@ -514,7 +509,8 @@ class QueryRegionResults(models.Model):
 class IndexEntries(models.Model):
     video = models.ForeignKey(Video)
     features_file_name = models.CharField(max_length=100)
-    entries_file_name = models.CharField(max_length=100)
+    entries = JSONField(blank=True,null=True)
+    metadata = JSONField(blank=True,null=True)
     algorithm = models.CharField(max_length=100)
     indexer = models.ForeignKey(TrainedModel, null=True)
     indexer_shasum = models.CharField(max_length=40)
@@ -528,7 +524,7 @@ class IndexEntries(models.Model):
     event = models.ForeignKey(TEvent, null=True)
 
     class Meta:
-        unique_together = ('video', 'entries_file_name',)
+        unique_together = ('video', 'features_file_name',)
 
     def __unicode__(self):
         return "{} in {} index by {}".format(self.detection_name, self.algorithm, self.video.name)
@@ -538,12 +534,6 @@ class IndexEntries(models.Model):
             return "{}/{}/indexes/{}".format(media_root, self.video_id, self.features_file_name)
         else:
             return "{}/{}/indexes/{}".format(settings.MEDIA_ROOT, self.video_id, self.features_file_name)
-
-    def entries_path(self, media_root=None):
-        if not (media_root is None):
-            return "{}/{}/indexes/{}".format(media_root, self.video_id, self.entries_file_name)
-        else:
-            return "{}/{}/indexes/{}".format(settings.MEDIA_ROOT, self.video_id, self.entries_file_name)
 
     def load_index(self,media_root=None):
         if media_root is None:
@@ -560,9 +550,7 @@ class IndexEntries(models.Model):
             vectors = np.load(self.npy_path(media_root))
         else:
             vectors = None
-        fs.ensure(self.entries_path(media_root=''),dirnames,media_root)
-        entries = json.load(file(self.entries_path(media_root)))
-        return vectors,entries
+        return vectors,self.entries
 
 
 class Tube(models.Model):
