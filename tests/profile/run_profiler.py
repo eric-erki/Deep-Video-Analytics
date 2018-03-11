@@ -25,10 +25,6 @@ if __name__ == '__main__':
         store_token_for_testing()
     token = json.loads(file('creds.json').read())['token']
     context = context.DVAContext(server=server,token=token)
-    queries = []
-    for fname in glob.glob('processes/*.json'):
-        q = query.DVAQuery(json.load(file(fname)))
-        q.execute(context)
-        queries.append(q)
-    for q in queries:
-        q.wait()
+    q = query.DVAQuery(json.load(file("profiler_process.json")))
+    q.execute(context)
+    q.wait()
