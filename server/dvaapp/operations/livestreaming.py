@@ -64,7 +64,6 @@ class LivestreamCapture(object):
         self.pict_type_index = self.csv_format['pict_type']
         self.time_index = self.csv_format['best_effort_timestamp_time']
 
-
     def start_process(self):
         self.start_time = time.time()
         args = ['./scripts/consume_livestream.sh',self.path,self.segments_dir]
@@ -81,7 +80,7 @@ class LivestreamCapture(object):
             if line.strip():
                 entries = line.strip().split(',')
                 if len(entries) == self.field_count:
-                    frames[findex] = {'type': entries[self.pict_type_index], 'ts': float(entries[self.time_index])}
+                    frames[findex] = (entries[self.pict_type_index],float(entries[self.time_index]))
                     findex += 1
                 else:
                     errro_message = "format used {} \n {} (expected) != {} entries in {} \n {} ".format(self.csv_format,self.field_count,len(entries),segment_id, line)
