@@ -1,7 +1,6 @@
 from django.conf import settings
 import os
 import shlex
-import uuid
 import boto3
 import shutil
 import errno
@@ -32,6 +31,13 @@ else:
     S3_MODE = False
     GS_MODE = False
     BUCKET = None
+
+if 'DO_ACCESS_KEY_ID' in os.environ and 'DO_SECRET_ACCESS_KEY' and os.environ:
+    do_session = boto3.session.Session()
+    do_client = do_session.client('s3',region_name=os.environ.get('DO_REGION','nyc3'),
+                            endpoint_url='https://{}.digitaloceanspaces.com'.format(os.environ.get('DO_REGION','nyc3')),
+                            aws_access_key_id=os.environ['DO_ACCESS_KEY_ID'],
+                            aws_secret_access_key=os.environ['DO_SECRET_ACCESS_KEY'])
 
 
 def cacheable(path):
@@ -186,8 +192,12 @@ def get_path_to_file(path,local_path):
         remote_bucket = GS.get_bucket(bucket_name)
         with open(local_path,'w') as fout:
             remote_bucket.get_blob(key).download_to_file(fout)
+    elif fs_type == 'do' and not path.endswith('/'):
+        bucket_name = path[5:].split('/')[0]
+        key = '/'.join(path[5:].split('/')[1:])
+        do_client.download_file(bucket_name,key,local_path)
     else:
-        raise NotImplementedError("importing S3/GCS directories disabled or Unknown file system {}".format(path))
+        raise NotImplementedError("importing S3/GCS/DO directories disabled or Unknown file system {}".format(path))
 
 
 def upload_file_to_remote(fpath,cache=True):

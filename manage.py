@@ -6,6 +6,23 @@ import time
 import urllib2
 import os
 import webbrowser
+import shlex
+
+
+def launch_gcp():
+    command = 'gcloud beta compute --project "{project}" instances create "{name}" ' \
+              '--zone "us-west1-b" --machine-type "custom-12-46080" --subnet "default" --maintenance-policy' \
+              ' "TERMINATE" --service-account "{service-_ccount}"' \
+              ' --scopes "https://www.googleapis.com/auth/devstorage.read_only",' \
+              '"https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring.write",' \
+              '"https://www.googleapis.com/auth/servicecontrol",' \
+              '"https://www.googleapis.com/auth/service.management.readonly",' \
+              '"https://www.googleapis.com/auth/trace.append" ' \
+              '--accelerator type=nvidia-tesla-p100,count=2 --min-cpu-platform "Automatic" --image "{image_name}" ' \
+              '--image-project "{image_project}" --boot-disk-size "128" ' \
+              '--boot-disk-type "pd-ssd" --boot-disk-device-name "{name}"'
+    print "running {}".format(command)
+    subprocess.check_call(shlex.split(command))
 
 
 def start(deployment_type, gpu_count, init_process):
