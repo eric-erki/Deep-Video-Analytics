@@ -116,11 +116,153 @@ def view_uwsgi_logs():
         ["docker", "exec", "-it", "webserver", "bash", '-c ', "'cat /var/log/supervisor/app-*'"])
 
 
+def generate_multi_gpu_compose():
+    skeleton = """
+     version: '3'
+     services:
+       db:
+         image: postgres:9.6.6
+         container_name: dva-pg
+         volumes:
+          - dvapgdata:/var/lib/postgresql/data
+         env_file:
+           - ../common.env
+       rabbit:
+         image: rabbitmq
+         container_name: dva-rmq
+         env_file:
+           - ../common.env
+         volumes:
+           - dvarabbit:/var/lib/rabbitmq
+       redis:
+         image: bitnami/redis:latest
+         container_name: dva-redis
+         env_file:
+           - ../common.env
+         volumes:
+           - dvaredis:/bitnami       
+       webserver:
+         image: akshayubhat/dva-auto:gpu
+         container_name: webserver
+         env_file:
+           - ../common.env
+         environment:
+           - LAUNCH_SERVER_NGINX=1
+           - LAUNCH_NOTEBOOK=1
+           - INIT_PROCESS={INIT_PROCESS}
+         command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
+         ports:
+           - "127.0.0.1:8000:80"
+           - "127.0.0.1:8888:8888"
+         depends_on:
+           - db
+           - redis       
+           - rabbit
+         volumes:
+           - dvadata:/root/media
+       non-gpu-workers:
+         image: akshayubhat/dva-auto:gpu
+         env_file:
+           - ../common.env
+         environment:
+           - LAUNCH_BY_NAME_retriever_inception=1
+           - LAUNCH_BY_NAME_retriever_facenet=1
+           - LAUNCH_Q_qextract=1
+           - LAUNCH_Q_qstreamer=1
+           - LAUNCH_SCHEDULER=1
+           - LAUNCH_Q_GLOBAL_RETRIEVER=1
+         command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
+         depends_on:
+           - db
+           - redis       
+           - rabbit
+         volumes:
+           - dvadata:/root/media
+    {gpu_workers}
+       global-model:
+         image: akshayubhat/dva-auto:gpu
+         env_file:
+           - ../common.env
+         environment:
+           - GPU_AVAILABLE=1     
+           - NVIDIA_VISIBLE_DEVICES={global_model_gpu_id}
+           - GPU_MEMORY={global_model_memory_fraction}
+           - LAUNCH_Q_GLOBAL_MODEL=1
+         command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
+         depends_on:
+           - db
+           - redis       
+           - rabbit
+         volumes:
+           - dvadata:/root/media
+     volumes:
+      dvapgdata:
+      dvadata:
+      dvarabbit:
+      dvaredis:
+    """
+
+    block = """   {worker_name}:
+         image: akshayubhat/dva-auto:gpu
+         env_file:
+           - ../common.env
+         environment:
+           - GPU_AVAILABLE=1
+           - NVIDIA_VISIBLE_DEVICES={gpu_id}
+           - GPU_MEMORY={memory_fraction}
+           - {env_key}={env_value}
+         command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
+         depends_on:
+           - db
+           - redis       
+           - rabbit
+         volumes:
+           - dvadata:/root/media"""
+
+    config = {
+        "deploy/gpu/docker-compose-2-gpus.yml": {"global_model_gpu_id": 0,
+                                      "global_model_memory_fraction": 0.1,
+                                      "workers":
+                                          [(0, 0.25, "LAUNCH_BY_NAME_indexer_inception", "inception"),
+                                           (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
+                                           (0, 0.5, "LAUNCH_BY_NAME_detector_coco", "coco"),
+                                           (1, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
+                                           (1, 0.19, "LAUNCH_BY_NAME_detector_face", "face"),
+                                           (1, 0.15, "LAUNCH_BY_NAME_indexer_facenet", "facenet"),
+                                           (1, 0.15, "LAUNCH_BY_NAME_analyzer_tagger", "tagger")]
+                                      },
+        "deploy/gpu/docker-compose-4-gpus.yml": {"global_model_gpu_id": 2,
+                                      "global_model_memory_fraction": 0.29,
+                                      "workers":
+                                          [(0, 0.3, "LAUNCH_BY_NAME_indexer_inception", "inception"),
+                                           (0, 0.4, "LAUNCH_BY_NAME_analyzer_tagger", "tagger"),
+                                           (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
+                                           (1, 1.0, "LAUNCH_BY_NAME_detector_coco", "coco"),
+                                           (2, 0.7, "LAUNCH_BY_NAME_detector_face", "face"),
+                                           (3, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
+                                           (3, 0.45, "LAUNCH_BY_NAME_indexer_facenet", "facenet")
+                                           ]
+                                      },
+    }
+    for fname in config:
+        blocks = []
+        worker_specs = config[fname]['workers']
+        for gpu_id, fraction, env_key, worker_name, in worker_specs:
+            blocks.append(
+                block.format(worker_name=worker_name, gpu_id=gpu_id, memory_fraction=fraction, env_key=env_key,
+                             env_value=1))
+        with open(fname, 'w') as out:
+            out.write(skeleton.format(gpu_workers="\n".join(blocks),
+                                      global_model_gpu_id=config[fname]['global_model_gpu_id'],
+                                      global_model_memory_fraction=config[fname]['global_model_memory_fraction'],
+                                      INIT_PROCESS='${INIT_PROCESS}'))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
                         help="Select action out of { start | stop | clean | clean_restart "
-                             "| jupyter (view jupyter URL) | wsgi (view logs) }")
+                             "| jupyter (view jupyter URL) | wsgi (view logs) | generate_multi_gpu_compose }")
     parser.add_argument("type", nargs='?', help="select deployment type { dev | test_rfs | cpu | gpu  }. If unsure "
                                                 "choose cpu. Required for start, stop, clean, restart, clean_restart")
     parser.add_argument("--gpus", help="For GPU mode select number of P100 GPUs: 1, 2, 4. default is 1", default=1,
@@ -144,5 +286,7 @@ if __name__ == '__main__':
         view_notebook_url()
     elif args.action == 'wsgi':
         view_uwsgi_logs()
+    elif args.action == 'generate_multi_gpu_compose':
+        generate_multi_gpu_compose()
     else:
         raise NotImplementedError("{} and {}".format(args.action,args.type))
