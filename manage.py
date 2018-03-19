@@ -25,6 +25,10 @@ def launch_gcp():
     subprocess.check_call(shlex.split(command))
 
 
+def load_envs(path):
+    return { line.split('=')[0]:line.split('=')[1] for line in file(path)}
+
+
 def start(deployment_type, gpu_count, init_process):
     print "Checking if docker-compose is available"
     max_minutes = 20
@@ -62,8 +66,12 @@ def start(deployment_type, gpu_count, init_process):
         print " ".join(args)
         envs = copy.deepcopy(os.environ)
         envs['INIT_PROCESS'] = init_process
+        if os.path.isfile(os.path.expanduser('~/aws.env')):
+            envs.update(load_envs(os.path.expanduser('~/aws.env')))
+        if os.path.isfile(os.path.expanduser('~/do.env')):
+            envs.update(load_envs(os.path.expanduser('~/do.env')))
         compose_process = subprocess.Popen(args, cwd=os.path.join(os.path.dirname(__file__),
-                                                                  'deploy/{}'.format(deployment_type)),env=envs)
+                                                                  'deploy/{}'.format(deployment_type)), env=envs)
     except:
         raise SystemError("Could not start container")
     while max_minutes:
