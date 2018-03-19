@@ -291,7 +291,7 @@ def perform_export(task_id):
     if video_id:
         dv = models.Video.objects.get(pk=video_id)
     else:
-        dv = models.Video.objects.get(**dt.arguments['selector'])
+        raise ValueError("video_id is null")
     if settings.DISABLE_NFS:
         fs.download_video_from_remote_to_local(dv)
     try:
@@ -300,6 +300,11 @@ def perform_export(task_id):
         local_path = "{}/exports/{}".format(settings.MEDIA_ROOT,filename)
         path = dt.arguments.get('path',None)
         if path:
+            if not path.endswith('dva_export.zip'):
+                if path.endswith('.zip'):
+                    path = path.replace('.zip', '.dva_export.zip')
+                else:
+                    path = '{}.dva_export.zip'.format(path)
             fs.upload_file_to_path(local_path,path)
             os.remove(local_path)
         else:
