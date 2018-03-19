@@ -200,6 +200,25 @@ def get_path_to_file(path,local_path):
         raise NotImplementedError("importing S3/GCS/DO directories disabled or Unknown file system {}".format(path))
 
 
+def upload_file_to_path(local_path,remote_path):
+    fs_type = remote_path[:2]
+    bucket_name = remote_path[5:].split('/')[0]
+    key = '/'.join(remote_path[5:].split('/')[1:])
+    if remote_path.endswith('/'):
+        raise NotImplementedError("key/remote-path cannot end in a /")
+    elif fs_type == 's3':
+        with open(local_path,'rb') as body:
+            S3.Object(bucket_name,key).put(Body=body)
+    elif fs_type == 'gs':
+        remote_bucket = GS.get_bucket(bucket_name)
+        with open(local_path,'w') as flocal:
+            remote_bucket.get_blob(key).upload_from_file(flocal)
+    elif fs_type == 'do':
+        do_client.upload_file(local_path,bucket_name,key)
+    else:
+        raise NotImplementedError("Unknown cloud file system {}".format(remote_path))
+
+
 def upload_file_to_remote(fpath,cache=True):
     if cache:
         cache_path(fpath)
