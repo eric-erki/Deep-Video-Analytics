@@ -26,7 +26,7 @@ def launch_gcp():
 
 
 def load_envs(path):
-    return { line.split('=')[0]:line.split('=')[1] for line in file(path)}
+    return { line.split('=')[0]:line.split('=')[1].strip() for line in file(path)}
 
 
 def start(deployment_type, gpu_count, init_process):
