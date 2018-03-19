@@ -288,7 +288,10 @@ def perform_export(task_id):
     if dt is None:
         return 0
     video_id = dt.video_id
-    dv = models.Video.objects.get(pk=video_id)
+    if video_id:
+        dv = models.Video.objects.get(pk=video_id)
+    else:
+        dv = models.Video.objects.get(**dt.arguments['selector'])
     if settings.DISABLE_NFS:
         fs.download_video_from_remote_to_local(dv)
     try:
@@ -296,9 +299,7 @@ def perform_export(task_id):
         dt.arguments['file_name'] = local_path
         path = dt.arguments.get('path',None)
         if path:
-            returncode = fs.upload_file_to_path(local_path,path)
-            if returncode != 0:
-                raise ValueError("return code != 0")
+            fs.upload_file_to_path(local_path,path)
     except:
         dt.errored = True
         dt.error_message = "Could not export"
