@@ -291,14 +291,12 @@ def perform_export(task_id):
     dv = models.Video.objects.get(pk=video_id)
     if settings.DISABLE_NFS:
         fs.download_video_from_remote_to_local(dv)
-    destination = dt.arguments['destination']
     try:
-        if destination == "FILE":
-            file_name = task_shared.export_file(dv, export_event_pk=dt.pk)
-            dt.arguments['file_name'] = file_name
-        elif destination == "S3":
-            path = dt.arguments['path']
-            returncode = task_shared.perform_s3_export(dv, path, export_event_pk=dt.pk)
+        local_path = task_shared.export_file(dv, export_event_pk=dt.pk)
+        dt.arguments['file_name'] = local_path
+        path = dt.arguments.get('path',None)
+        if path:
+            returncode = fs.upload_file_to_path(local_path,path)
             if returncode != 0:
                 raise ValueError("return code != 0")
     except:

@@ -40,24 +40,6 @@ def launch_worker(queue_name, worker_name):
     return message
 
 
-def perform_s3_export(dv,path,export_event_pk=None):
-    cwd_path = "{}/{}/".format(settings.MEDIA_ROOT, dv.pk)
-    a = serializers.VideoExportSerializer(instance=dv)
-    data = copy.deepcopy(a.data)
-    data['labels'] = serializers.serialize_video_labels(dv)
-    if export_event_pk:
-        data['export_event_pk'] = export_event_pk
-    with file("{}/{}/table_data.json".format(settings.MEDIA_ROOT, dv.pk), 'w') as output:
-        json.dump(data, output)
-    if path.startswith('s3://'):
-        upload = subprocess.Popen(args=["aws", "s3", "sync",'--quiet', ".",path],cwd=cwd_path)
-        upload.communicate()
-        upload.wait()
-        return upload.returncode
-    elif path.startswith('gs://'):
-        raise NotImplementedError
-
-
 def import_path(dv,path,export=False,framelist=False):
     if export:
         dv.create_directory(create_subdirs=False)
