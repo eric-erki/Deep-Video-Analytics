@@ -163,7 +163,6 @@ def get_path_to_file(path,local_path):
             path = "gs://{}{}".format(settings.MEDIA_BUCKET,path)
         else:
             raise ValueError("NFS disabled but neither GS or S3 enabled.")
-    fs_type = path[:2]
     # avoid maliciously crafted relative imports outside media root
     if path.startswith('/ingest') and '..' not in path:
         shutil.move(os.path.join(settings.MEDIA_ROOT, path.strip('/')),local_path)
@@ -181,23 +180,25 @@ def get_path_to_file(path,local_path):
                 if chunk:
                     f.write(chunk)
         r.close()
-    elif fs_type == 's3' and not path.endswith('/'):
+    elif path.endswith('/'):
+        raise NotImplementedError("Importing directories disabled {}".format(path))
+    elif path.startswith('s3'):
         bucket_name = path[5:].split('/')[0]
         key = '/'.join(path[5:].split('/')[1:])
         remote_bucket = S3.Bucket(bucket_name)
         remote_bucket.download_file(key, local_path)
-    elif path.startswith('gs') and not path.endswith('/'):
+    elif path.startswith('gs'):
         bucket_name = path[5:].split('/')[0]
         key = '/'.join(path[5:].split('/')[1:])
         remote_bucket = GS.get_bucket(bucket_name)
         with open(local_path,'w') as fout:
             remote_bucket.get_blob(key).download_to_file(fout)
-    elif fs_type == 'do' and not path.endswith('/'):
+    elif path.startswith('do'):
         bucket_name = path[5:].split('/')[0]
         key = '/'.join(path[5:].split('/')[1:])
         do_client.download_file(bucket_name,key,local_path)
     else:
-        raise NotImplementedError("importing S3/GCS/DO directories disabled or Unknown file system {}".format(path))
+        raise NotImplementedError("Unknown file system {}".format(path))
 
 
 def upload_file_to_path(local_path,remote_path):
