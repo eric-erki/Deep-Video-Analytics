@@ -33,7 +33,7 @@
        - DISABLE_NFS=1
        - LAUNCH_SERVER_NGINX=1
        - INIT_PROCESS=${INIT_PROCESS}
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 10 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80" # Since Docker messes up iptables, ufw has no effect as a result bind to localhost and tunnel / Port forward through SSH
        - "127.0.0.1:8888:8888" # Since Docker messes up iptables, ufw has no effect as a result bind to localhost and tunnel / Port forward through SSH
@@ -51,7 +51,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_Q_qextract=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -66,7 +66,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_Q_qtrainer=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -81,7 +81,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_SCHEDULER=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -96,7 +96,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_indexer_inception=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -111,7 +111,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_indexer_facenet=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -126,7 +126,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_detector_coco=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -141,7 +141,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_analyzer_crnn=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -156,7 +156,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_analyzer_tagger=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -171,7 +171,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_detector_face=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -186,7 +186,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_BY_NAME_detector_textbox=1
-     command: bash -c "sleep 60 && git reset --hard && git checkout --track origin/master && ./start_container.py"
+     command: bash -c "sleep 60 && git reset --hard && git checkout --track origin/master && git pull && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -201,7 +201,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_Q_GLOBAL_MODEL=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -216,7 +216,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_Q_qstreamer=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db
@@ -231,7 +231,7 @@
      environment:
        - DISABLE_NFS=1
        - LAUNCH_Q_GLOBAL_RETRIEVER=1
-     command: bash -c "git reset --hard && git checkout --track origin/master && sleep 60 && ./start_container.py"
+     command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
      depends_on:
        - redis
        - db

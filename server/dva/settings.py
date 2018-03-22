@@ -22,12 +22,8 @@ if DISABLE_NFS and (MEDIA_BUCKET is None):
     raise EnvironmentError("Either an NFS/Data volume or a remote S3 bucket is required!")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if 'SECRET_KEY' in os.environ:
-    SECRET_KEY = os.environ['SECRET_KEY']
-    AUTH_DISABLED = False
-else:
-    SECRET_KEY = 'changemeabblasdasbdbrp2$j&^'  # change this in prod
-    AUTH_DISABLED = os.environ.get('AUTH_DISABLED', False)
+SECRET_KEY = os.environ['SECRET_KEY']
+AUTH_DISABLED = os.environ.get('AUTH_DISABLED', False)
 
 INTERNAL_IPS = ['localhost','127.0.0.1']
 
