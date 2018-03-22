@@ -87,6 +87,12 @@ def load_dva_export_file(dv):
 
 
 def export_file(video_obj,export_event_pk=None):
+    """
+    TODO(akshay) Fix this to enable concurrenct exports
+    :param video_obj:
+    :param export_event_pk:
+    :return:
+    """
     video_id = video_obj.pk
     file_name = '{}_{}.dva_export.zip'.format(video_id, int(calendar.timegm(time.gmtime())))
     try:
