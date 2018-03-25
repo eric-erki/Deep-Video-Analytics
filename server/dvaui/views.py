@@ -9,7 +9,7 @@ from .forms import UploadFileForm, YTVideoForm, AnnotationForm
 from dvaapp.models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, \
     Tube,  Segment, FrameLabel, SegmentLabel, \
     VideoLabel, RegionLabel, TubeLabel, Label, ManagementAction, \
-    TrainedModel, Retriever, SystemState, QueryRegion, QueryRegionResults, Worker, TrainingSet
+    TrainedModel, Retriever, SystemState, QueryRegion, QueryRegionResults, Worker, TrainingSet, Export
 from .models import StoredDVAPQL, ExternalServer
 from dva.celery import app
 from django.contrib.auth.models import User
@@ -54,7 +54,7 @@ class VideoList(UserPassesTestMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(VideoList, self).get_context_data(**kwargs)
-        context['exports'] = TEvent.objects.all().filter(operation='perform_export')
+        context['exports'] = Export.objects.all().filter(export_type=Export.VIDEO_EXPORT)
         return context
 
     def test_func(self):
