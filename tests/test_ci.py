@@ -58,8 +58,7 @@ if __name__ == '__main__':
         temp = TEvent.objects.create(arguments={'video_selector':{'pk':v.pk}})
         perform_export(temp.pk)
         fname = Export.objects.get(event=temp).url
-        f = SimpleUploadedFile(fname, file("{}/{}".format(settings.MEDIA_ROOT, fname)).read(),
-                               content_type="application/zip")
+        f = SimpleUploadedFile(fname, file(fname).read(), content_type="application/zip")
         print fname
         vimported = handle_uploaded_file(f, fname)
         perform_import(TEvent.objects.get(video=vimported, operation='perform_import').pk)
