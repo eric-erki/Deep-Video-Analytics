@@ -5,8 +5,8 @@ from django.conf import settings
 from PIL import Image
 from . import serializers
 from dva.in_memory import redis_client
-from .fs import ensure, upload_file_to_remote, upload_video_to_remote, get_path_to_file
-from dva.celery import app
+from .fs import ensure, upload_file_to_remote, upload_video_to_remote, get_path_to_file, \
+    download_video_from_remote_to_local, upload_file_to_path
 
 
 def pid_exists(pid):
@@ -86,7 +86,9 @@ def load_dva_export_file(dv):
     os.remove(source_zip)
 
 
-def export_video_to_file(video_obj):
+def export_video_to_file(video_obj,export,task_obj):
+    if settings.DISABLE_NFS:
+        download_video_from_remote_to_local(video_obj)
     video_id = video_obj.pk
     export_uuid = str(uuid.uuid4())
     file_name = '{}.dva_export.zip'.format(export_uuid)
@@ -105,7 +107,21 @@ def export_video_to_file(video_obj):
                               cwd='{}/exports/'.format(settings.MEDIA_ROOT))
     zipper.wait()
     shutil.rmtree("{}/exports/{}".format(settings.MEDIA_ROOT, export_uuid))
-    return file_name
+    local_path = "{}/exports/{}".format(settings.MEDIA_ROOT, file_name)
+    path = task_obj.arguments.get('path', None)
+    if path:
+        if not path.endswith('dva_export.zip'):
+            if path.endswith('.zip'):
+                path = path.replace('.zip', '.dva_export.zip')
+            else:
+                path = '{}.dva_export.zip'.format(path)
+        upload_file_to_path(local_path, path)
+        os.remove(local_path)
+        export.url = path
+    else:
+        if settings.DISABLE_NFS:
+            upload_file_to_remote("/exports/{}".format(file_name))
+            export.url = "/exports/{}".format(file_name)
 
 
 def build_queryset(args,video_id=None,query_id=None,target=None,filters=None):

@@ -288,34 +288,20 @@ def perform_export(task_id):
     if dt is None:
         return 0
     args = dt.arguments
-    if 'video_selector' in args:
-        dv = models.Video.objects.get(pk=models.Video.objects.get(**args['video_selector']))
-    else:
-        raise ValueError("video_selector is null")
     de = models.Export()
-    de.export_type = de.VIDEO_EXPORT
-    if settings.DISABLE_NFS:
-        fs.download_video_from_remote_to_local(dv)
+    de.event = dt
     try:
-        filename = task_shared.export_video_to_file(dv)
-        dt.arguments['file_name'] = filename
-        local_path = "{}/exports/{}".format(settings.MEDIA_ROOT,filename)
-        path = dt.arguments.get('path',None)
-        if path:
-            if not path.endswith('dva_export.zip'):
-                if path.endswith('.zip'):
-                    path = path.replace('.zip', '.dva_export.zip')
-                else:
-                    path = '{}.dva_export.zip'.format(path)
-            fs.upload_file_to_path(local_path,path)
-            os.remove(local_path)
-            de.url = path
+        if 'video_selector' in args:
+            dv = models.Video.objects.get(**args['video_selector'])
+            de.export_type = de.VIDEO_EXPORT
+            task_shared.export_video_to_file(dv,de,dt)
+            de.save()
+        elif 'model_selector' in args:
+            raise NotImplementedError
+        elif 'training_set_selector' in args:
+            raise NotImplementedError
         else:
-            if settings.DISABLE_NFS:
-                fs.upload_file_to_remote("/exports/{}".format(filename))
-            de.url = "/exports/{}".format(filename)
-        de.event = dt
-        de.save()
+            raise ValueError("selector not found")
     except:
         dt.errored = True
         dt.error_message = "Could not export"
