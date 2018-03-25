@@ -37,7 +37,6 @@ docs/experiments/yolo/yolo_test.zip
 /client/dist/
 /client/dvaclient.egg-info/
 /deploy/kube/secrets.yml
-/deploy/kube/config.py
 /deploy/static/
 /docs/marketing/
 /tests/training/facenet.npy

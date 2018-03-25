@@ -26,7 +26,7 @@ def launch_gcp():
 
 
 def load_envs(path):
-    return { line.split('=')[0]:line.split('=')[1].strip() for line in file(path)}
+    return {line.split('=')[0]: line.split('=')[1].strip() for line in file(path)}
 
 
 def start(deployment_type, gpu_count, init_process):
@@ -51,7 +51,7 @@ def start(deployment_type, gpu_count, init_process):
         if deployment_type == 'gpu':
             print "Trying to set persistence mode for GPU"
             try:
-                subprocess.check_call(["sudo","nvidia-smi", '-pm', '1'])
+                subprocess.check_call(["sudo", "nvidia-smi", '-pm', '1'])
             except:
                 print "Error could not set persistence mode pleae manually run 'sudo nvidia-smi -pm 1'"
                 pass
@@ -95,7 +95,7 @@ def start(deployment_type, gpu_count, init_process):
 
 def stop(deployment_type, gpu_count, clean=False):
     if clean:
-        extra_args = ['-v',]
+        extra_args = ['-v', ]
     else:
         extra_args = []
     if deployment_type == 'gpu':
@@ -107,7 +107,7 @@ def stop(deployment_type, gpu_count, clean=False):
         fname = 'docker-compose.yml'
     print "Stopping deploy/{}/{}".format(deployment_type, fname)
     try:
-        subprocess.check_call(["docker-compose", '-f', fname, 'down']+extra_args,
+        subprocess.check_call(["docker-compose", '-f', fname, 'down'] + extra_args,
                               cwd=os.path.join(os.path.dirname(__file__), 'deploy/{}'.format(deployment_type)))
     except:
         raise SystemError("Could not stop containers")
@@ -229,28 +229,28 @@ def generate_multi_gpu_compose():
 
     config = {
         "deploy/gpu/docker-compose-2-gpus.yml": {"global_model_gpu_id": 0,
-                                      "global_model_memory_fraction": 0.1,
-                                      "workers":
-                                          [(0, 0.25, "LAUNCH_BY_NAME_indexer_inception", "inception"),
-                                           (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
-                                           (0, 0.5, "LAUNCH_BY_NAME_detector_coco", "coco"),
-                                           (1, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
-                                           (1, 0.19, "LAUNCH_BY_NAME_detector_face", "face"),
-                                           (1, 0.15, "LAUNCH_BY_NAME_indexer_facenet", "facenet"),
-                                           (1, 0.15, "LAUNCH_BY_NAME_analyzer_tagger", "tagger")]
-                                      },
+                                                 "global_model_memory_fraction": 0.1,
+                                                 "workers":
+                                                     [(0, 0.25, "LAUNCH_BY_NAME_indexer_inception", "inception"),
+                                                      (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
+                                                      (0, 0.5, "LAUNCH_BY_NAME_detector_coco", "coco"),
+                                                      (1, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
+                                                      (1, 0.19, "LAUNCH_BY_NAME_detector_face", "face"),
+                                                      (1, 0.15, "LAUNCH_BY_NAME_indexer_facenet", "facenet"),
+                                                      (1, 0.15, "LAUNCH_BY_NAME_analyzer_tagger", "tagger")]
+                                                 },
         "deploy/gpu/docker-compose-4-gpus.yml": {"global_model_gpu_id": 2,
-                                      "global_model_memory_fraction": 0.29,
-                                      "workers":
-                                          [(0, 0.3, "LAUNCH_BY_NAME_indexer_inception", "inception"),
-                                           (0, 0.4, "LAUNCH_BY_NAME_analyzer_tagger", "tagger"),
-                                           (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
-                                           (1, 1.0, "LAUNCH_BY_NAME_detector_coco", "coco"),
-                                           (2, 0.7, "LAUNCH_BY_NAME_detector_face", "face"),
-                                           (3, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
-                                           (3, 0.45, "LAUNCH_BY_NAME_indexer_facenet", "facenet")
-                                           ]
-                                      },
+                                                 "global_model_memory_fraction": 0.29,
+                                                 "workers":
+                                                     [(0, 0.3, "LAUNCH_BY_NAME_indexer_inception", "inception"),
+                                                      (0, 0.4, "LAUNCH_BY_NAME_analyzer_tagger", "tagger"),
+                                                      (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
+                                                      (1, 1.0, "LAUNCH_BY_NAME_detector_coco", "coco"),
+                                                      (2, 0.7, "LAUNCH_BY_NAME_detector_face", "face"),
+                                                      (3, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
+                                                      (3, 0.45, "LAUNCH_BY_NAME_indexer_facenet", "facenet")
+                                                      ]
+                                                 },
     }
     for fname in config:
         blocks = []
@@ -264,6 +264,188 @@ def generate_multi_gpu_compose():
                                       global_model_gpu_id=config[fname]['global_model_gpu_id'],
                                       global_model_memory_fraction=config[fname]['global_model_memory_fraction'],
                                       INIT_PROCESS='${INIT_PROCESS}'))
+
+
+def run_commands(command_list):
+    for k in command_list:
+        print "running {}".format(k)
+        subprocess.check_call(shlex.split(k))
+
+
+def launch_kube(gpu=False):
+    create_kube_secrets()
+    init_commands = ['kubectl create -f deploy/kube/secrets.yml', 'kubectl create -f deploy/kube/postgres.yaml',
+                     'kubectl create -f deploy/kube/rabbitmq.yaml', 'kubectl create -f deploy/kube/redis.yaml']
+    print "sleeping for 120 seconds"
+    time.sleep(120)
+    run_commands(init_commands)
+    webserver_commands = ['kubectl create -f deploy/kube/webserver.yaml', ]
+    run_commands(webserver_commands)
+    print "sleeping for 60 seconds"
+    time.sleep(60)
+    if gpu:
+        deployment_commands = ['kubectl create -f deploy/kube/coco_gpu.yaml',
+                               'kubectl create -f deploy/kube/extractor.yaml',
+                               'kubectl create -f deploy/kube/face.yaml',
+                               'kubectl create -f deploy/kube/facenet.yaml',
+                               'kubectl create -f deploy/kube/facenet_retriever.yaml',
+                               'kubectl create -f deploy/kube/inception.yaml',
+                               'kubectl create -f deploy/kube/inception_retriever.yaml',
+                               'kubectl create -f deploy/kube/global_retriever.yaml',
+                               'kubectl create -f deploy/kube/textbox.yaml',
+                               'kubectl create -f deploy/kube/scheduler.yaml,'
+                               'kubectl create -f deploy/kube/crnn.yaml',
+                               'kubectl create -f deploy/kube/tagger.yaml']
+    else:
+        deployment_commands = ['kubectl create -f deploy/kube/coco.yaml',
+                               'kubectl create -f deploy/kube/extractor.yaml',
+                               'kubectl create -f deploy/kube/face.yaml',
+                               'kubectl create -f deploy/kube/facenet.yaml',
+                               'kubectl create -f deploy/kube/facenet_retriever.yaml',
+                               'kubectl create -f deploy/kube/inception.yaml',
+                               'kubectl create -f deploy/kube/inception_retriever.yaml',
+                               'kubectl create -f deploy/kube/global_retriever.yaml',
+                               'kubectl create -f deploy/kube/textbox.yaml',
+                               'kubectl create -f deploy/kube/scheduler.yaml,'
+                               'kubectl create -f deploy/kube/crnn.yaml',
+                               'kubectl create -f deploy/kube/tagger.yaml']
+    run_commands(deployment_commands)
+
+
+def delete_kube():
+    delete_commands = ['kubectl delete -f deploy/kube/secrets.yml',
+                       'kubectl delete -f deploy/kube/coco.yaml',
+                       'kubectl delete -f deploy/kube/redis.yaml',
+                       'kubectl delete -f deploy/kube/extractor.yaml',
+                       'kubectl delete -f deploy/kube/face.yaml',
+                       'kubectl delete -f deploy/kube/facenet.yaml',
+                       'kubectl delete -f deploy/kube/facenet_retriever.yaml',
+                       'kubectl delete -f deploy/kube/inception.yaml',
+                       'kubectl delete -f deploy/kube/inception_retriever.yaml',
+                       'kubectl delete -f deploy/kube/postgres.yaml',
+                       'kubectl delete -f deploy/kube/rabbitmq.yaml',
+                       'kubectl delete -f deploy/kube/textbox.yaml',
+                       'kubectl delete -f deploy/kube/webserver.yaml',
+                       'kubectl delete -f deploy/kube/scheduler.yaml',
+                       'kubectl delete -f deploy/kube/crnn.yaml',
+                       'kubectl delete -f deploy/kube/tagger.yaml',
+                       'kubectl delete -f deploy/kube/global_retriever.yaml', ]
+    run_commands(delete_commands)
+
+
+def kube_shell():
+    """
+    Create shell script to bash into a container running on Kubernetes.
+    :return:
+    """
+    contents = """
+    #!/usr/bin/env bash
+    kubectl exec -it $1 -c $2  bash"""
+    ""
+
+
+def kube_gpu_setup():
+    command = ['kubectl', 'create', '-f',
+               'https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/k8s-1.9/nvidia-driver-installer/cos/daemonset-preloaded.yaml', ]
+    subprocess.check_call(command)
+
+
+def erase_gs_bucket():
+    # from config import mediabucket
+    # os.system('gsutil -m rm gs://{}/**'.format(mediabucket))
+    pass
+
+
+def get_kube_config():
+    example_config = """     
+    region = ''  # GCP region e.g. us-central1 etc,
+    dbusername = ''
+    dbpassword = ''
+    rabbithost = ''
+    rabbitusername = ''
+    rabbitpassword = ''
+    awskey = ''  # if you intend to import data from S3
+    awssecret = ''  # if you intend to import data from S3
+    mediabucket = ''
+    secretkey = ''
+    superuser = ''
+    superpass = ''
+    superemail = ''
+    cloudfsprefix = 'gs'
+    cors_origin = ''  # to set CORS on the bucket Can be * or specific website e.g. http://example.website.com
+    redishost = "redis-master"
+    redispassword = "sadnnasndaslnk"
+    """
+    pass
+
+
+def kube_create_node_pool():
+    command = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}" --zone "{zone}" --cluster "{cluster_name}" ' \
+              '--machine-type "n1-standard-2" --image-type "COS" ' \
+              '--disk-size "100" ' \
+              '--scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_write",' \
+              '"https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring",' \
+              '"https://www.googleapis.com/auth/servicecontrol",' \
+              '"https://www.googleapis.com/auth/service.management.readonly",' \
+              '"https://www.googleapis.com/auth/trace.append" ' \
+              '--preemptible --num-nodes "{count}"  '
+    # command = command.format(project_name=config.project_name,
+    #                          pool_name="premptpool", cluster_name=config.cluster_name,
+    #                          zone=config.zone, count=5)
+    # print command
+    # os.system(command)
+    pass
+
+
+def create_gs_bucket():
+    """
+    from config import mediabucket, region, cors_origin
+    import os, json
+    os.system('gsutil mb -c regional -l {} gs://{}'.format(region,mediabucket))
+    os.system('gsutil iam ch allUsers:objectViewer gs://{}'.format(mediabucket))
+    with open('cors.json','w') as out:
+        json.dump([
+        {
+          "origin": [cors_origin],
+          "responseHeader": ["Content-Type"],
+          "method": ["GET", "HEAD"],
+          "maxAgeSeconds": 3600
+        }
+        ],out)
+    os.system('gsutil cors set cors.json gs://{}'.format(mediabucket))
+    :return:
+    """
+    pass
+
+
+def create_kube_secrets():
+    """
+    with open('secrets_template.yml') as f:
+        template = f.read()
+    with open('secrets.yml','w') as out:
+        out.write(template.format(
+            dbusername=base64.encodestring(config.dbusername),
+            dbpassword=base64.encodestring(config.dbpassword),
+            rabbithost=base64.encodestring(config.rabbithost),
+            rabbitpassword=base64.encodestring(config.rabbitpassword),
+            rabbitusername=base64.encodestring(config.rabbitusername),
+            awskey=base64.encodestring(config.awskey),
+            awssecret=base64.encodestring(config.awssecret),
+            secretkey=base64.encodestring(config.secretkey),
+            mediabucket=base64.encodestring(config.mediabucket),
+            mediaurl=base64.encodestring('http://{}.storage.googleapis.com/'.format(config.mediabucket)),
+            superuser=base64.encodestring(config.superuser),
+            superpass=base64.encodestring(config.superpass),
+            superemail=base64.encodestring(config.superemail),
+            cloudfsprefix=base64.encodestring(config.cloudfsprefix),
+            redishost=base64.encodestring(config.redishost),
+            redispassword=base64.encodestring(config.redispassword),
+        ).replace('\n\n','\n'))
+    :return:
+    """
+    pass
+
+
 
 
 if __name__ == '__main__':
@@ -297,4 +479,4 @@ if __name__ == '__main__':
     elif args.action == 'generate_multi_gpu_compose':
         generate_multi_gpu_compose()
     else:
-        raise NotImplementedError("{} and {}".format(args.action,args.type))
+        raise NotImplementedError("{} and {}".format(args.action, args.type))
