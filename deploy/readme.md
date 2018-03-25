@@ -11,7 +11,7 @@
 
 3. /kube contains files used for a scalable GKE + GCS setup, with both GPU and non-GPU node pools supported.
 
-4. /test_rfs contains docker-compose file for testing remote fs for sync between containers that don't share a volume.
+4. /test_rfs contains docker-compose file for testing cloud fs (s3 or gs) for sync between containers that don't share a volume.
 
 #### Container images
 
