@@ -121,7 +121,7 @@ def export_video_to_file(video_obj,export,task_obj):
     else:
         if settings.DISABLE_NFS:
             upload_file_to_remote("/exports/{}".format(file_name))
-            export.url = "/exports/{}".format(file_name)
+        export.url = "/exports/{}".format(file_name)
 
 
 def build_queryset(args,video_id=None,query_id=None,target=None,filters=None):
