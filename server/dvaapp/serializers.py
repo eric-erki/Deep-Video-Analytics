@@ -445,14 +445,14 @@ class VideoImporter(object):
                                'vgg':'52723231e796dd06fafd190957c8a3b5a69e009c'}
 
     def import_video(self):
-        self.video.name = self.json['name']
+        if self.video.name is None or not self.video.name:
+            self.video.name = self.json['name']
         self.video.frames = self.json['frames']
         self.video.height = self.json['height']
         self.video.width = self.json['width']
         self.video.segments = self.json.get('segments', 0)
         self.video.stream = self.json.get('stream',False)
         self.video.dataset = self.json['dataset']
-        self.video.url = self.json['url']
         self.video.description = self.json['description']
         self.video.metadata = self.json['metadata']
         self.video.length_in_seconds = self.json['length_in_seconds']
