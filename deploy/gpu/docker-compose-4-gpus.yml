@@ -7,26 +7,26 @@
      volumes:
       - dvapgdata:/var/lib/postgresql/data
      env_file:
-       - ../common.env
+       - ../../common.env
    rabbit:
      image: rabbitmq
      container_name: dva-rmq
      env_file:
-       - ../common.env
+       - ../../common.env
      volumes:
        - dvarabbit:/var/lib/rabbitmq
    redis:
      image: bitnami/redis:latest
      container_name: dva-redis
      env_file:
-       - ../common.env
+       - ../../common.env
      volumes:
        - dvaredis:/bitnami       
    webserver:
      image: akshayubhat/dva-auto:gpu
      container_name: webserver
      env_file:
-       - ../common.env
+       - ../../common.env
      environment:
        - LAUNCH_SERVER_NGINX=1
        - LAUNCH_NOTEBOOK=1
@@ -44,7 +44,7 @@
    non-gpu-workers:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../common.env
+       - ../../common.env
      environment:
        - LAUNCH_BY_NAME_retriever_inception=1
        - LAUNCH_BY_NAME_retriever_facenet=1
@@ -62,7 +62,7 @@
    inception:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../common.env
+       - ../../common.env
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES=0
@@ -78,7 +78,7 @@
    tagger:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../common.env
+       - ../../common.env
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES=0
@@ -94,7 +94,7 @@
    crnn:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../common.env
+       - ../../common.env
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES=0
@@ -110,7 +110,7 @@
    coco:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../common.env
+       - ../../common.env
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES=1
@@ -126,7 +126,7 @@
    face:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../common.env
+       - ../../common.env
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES=2
@@ -142,7 +142,7 @@
    textbox:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../common.env
+       - ../../common.env
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES=3
@@ -158,7 +158,7 @@
    facenet:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../common.env
+       - ../../common.env
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES=3
@@ -174,7 +174,7 @@
    global-model:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../common.env
+       - ../../common.env
      environment:
        - GPU_AVAILABLE=1     
        - NVIDIA_VISIBLE_DEVICES=2

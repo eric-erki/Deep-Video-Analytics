@@ -7,26 +7,26 @@
      volumes:
       - dvapgdata:/var/lib/postgresql/data
      env_file:
-       - ../common.env
+       - ../../common.env
    rabbit:
      image: rabbitmq
      container_name: dva-rmq
      env_file:
-       - ../common.env
+       - ../../common.env
      volumes:
        - dvarabbit:/var/lib/rabbitmq
    redis:
      image: bitnami/redis:latest
      container_name: dva-redis
      env_file:
-       - ../common.env
+       - ../../common.env
      volumes:
        - dvaredis:/bitnami
    webserver:
      image: akshayubhat/dva-auto:latest
      container_name: webserver
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -45,7 +45,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: extractor
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -60,7 +60,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: trainer
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -75,7 +75,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: scheduler
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -90,7 +90,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: inception
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -105,7 +105,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: facenet
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -120,7 +120,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: coco
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -135,7 +135,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: crnn
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -150,7 +150,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: tagger
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -165,7 +165,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: face
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -180,7 +180,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: textdetector
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -195,7 +195,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: global_model
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -210,7 +210,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: streamer
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:
@@ -225,7 +225,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: global_retriever
      env_file:
-       - ../common.env
+       - ../../common.env
        - ~/aws.env
        - ~/media.env
      environment:

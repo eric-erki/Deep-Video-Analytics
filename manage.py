@@ -134,26 +134,26 @@ def generate_multi_gpu_compose():
          volumes:
           - dvapgdata:/var/lib/postgresql/data
          env_file:
-           - ../common.env
+           - ../../common.env
        rabbit:
          image: rabbitmq
          container_name: dva-rmq
          env_file:
-           - ../common.env
+           - ../../common.env
          volumes:
            - dvarabbit:/var/lib/rabbitmq
        redis:
          image: bitnami/redis:latest
          container_name: dva-redis
          env_file:
-           - ../common.env
+           - ../../common.env
          volumes:
            - dvaredis:/bitnami       
        webserver:
          image: akshayubhat/dva-auto:gpu
          container_name: webserver
          env_file:
-           - ../common.env
+           - ../../common.env
          environment:
            - LAUNCH_SERVER_NGINX=1
            - LAUNCH_NOTEBOOK=1
@@ -171,7 +171,7 @@ def generate_multi_gpu_compose():
        non-gpu-workers:
          image: akshayubhat/dva-auto:gpu
          env_file:
-           - ../common.env
+           - ../../common.env
          environment:
            - LAUNCH_BY_NAME_retriever_inception=1
            - LAUNCH_BY_NAME_retriever_facenet=1
@@ -190,7 +190,7 @@ def generate_multi_gpu_compose():
        global-model:
          image: akshayubhat/dva-auto:gpu
          env_file:
-           - ../common.env
+           - ../../common.env
          environment:
            - GPU_AVAILABLE=1     
            - NVIDIA_VISIBLE_DEVICES={global_model_gpu_id}
@@ -213,7 +213,7 @@ def generate_multi_gpu_compose():
     block = """   {worker_name}:
          image: akshayubhat/dva-auto:gpu
          env_file:
-           - ../common.env
+           - ../../common.env
          environment:
            - GPU_AVAILABLE=1
            - NVIDIA_VISIBLE_DEVICES={gpu_id}
