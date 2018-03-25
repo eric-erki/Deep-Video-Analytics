@@ -615,7 +615,14 @@ class VideoImporter(object):
             di.video = self.video
             di.algorithm = i['algorithm']
             # defaults only for backward compatibility
-            di.indexer_shasum =i.get('indexer_shasum',self.name_to_shasum[i['algorithm']])
+            if 'indexer_shasum' in i:
+                di.indexer_shasum = i['indexer_shasum']
+            elif i['algorithm'] in self.name_to_shasum:
+                di.indexer_shasum = self.name_to_shasum[i['algorithm']]
+            else:
+                di.indexer_shasum = 'UNKNOWN'
+            if 'approximator_shasum' in i:
+                di.approximator_shasum = i['approximator_shasum']
             di.count = i['count']
             di.contains_detections = i['contains_detections']
             di.contains_frames = i['contains_frames']
@@ -627,11 +634,7 @@ class VideoImporter(object):
             else:
                 entries = i['entries']
             di.detection_name = i['detection_name']
-            # signature = "{}".format(di.features_file_name)
-            # if signature in previous_transformed:
-            #     logging.warning("repeated index entries found, skipping {}".format(signature))
-            # else:
-            #     previous_transformed.add(signature)
+            di.metadata = i.get('metadata',{})
             transformed = []
             for entry in entries:
                 entry['video_primary_key'] = self.video.pk
