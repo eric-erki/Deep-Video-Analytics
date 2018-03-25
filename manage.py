@@ -278,9 +278,9 @@ def launch_kube(gpu=False):
     setup_kube()
     init_commands = ['kubectl create -f deploy/kube/secrets.yml', 'kubectl create -f deploy/kube/postgres.yaml',
                      'kubectl create -f deploy/kube/rabbitmq.yaml', 'kubectl create -f deploy/kube/redis.yaml']
+    run_commands(init_commands)
     print "sleeping for 120 seconds"
     time.sleep(120)
-    run_commands(init_commands)
     webserver_commands = ['kubectl create -f deploy/kube/webserver.yaml', ]
     run_commands(webserver_commands)
     print "sleeping for 60 seconds"
@@ -352,7 +352,7 @@ def get_kube_config():
     # to set CORS on the bucket Can be * or specific website e.g. http://example.website.com
     :return:
     """
-    if os.path.isfile('kubeconfig.json'):
+    if not os.path.isfile('kubeconfig.json'):
         print "kubeconfig.json not found, edit kubeconfig.example.json and store it as kubeconfig.json"
         raise EnvironmentError(
             "kubeconfig.json not found, edit kubeconfig.example.json and store it as kubeconfig.json")

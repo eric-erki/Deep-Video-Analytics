@@ -693,3 +693,14 @@ class QueryRegionIndexVector(models.Model):
     created = models.DateTimeField('date created', auto_now_add=True)
 
 
+class Export(models.Model):
+    MODEL_EXPORT = constants.MODEL_EXPORT
+    VIDEO_EXPORT = constants.VIDEO_EXPORT
+    EXPORT_TYPES = (
+        (MODEL_EXPORT, 'Model export'),
+        (VIDEO_EXPORT, 'Video export'),
+    )
+    export_type = models.CharField(max_length=1,choices=EXPORT_TYPES,db_index=True)
+    event = models.ForeignKey(TEvent)
+    url = models.TextField(default="")
+    created = models.DateTimeField('date created', auto_now_add=True)

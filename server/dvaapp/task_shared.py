@@ -86,35 +86,25 @@ def load_dva_export_file(dv):
     os.remove(source_zip)
 
 
-def export_file(video_obj,export_event_pk=None):
-    """
-    TODO(akshay) Fix this to enable concurrenct exports
-    :param video_obj:
-    :param export_event_pk:
-    :return:
-    """
+def export_video_to_file(video_obj):
     video_id = video_obj.pk
-    file_name = '{}_{}.dva_export.zip'.format(video_id, int(calendar.timegm(time.gmtime())))
+    export_uuid = str(uuid.uuid4())
+    file_name = '{}.dva_export.zip'.format(export_uuid)
     try:
         os.mkdir("{}/{}".format(settings.MEDIA_ROOT, 'exports'))
     except:
         pass
-    outdirname = "{}/exports/{}".format(settings.MEDIA_ROOT, video_id)
-    if os.path.isdir(outdirname):
-        shutil.rmtree(outdirname)
     shutil.copytree('{}/{}'.format(settings.MEDIA_ROOT, video_id),
-                    "{}/exports/{}".format(settings.MEDIA_ROOT, video_id))
+                    "{}/exports/{}".format(settings.MEDIA_ROOT, export_uuid))
     a = serializers.VideoExportSerializer(instance=video_obj)
     data = copy.deepcopy(a.data)
     data['labels'] = serializers.serialize_video_labels(video_obj)
-    if export_event_pk:
-        data['export_event_pk'] = export_event_pk
-    with file("{}/exports/{}/table_data.json".format(settings.MEDIA_ROOT, video_id), 'w') as output:
+    with file("{}/exports/{}/table_data.json".format(settings.MEDIA_ROOT, export_uuid), 'w') as output:
         json.dump(data, output)
-    zipper = subprocess.Popen(['zip', file_name, '-r', '{}'.format(video_id)],
+    zipper = subprocess.Popen(['zip', file_name, '-r', '{}'.format(export_uuid)],
                               cwd='{}/exports/'.format(settings.MEDIA_ROOT))
     zipper.wait()
-    shutil.rmtree("{}/exports/{}".format(settings.MEDIA_ROOT, video_id))
+    shutil.rmtree("{}/exports/{}".format(settings.MEDIA_ROOT, export_uuid))
     return file_name
 
 

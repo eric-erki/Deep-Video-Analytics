@@ -3,7 +3,12 @@ from .models import Video, Frame, TEvent, IndexEntries, QueryResults, DVAPQL, \
     Region, Tube, Segment, DeletedVideo, \
     VideoLabel, FrameLabel, RegionLabel, TubeLabel, SegmentLabel, Label, ManagementAction, \
     TrainedModel, Retriever, SystemState, Worker, QueryRegion, QueryRegionIndexVector, \
-    QueryRegionResults, TrainingSet
+    QueryRegionResults, TrainingSet, Export
+
+
+@admin.register(Export)
+class ExportAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(SystemState)

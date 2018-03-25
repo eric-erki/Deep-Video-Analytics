@@ -287,15 +287,17 @@ def perform_export(task_id):
     dt = get_and_check_task(task_id)
     if dt is None:
         return 0
-    video_id = dt.video_id
-    if video_id:
-        dv = models.Video.objects.get(pk=video_id)
+    args = dt.arguments
+    if 'video_selector' in args:
+        dv = models.Video.objects.get(pk=models.Video.objects.get(**args['video_selector']))
     else:
-        raise ValueError("video_id is null")
+        raise ValueError("video_selector is null")
+    de = models.Export()
+    de.export_type = de.VIDEO_EXPORT
     if settings.DISABLE_NFS:
         fs.download_video_from_remote_to_local(dv)
     try:
-        filename = task_shared.export_file(dv, export_event_pk=dt.pk)
+        filename = task_shared.export_video_to_file(dv)
         dt.arguments['file_name'] = filename
         local_path = "{}/exports/{}".format(settings.MEDIA_ROOT,filename)
         path = dt.arguments.get('path',None)
@@ -307,9 +309,13 @@ def perform_export(task_id):
                     path = '{}.dva_export.zip'.format(path)
             fs.upload_file_to_path(local_path,path)
             os.remove(local_path)
+            de.url = path
         else:
             if settings.DISABLE_NFS:
                 fs.upload_file_to_remote("/exports/{}".format(filename))
+            de.url = "/exports/{}".format(filename)
+        de.event = dt
+        de.save()
     except:
         dt.errored = True
         dt.error_message = "Could not export"

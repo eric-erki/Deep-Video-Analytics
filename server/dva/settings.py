@@ -257,10 +257,11 @@ TASK_NAMES_TO_QUEUE = {
     "perform_export":Q_EXTRACTOR,
     "perform_deletion":Q_EXTRACTOR,
     "perform_sync":Q_EXTRACTOR,
-    "perform_detector_import":Q_EXTRACTOR,
     "perform_import":Q_EXTRACTOR,
     "perform_stream_capture": Q_STREAMER,
     "perform_training": Q_TRAINER,
     "perform_reduce": Q_REDUCER,
     "perform_video_decode_lambda": Q_LAMBDA
 }
+
+NON_PROCESSING_TASKS = {'perform_training','perform_training_set_creation','perform_deletion', 'perform_export'}
