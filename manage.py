@@ -7,6 +7,8 @@ import urllib2
 import os
 import webbrowser
 import shlex
+import json
+import base64
 
 
 def launch_gcp():
@@ -273,7 +275,7 @@ def run_commands(command_list):
 
 
 def launch_kube(gpu=False):
-    create_kube_secrets()
+    setup_kube()
     init_commands = ['kubectl create -f deploy/kube/secrets.yml', 'kubectl create -f deploy/kube/postgres.yaml',
                      'kubectl create -f deploy/kube/rabbitmq.yaml', 'kubectl create -f deploy/kube/redis.yaml']
     print "sleeping for 120 seconds"
@@ -333,119 +335,102 @@ def delete_kube():
     run_commands(delete_commands)
 
 
-def kube_shell():
-    """
-    Create shell script to bash into a container running on Kubernetes.
-    :return:
-    """
-    contents = """
-    #!/usr/bin/env bash
-    kubectl exec -it $1 -c $2  bash"""
-    ""
-
-
 def kube_gpu_setup():
     command = ['kubectl', 'create', '-f',
-               'https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/k8s-1.9/nvidia-driver-installer/cos/daemonset-preloaded.yaml', ]
+               'https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators'
+               '/k8s-1.9/nvidia-driver-installer/cos/daemonset-preloaded.yaml']
     subprocess.check_call(command)
 
 
-def erase_gs_bucket():
-    # from config import mediabucket
-    # os.system('gsutil -m rm gs://{}/**'.format(mediabucket))
-    pass
+def erase_kube_bucket():
+    config = get_kube_config()
+    subprocess.check_call(['gsutil', '-m', 'rm', 'gs://{}/**'.format(config['mediabucket'])])
 
 
 def get_kube_config():
-    example_config = """     
-    region = ''  # GCP region e.g. us-central1 etc,
-    dbusername = ''
-    dbpassword = ''
-    rabbithost = ''
-    rabbitusername = ''
-    rabbitpassword = ''
-    awskey = ''  # if you intend to import data from S3
-    awssecret = ''  # if you intend to import data from S3
-    mediabucket = ''
-    secretkey = ''
-    superuser = ''
-    superpass = ''
-    superemail = ''
-    cloudfsprefix = 'gs'
-    cors_origin = ''  # to set CORS on the bucket Can be * or specific website e.g. http://example.website.com
-    redishost = "redis-master"
-    redispassword = "sadnnasndaslnk"
     """
-    pass
+    # to set CORS on the bucket Can be * or specific website e.g. http://example.website.com
+    :return:
+    """
+    if os.path.isfile('kubeconfig.json'):
+        print "kubeconfig.json not found, edit kubeconfig.example.json and store it as kubeconfig.json"
+        raise EnvironmentError(
+            "kubeconfig.json not found, edit kubeconfig.example.json and store it as kubeconfig.json")
+    else:
+        with open('kubeconfig.json') as fh:
+            return json.load(fh)
 
 
-def kube_create_node_pool():
-    command = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}" --zone "{zone}" --cluster "{cluster_name}" ' \
+def kube_create_premptible_node_pool():
+    config = get_kube_config()
+    command = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}"' \
+              ' --zone "{zone}" --cluster "{cluster_name}" ' \
               '--machine-type "n1-standard-2" --image-type "COS" ' \
               '--disk-size "100" ' \
-              '--scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_write",' \
+              '--scopes "https://www.googleapis.com/auth/compute",' \
+              '"https://www.googleapis.com/auth/devstorage.read_write",' \
               '"https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring",' \
               '"https://www.googleapis.com/auth/servicecontrol",' \
               '"https://www.googleapis.com/auth/service.management.readonly",' \
               '"https://www.googleapis.com/auth/trace.append" ' \
               '--preemptible --num-nodes "{count}"  '
-    # command = command.format(project_name=config.project_name,
-    #                          pool_name="premptpool", cluster_name=config.cluster_name,
-    #                          zone=config.zone, count=5)
-    # print command
-    # os.system(command)
-    pass
+    command = command.format(project_name=config['project_name'],
+                             pool_name="premptpool",
+                             cluster_name=config['cluster_name'],
+                             zone=config['zone'], count=5)
+    print command
+    subprocess.check_call(shlex.split(command))
 
 
-def create_gs_bucket():
-    """
-    from config import mediabucket, region, cors_origin
-    import os, json
-    os.system('gsutil mb -c regional -l {} gs://{}'.format(region,mediabucket))
-    os.system('gsutil iam ch allUsers:objectViewer gs://{}'.format(mediabucket))
-    with open('cors.json','w') as out:
+def setup_kube():
+    config = get_kube_config()
+    print "attempting to create bucket"
+    try:
+        subprocess.check_call(shlex.split('gsutil mb -c regional -l {} gs://{}'.format(config['region'],
+                                                                                       config['mediabucket'])))
+    except:
+        print "failed to create bucket, assuming it already exists"
+    print "attempting to set public view permission on the bucket"
+    try:
+        subprocess.check_call(shlex.split('gsutil iam ch allUsers:objectViewer gs://{}'.format(config['mediabucket'])))
+    except:
+        print "failed to set permissions to public"
+    with open('cors.json', 'w') as out:
         json.dump([
-        {
-          "origin": [cors_origin],
-          "responseHeader": ["Content-Type"],
-          "method": ["GET", "HEAD"],
-          "maxAgeSeconds": 3600
-        }
-        ],out)
-    os.system('gsutil cors set cors.json gs://{}'.format(mediabucket))
-    :return:
-    """
-    pass
-
-
-def create_kube_secrets():
-    """
-    with open('secrets_template.yml') as f:
+            {
+                "origin": [config['cors_origin']],
+                "responseHeader": ["Content-Type"],
+                "method": ["GET", "HEAD"],
+                "maxAgeSeconds": 3600
+            }
+        ], out)
+    print "attempting to set bucket policy"
+    try:
+        subprocess.check_call(shlex.split('gsutil cors set cors.json gs://{}'.format(config['mediabucket'])))
+    except:
+        print "failed to set bucket policy"
+    print "Attempting to create deploy/kube/secrets.yml from deploy/kube/secrets_template.yml and config."
+    with open('deploy/kube/secrets_template.yml') as f:
         template = f.read()
-    with open('secrets.yml','w') as out:
+    with open('deploy/kube/secrets.yml', 'w') as out:
         out.write(template.format(
-            dbusername=base64.encodestring(config.dbusername),
-            dbpassword=base64.encodestring(config.dbpassword),
-            rabbithost=base64.encodestring(config.rabbithost),
-            rabbitpassword=base64.encodestring(config.rabbitpassword),
-            rabbitusername=base64.encodestring(config.rabbitusername),
-            awskey=base64.encodestring(config.awskey),
-            awssecret=base64.encodestring(config.awssecret),
-            secretkey=base64.encodestring(config.secretkey),
-            mediabucket=base64.encodestring(config.mediabucket),
-            mediaurl=base64.encodestring('http://{}.storage.googleapis.com/'.format(config.mediabucket)),
-            superuser=base64.encodestring(config.superuser),
-            superpass=base64.encodestring(config.superpass),
-            superemail=base64.encodestring(config.superemail),
-            cloudfsprefix=base64.encodestring(config.cloudfsprefix),
-            redishost=base64.encodestring(config.redishost),
-            redispassword=base64.encodestring(config.redispassword),
-        ).replace('\n\n','\n'))
-    :return:
-    """
-    pass
-
-
+            dbusername=base64.encodestring(config['dbusername']),
+            dbpassword=base64.encodestring(config['dbpassword']),
+            rabbithost=base64.encodestring(config['rabbithost']),
+            rabbitpassword=base64.encodestring(config['rabbitpassword']),
+            rabbitusername=base64.encodestring(config['rabbitusername']),
+            awskey=base64.encodestring(config['awskey']),
+            awssecret=base64.encodestring(config['awssecret']),
+            secretkey=base64.encodestring(config['secretkey']),
+            mediabucket=base64.encodestring(config['mediabucket']),
+            mediaurl=base64.encodestring('http://{}.storage.googleapis.com/'.format(config['mediabucket'])),
+            superuser=base64.encodestring(config['superuser']),
+            superpass=base64.encodestring(config['superpass']),
+            superemail=base64.encodestring(config['superemail']),
+            cloudfsprefix=base64.encodestring(config['cloudfsprefix']),
+            redishost=base64.encodestring(config['redishost']),
+            redispassword=base64.encodestring(config['redispassword']),
+        ).replace('\n\n', '\n'))
 
 
 if __name__ == '__main__':
@@ -453,30 +438,39 @@ if __name__ == '__main__':
     parser.add_argument("action",
                         help="Select action out of { start | stop | clean | clean_restart "
                              "| jupyter (view jupyter URL) | wsgi (view logs) | generate_multi_gpu_compose }")
-    parser.add_argument("type", nargs='?', help="select deployment type { dev | test_rfs | cpu | gpu  }. If unsure "
-                                                "choose cpu. Required for start, stop, clean, restart, clean_restart")
+    parser.add_argument("type", nargs='?',
+                        help="select deployment type { dev | test_rfs | cpu | gpu | kube  }. If unsure "
+                             "choose cpu. Required for start, stop, clean, restart, clean_restart")
     parser.add_argument("--gpus", help="For GPU mode select number of P100 GPUs: 1, 2, 4. default is 1", default=1,
                         type=int)
     parser.add_argument("--init_process", help="Initial DVAPQL path default: configs/custom_defaults/init_process.json",
                         default="/root/DVA/configs/custom_defaults/init_process.json")
     args = parser.parse_args()
-    if args.action == 'stop':
-        stop(args.type, args.gpus)
-    elif args.action == 'start':
-        start(args.type, args.gpus, args.init_process)
-    elif args.action == 'clean':
-        stop(args.type, args.gpus, clean=True)
-    elif args.action == 'restart':
-        stop(args.type, args.gpus)
-        start(args.type, args.gpus, args.init_process)
-    elif args.action == 'clean_restart':
-        stop(args.type, args.gpus, clean=True)
-        start(args.type, args.gpus, args.init_process)
-    elif args.action == 'jupyter':
-        view_notebook_url()
-    elif args.action == 'wsgi':
-        view_uwsgi_logs()
-    elif args.action == 'generate_multi_gpu_compose':
-        generate_multi_gpu_compose()
+    if args.type and args.type == 'kube':
+        if args.action == 'start':
+            launch_kube()
+        elif args.action == 'stop':
+            delete_kube()
+        else:
+            raise NotImplementedError("Kubernetes management only suports start and stop actions")
     else:
-        raise NotImplementedError("{} and {}".format(args.action, args.type))
+        if args.action == 'stop':
+            stop(args.type, args.gpus)
+        elif args.action == 'start':
+            start(args.type, args.gpus, args.init_process)
+        elif args.action == 'clean':
+            stop(args.type, args.gpus, clean=True)
+        elif args.action == 'restart':
+            stop(args.type, args.gpus)
+            start(args.type, args.gpus, args.init_process)
+        elif args.action == 'clean_restart':
+            stop(args.type, args.gpus, clean=True)
+            start(args.type, args.gpus, args.init_process)
+        elif args.action == 'jupyter':
+            view_notebook_url()
+        elif args.action == 'wsgi':
+            view_uwsgi_logs()
+        elif args.action == 'generate_multi_gpu_compose':
+            generate_multi_gpu_compose()
+        else:
+            raise NotImplementedError("{} and {}".format(args.action, args.type))
