@@ -54,7 +54,7 @@ def create_custom_env(init_process, init_models, deployment_type):
         out.write(file('default.env').read())
         out.write('\n')
         for k,v in envs.items():
-            out.write("{}={}".format(k,v))
+            out.write("{}={}\n".format(k,v))
 
 
 def start(deployment_type, gpu_count, init_process, init_models):
