@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import argparse
-import copy
+import logging
 import subprocess
 import time
 import urllib2
@@ -29,6 +29,32 @@ def launch_gcp():
 
 def load_envs(path):
     return {line.split('=')[0]: line.split('=')[1].strip() for line in file(path)}
+
+
+def create_custom_env(init_process, init_models, deployment_type):
+    envs = {}
+    envs['INIT_PROCESS'] = init_process
+    envs['INIT_MODELS'] = init_models
+    if deployment_type == 'test_rfs':
+        envs['DISABLE_NFS'] = 1
+        try:
+            envs.update(load_envs(os.path.expanduser('~/media.env')))
+        except:
+            logging.error('~/media.env not found. required for testing rfs mode.')
+        try:
+            envs.update(load_envs(os.path.expanduser('~/aws.env')))
+        except:
+            logging.error('~/aws.env not found. required for testing rfs mode.')
+    else:
+        if os.path.isfile(os.path.expanduser('~/aws.env')):
+            envs.update(load_envs(os.path.expanduser('~/aws.env')))
+        if os.path.isfile(os.path.expanduser('~/do.env')):
+            envs.update(load_envs(os.path.expanduser('~/do.env')))
+    with open('custom.env','w') as out:
+        out.write(file('default.env').read())
+        out.write('\n')
+        for k,v in envs.items():
+            out.write("{}={}".format(k,v))
 
 
 def start(deployment_type, gpu_count, init_process, init_models):
@@ -66,15 +92,9 @@ def start(deployment_type, gpu_count, init_process, init_models):
     try:
         args = ["docker-compose", '-f', fname, 'up', '-d']
         print " ".join(args)
-        envs = copy.deepcopy(os.environ)
-        envs['INIT_PROCESS'] = init_process
-        envs['INIT_MODELS'] = init_models
-        if os.path.isfile(os.path.expanduser('~/aws.env')):
-            envs.update(load_envs(os.path.expanduser('~/aws.env')))
-        if os.path.isfile(os.path.expanduser('~/do.env')):
-            envs.update(load_envs(os.path.expanduser('~/do.env')))
+        create_custom_env(init_process, init_models, deployment_type)
         compose_process = subprocess.Popen(args, cwd=os.path.join(os.path.dirname(__file__),
-                                                                  'deploy/{}'.format(deployment_type)), env=envs)
+                                                                  'deploy/{}'.format(deployment_type)))
     except:
         raise SystemError("Could not start container")
     while max_minutes:
@@ -137,31 +157,29 @@ def generate_multi_gpu_compose():
          volumes:
           - dvapgdata:/var/lib/postgresql/data
          env_file:
-           - ../../common.env
+           - ../../custom.env
        rabbit:
          image: rabbitmq
          container_name: dva-rmq
          env_file:
-           - ../../common.env
+           - ../../custom.env
          volumes:
            - dvarabbit:/var/lib/rabbitmq
        redis:
          image: bitnami/redis:latest
          container_name: dva-redis
          env_file:
-           - ../../common.env
+           - ../../custom.env
          volumes:
            - dvaredis:/bitnami       
        webserver:
          image: akshayubhat/dva-auto:gpu
          container_name: webserver
          env_file:
-           - ../../common.env
+           - ../../custom.env
          environment:
            - LAUNCH_SERVER_NGINX=1
            - LAUNCH_NOTEBOOK=1
-           - INIT_PROCESS={INIT_PROCESS}
-           - INIT_MODELS=${INIT_MODELS}                  
          command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
          ports:
            - "127.0.0.1:8000:80"
@@ -175,7 +193,7 @@ def generate_multi_gpu_compose():
        non-gpu-workers:
          image: akshayubhat/dva-auto:gpu
          env_file:
-           - ../../common.env
+           - ../../custom.env
          environment:
            - LAUNCH_BY_NAME_retriever_inception=1
            - LAUNCH_BY_NAME_retriever_facenet=1
@@ -183,7 +201,6 @@ def generate_multi_gpu_compose():
            - LAUNCH_Q_qstreamer=1
            - LAUNCH_SCHEDULER=1
            - LAUNCH_Q_GLOBAL_RETRIEVER=1
-           - INIT_MODELS=${INIT_MODELS}           
          command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
          depends_on:
            - db
@@ -195,13 +212,12 @@ def generate_multi_gpu_compose():
        global-model:
          image: akshayubhat/dva-auto:gpu
          env_file:
-           - ../../common.env
+           - ../../custom.env
          environment:
            - GPU_AVAILABLE=1     
            - NVIDIA_VISIBLE_DEVICES={global_model_gpu_id}
            - GPU_MEMORY={global_model_memory_fraction}
            - LAUNCH_Q_GLOBAL_MODEL=1
-           - INIT_MODELS=${INIT_MODELS}           
          command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
          depends_on:
            - db
@@ -219,13 +235,12 @@ def generate_multi_gpu_compose():
     block = """   {worker_name}:
          image: akshayubhat/dva-auto:gpu
          env_file:
-           - ../../common.env
+           - ../../custom.env
          environment:
            - GPU_AVAILABLE=1
            - NVIDIA_VISIBLE_DEVICES={gpu_id}
            - GPU_MEMORY={memory_fraction}
            - {env_key}={env_value}
-           - INIT_MODELS=${INIT_MODELS}           
          command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
          depends_on:
            - db
@@ -269,8 +284,7 @@ def generate_multi_gpu_compose():
         with open(fname, 'w') as out:
             out.write(skeleton.format(gpu_workers="\n".join(blocks),
                                       global_model_gpu_id=config[fname]['global_model_gpu_id'],
-                                      global_model_memory_fraction=config[fname]['global_model_memory_fraction'],
-                                      INIT_PROCESS='${INIT_PROCESS}'))
+                                      global_model_memory_fraction=config[fname]['global_model_memory_fraction']))
 
 
 def run_commands(command_list):

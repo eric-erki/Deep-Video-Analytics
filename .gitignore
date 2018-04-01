@@ -14,6 +14,7 @@ creds.json
 *.pid
 *.mov
 *.pyc
+custom.env
 kubeconfig.json
 docs/experiments/private
 docs/experiments/coco/coco_annotations
