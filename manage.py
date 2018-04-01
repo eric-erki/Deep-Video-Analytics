@@ -67,6 +67,7 @@ def start(deployment_type, gpu_count, init_process, init_models):
             fname = 'docker-compose-{}-gpus.yml'.format(gpu_count)
     else:
         fname = 'docker-compose.yml'
+    create_custom_env(init_process, init_models, deployment_type)
     print "Starting deploy/{}/{}".format(deployment_type, fname)
     try:
         # Fixed to dev since deployment directory does not matters for checking if docker-compose exists.
@@ -92,7 +93,6 @@ def start(deployment_type, gpu_count, init_process, init_models):
     try:
         args = ["docker-compose", '-f', fname, 'up', '-d']
         print " ".join(args)
-        create_custom_env(init_process, init_models, deployment_type)
         compose_process = subprocess.Popen(args, cwd=os.path.join(os.path.dirname(__file__),
                                                                   'deploy/{}'.format(deployment_type)))
     except:
