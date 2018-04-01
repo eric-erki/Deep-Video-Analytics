@@ -65,22 +65,16 @@ class Approximators(object):
             if da.algorithm == 'LOPQ':
                 for i, e in enumerate(entries):
                     e['codes'] = approx.approximate(vectors[i, :])
-                entries_fname = "{}/{}/indexes/{}.json".format(settings.MEDIA_ROOT, index_entry.video_id, uid)
-                with open(entries_fname, 'w') as entryfile:
-                    json.dump(entries, entryfile)
-                approx_ind.entries_file_name = "{}.json".format(uid)
+                approx_ind.entries = entries
                 approx_ind.features_file_name = ""
             elif da.algorithm == 'PCA':
                 # TODO optimize this by doing matmul rather than calling for each entry
                 approx_vectors = np.array([approx.approximate(vectors[i, :]) for i, e in enumerate(entries)])
-                entries_fname = "{}/{}/indexes/{}.json".format(settings.MEDIA_ROOT, index_entry.video_id, uid)
                 feat_fname = "{}/{}/indexes/{}.npy".format(settings.MEDIA_ROOT, index_entry.video_id, uid)
-                with open(entries_fname, 'w') as entryfile:
-                    json.dump(entries, entryfile)
                 with open(feat_fname, 'w') as featfile:
                     np.save(featfile, approx_vectors)
-                approx_ind.entries_file_name = "{}.json".format(uid)
                 approx_ind.features_file_name = "{}.npy".format(uid)
+                approx_ind.entries = entries
             else:
                 raise NotImplementedError("unknown approximation algorithm {}".format(da.algorithm))
             approx_ind.indexer_shasum = index_entry.indexer_shasum

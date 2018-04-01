@@ -5,8 +5,8 @@ from django.conf import settings
 from PIL import Image
 from . import serializers
 from dva.in_memory import redis_client
-from .fs import ensure, upload_file_to_remote, upload_video_to_remote, get_path_to_file
-from dva.celery import app
+from .fs import ensure, upload_file_to_remote, upload_video_to_remote, get_path_to_file, \
+    download_video_from_remote_to_local, upload_file_to_path
 
 
 def pid_exists(pid):
@@ -38,24 +38,6 @@ def launch_worker(queue_name, worker_name):
     p = subprocess.Popen(['./startq.py','{}'.format(queue_name)], close_fds=True)
     message = "launched {} with pid {} on {}".format(queue_name, p.pid, worker_name)
     return message
-
-
-def perform_s3_export(dv,path,export_event_pk=None):
-    cwd_path = "{}/{}/".format(settings.MEDIA_ROOT, dv.pk)
-    a = serializers.VideoExportSerializer(instance=dv)
-    data = copy.deepcopy(a.data)
-    data['labels'] = serializers.serialize_video_labels(dv)
-    if export_event_pk:
-        data['export_event_pk'] = export_event_pk
-    with file("{}/{}/table_data.json".format(settings.MEDIA_ROOT, dv.pk), 'w') as output:
-        json.dump(data, output)
-    if path.startswith('s3://'):
-        upload = subprocess.Popen(args=["aws", "s3", "sync",'--quiet', ".",path],cwd=cwd_path)
-        upload.communicate()
-        upload.wait()
-        return upload.returncode
-    elif path.startswith('gs://'):
-        raise NotImplementedError
 
 
 def import_path(dv,path,export=False,framelist=False):
@@ -104,33 +86,42 @@ def load_dva_export_file(dv):
     os.remove(source_zip)
 
 
-def export_file(video_obj,export_event_pk=None):
+def export_video_to_file(video_obj,export,task_obj):
+    if settings.DISABLE_NFS:
+        download_video_from_remote_to_local(video_obj)
     video_id = video_obj.pk
-    file_name = '{}_{}.dva_export.zip'.format(video_id, int(calendar.timegm(time.gmtime())))
+    export_uuid = str(uuid.uuid4())
+    file_name = '{}.dva_export.zip'.format(export_uuid)
     try:
         os.mkdir("{}/{}".format(settings.MEDIA_ROOT, 'exports'))
     except:
         pass
-    outdirname = "{}/exports/{}".format(settings.MEDIA_ROOT, video_id)
-    if os.path.isdir(outdirname):
-        shutil.rmtree(outdirname)
     shutil.copytree('{}/{}'.format(settings.MEDIA_ROOT, video_id),
-                    "{}/exports/{}".format(settings.MEDIA_ROOT, video_id))
+                    "{}/exports/{}".format(settings.MEDIA_ROOT, export_uuid))
     a = serializers.VideoExportSerializer(instance=video_obj)
     data = copy.deepcopy(a.data)
     data['labels'] = serializers.serialize_video_labels(video_obj)
-    if export_event_pk:
-        data['export_event_pk'] = export_event_pk
-    with file("{}/exports/{}/table_data.json".format(settings.MEDIA_ROOT, video_id), 'w') as output:
+    with file("{}/exports/{}/table_data.json".format(settings.MEDIA_ROOT, export_uuid), 'w') as output:
         json.dump(data, output)
-    zipper = subprocess.Popen(['zip', file_name, '-r', '{}'.format(video_id)],
+    zipper = subprocess.Popen(['zip', file_name, '-r', '{}'.format(export_uuid)],
                               cwd='{}/exports/'.format(settings.MEDIA_ROOT))
     zipper.wait()
-    shutil.rmtree("{}/exports/{}".format(settings.MEDIA_ROOT, video_id))
-    # if NFS is disabled upload to the bucket
-    if settings.DISABLE_NFS:
-        upload_file_to_remote("/exports/{}".format(file_name))
-    return file_name
+    shutil.rmtree("{}/exports/{}".format(settings.MEDIA_ROOT, export_uuid))
+    local_path = "{}/exports/{}".format(settings.MEDIA_ROOT, file_name)
+    path = task_obj.arguments.get('path', None)
+    if path:
+        if not path.endswith('dva_export.zip'):
+            if path.endswith('.zip'):
+                path = path.replace('.zip', '.dva_export.zip')
+            else:
+                path = '{}.dva_export.zip'.format(path)
+        upload_file_to_path(local_path, path)
+        os.remove(local_path)
+        export.url = path
+    else:
+        if settings.DISABLE_NFS:
+            upload_file_to_remote("/exports/{}".format(file_name))
+        export.url = "{}/exports/{}".format(settings.MEDIA_URL,file_name).replace('//exports','/exports')
 
 
 def build_queryset(args,video_id=None,query_id=None,target=None,filters=None):
@@ -259,11 +250,9 @@ def ensure_files(queryset, target):
     elif target == 'segments':
         for k in queryset:
             ensure(k.path(media_root=''),dirnames)
-            ensure(k.framelist_path(media_root=''), dirnames)
     elif target == 'indexes':
         for k in queryset:
             ensure(k.npy_path(media_root=''), dirnames)
-            ensure(k.entries_path(media_root=''), dirnames)
     else:
         raise NotImplementedError
 
@@ -313,15 +302,13 @@ def import_frame_regions_json(regions_json,video,event_id):
 
 def get_sync_paths(dirname,task_id):
     if dirname == 'indexes':
-        f = [k.entries_path(media_root="") for k in IndexEntries.objects.filter(event_id=task_id) if k.entries_file_name]
-        f += [k.npy_path(media_root="") for k in IndexEntries.objects.filter(event_id=task_id) if k.features_file_name]
+        f = [k.npy_path(media_root="") for k in IndexEntries.objects.filter(event_id=task_id) if k.features_file_name]
     elif dirname == 'frames':
         f = [k.path(media_root="") for k in Frame.objects.filter(event_id=task_id)]
     elif dirname == 'segments':
         f = []
         for k in Segment.objects.filter(event_id=task_id):
             f.append(k.path(media_root=""))
-            f.append(k.framelist_path(media_root=""))
     elif dirname == 'regions':
         e = TEvent.objects.get(pk=task_id)
         if e.operation == 'perform_transformation': # TODO: transformation events merely materialize, fix this

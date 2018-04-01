@@ -10,7 +10,7 @@ celery==4.0.2
 django-celery-results
 dj-database-url==0.4.0
 raven
-psycopg2
+psycopg2-binary
 requests
 boto3
 protobuf

@@ -287,20 +287,21 @@ def perform_export(task_id):
     dt = get_and_check_task(task_id)
     if dt is None:
         return 0
-    video_id = dt.video_id
-    dv = models.Video.objects.get(pk=video_id)
-    if settings.DISABLE_NFS:
-        fs.download_video_from_remote_to_local(dv)
-    destination = dt.arguments['destination']
+    args = dt.arguments
+    de = models.Export()
+    de.event = dt
     try:
-        if destination == "FILE":
-            file_name = task_shared.export_file(dv, export_event_pk=dt.pk)
-            dt.arguments['file_name'] = file_name
-        elif destination == "S3":
-            path = dt.arguments['path']
-            returncode = task_shared.perform_s3_export(dv, path, export_event_pk=dt.pk)
-            if returncode != 0:
-                raise ValueError("return code != 0")
+        if 'video_selector' in args:
+            dv = models.Video.objects.get(**args['video_selector'])
+            de.export_type = de.VIDEO_EXPORT
+            task_shared.export_video_to_file(dv,de,dt)
+            de.save()
+        elif 'model_selector' in args:
+            raise NotImplementedError
+        elif 'training_set_selector' in args:
+            raise NotImplementedError
+        else:
+            raise ValueError("selector not found")
     except:
         dt.errored = True
         dt.error_message = "Could not export"

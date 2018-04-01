@@ -10,4 +10,5 @@ docker run --runtime=nvidia --rm nvidia/cuda:8.0 nvidia-smi
 sudo curl -L https://github.com/docker/compose/releases/download/1.17.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 sudo python fix_docker_compose.py
+sudo nvidia-smi -pm 1
 sudo service docker restart

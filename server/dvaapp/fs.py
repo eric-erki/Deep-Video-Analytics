@@ -1,7 +1,6 @@
 from django.conf import settings
 import os
 import shlex
-import uuid
 import boto3
 import shutil
 import errno
@@ -32,6 +31,13 @@ else:
     S3_MODE = False
     GS_MODE = False
     BUCKET = None
+
+if 'DO_ACCESS_KEY_ID' in os.environ and 'DO_SECRET_ACCESS_KEY' and os.environ:
+    do_session = boto3.session.Session()
+    do_client = do_session.client('s3',region_name=os.environ.get('DO_REGION','nyc3'),
+                            endpoint_url='https://{}.digitaloceanspaces.com'.format(os.environ.get('DO_REGION','nyc3')),
+                            aws_access_key_id=os.environ['DO_ACCESS_KEY_ID'],
+                            aws_secret_access_key=os.environ['DO_SECRET_ACCESS_KEY'])
 
 
 def cacheable(path):
@@ -157,7 +163,6 @@ def get_path_to_file(path,local_path):
             path = "gs://{}{}".format(settings.MEDIA_BUCKET,path)
         else:
             raise ValueError("NFS disabled but neither GS or S3 enabled.")
-    fs_type = path[:2]
     # avoid maliciously crafted relative imports outside media root
     if path.startswith('/ingest') and '..' not in path:
         shutil.move(os.path.join(settings.MEDIA_ROOT, path.strip('/')),local_path)
@@ -175,19 +180,44 @@ def get_path_to_file(path,local_path):
                 if chunk:
                     f.write(chunk)
         r.close()
-    elif fs_type == 's3' and not path.endswith('/'):
+    elif path.endswith('/'):
+        raise NotImplementedError("Importing directories disabled {}".format(path))
+    elif path.startswith('s3'):
         bucket_name = path[5:].split('/')[0]
         key = '/'.join(path[5:].split('/')[1:])
         remote_bucket = S3.Bucket(bucket_name)
         remote_bucket.download_file(key, local_path)
-    elif path.startswith('gs') and not path.endswith('/'):
+    elif path.startswith('gs'):
         bucket_name = path[5:].split('/')[0]
         key = '/'.join(path[5:].split('/')[1:])
         remote_bucket = GS.get_bucket(bucket_name)
         with open(local_path,'w') as fout:
             remote_bucket.get_blob(key).download_to_file(fout)
+    elif path.startswith('do'):
+        bucket_name = path[5:].split('/')[0]
+        key = '/'.join(path[5:].split('/')[1:])
+        do_client.download_file(bucket_name,key,local_path)
     else:
-        raise NotImplementedError("importing S3/GCS directories disabled or Unknown file system {}".format(path))
+        raise NotImplementedError("Unknown file system {}".format(path))
+
+
+def upload_file_to_path(local_path,remote_path):
+    fs_type = remote_path[:2]
+    bucket_name = remote_path[5:].split('/')[0]
+    key = '/'.join(remote_path[5:].split('/')[1:])
+    if remote_path.endswith('/'):
+        raise NotImplementedError("key/remote-path cannot end in a /")
+    elif fs_type == 's3':
+        with open(local_path,'rb') as body:
+            S3.Object(bucket_name,key).put(Body=body)
+    elif fs_type == 'gs':
+        remote_bucket = GS.get_bucket(bucket_name)
+        with open(local_path,'w') as flocal:
+            remote_bucket.get_blob(key).upload_from_file(flocal)
+    elif fs_type == 'do':
+        do_client.upload_file(local_path,bucket_name,key)
+    else:
+        raise NotImplementedError("Unknown cloud file system {}".format(remote_path))
 
 
 def upload_file_to_remote(fpath,cache=True):

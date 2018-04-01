@@ -6,26 +6,26 @@
      volumes:
       - dvapgdata:/var/lib/postgresql/data
      env_file:
-       - ../common.env
+       - ../../custom.env
    rabbit:
      image: rabbitmq
      container_name: dva-rmq
      env_file:
-       - ../common.env
+       - ../../custom.env
      volumes:
        - dvarabbit:/var/lib/rabbitmq
    redis:
      image: bitnami/redis:latest
      container_name: dva-redis
      env_file:
-       - ../common.env
+       - ../../custom.env
      volumes:
        - dvaredis:/bitnami
    dva:
      image: akshayubhat/dva-auto:gpu
      container_name: webserver
      env_file:
-       - ../common.env
+       - ../../custom.env
      environment:
        - LAUNCH_SERVER_NGINX=1
        - LAUNCH_BY_NAME_indexer_inception=1
@@ -43,7 +43,6 @@
        - LAUNCH_SCHEDULER=1
        - LAUNCH_Q_GLOBAL_MODEL=1
        - LAUNCH_Q_GLOBAL_RETRIEVER=1
-       - INIT_PROCESS=${INIT_PROCESS}
      command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80"

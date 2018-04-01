@@ -445,14 +445,14 @@ class VideoImporter(object):
                                'vgg':'52723231e796dd06fafd190957c8a3b5a69e009c'}
 
     def import_video(self):
-        self.video.name = self.json['name']
+        if self.video.name is None or not self.video.name:
+            self.video.name = self.json['name']
         self.video.frames = self.json['frames']
         self.video.height = self.json['height']
         self.video.width = self.json['width']
         self.video.segments = self.json.get('segments', 0)
         self.video.stream = self.json.get('stream',False)
         self.video.dataset = self.json['dataset']
-        self.video.url = self.json['url']
         self.video.description = self.json['description']
         self.video.metadata = self.json['metadata']
         self.video.length_in_seconds = self.json['length_in_seconds']
@@ -559,6 +559,7 @@ class VideoImporter(object):
         ds.video_id = self.video.pk
         ds.segment_index = s.get('segment_index', '-1')
         ds.start_time = s.get('start_time', 0)
+        ds.framelist = s.get('framelist', {})
         ds.end_time = s.get('end_time', 0)
         ds.metadata = s.get('metadata', "")
         if s.get('event', None):
@@ -585,18 +586,6 @@ class VideoImporter(object):
                 ce = TEvent.objects.get(pk=self.event_to_pk[child_old_id])
                 ce.parent_id = parent_id
                 ce.save()
-        if 'export_event_pk' in self.json:
-            last = TEvent.objects.get(pk=self.event_to_pk[self.json['export_event_pk']])
-            last.duration = 0
-            last.completed = True
-            last.save()
-        else:
-            # Unless specified this is the export task that led to the video being exported
-            #  and hence should be marked as completed
-            last = TEvent.objects.get(pk=self.event_to_pk[max(old_ids)])
-            last.duration = 0
-            last.completed = True
-            last.save()
 
     def convert_regions_files(self):
         if os.path.isdir('{}/detections/'.format(self.root)):
@@ -620,38 +609,42 @@ class VideoImporter(object):
             os.rename(temp_file, converted)
 
     def import_index_entries(self):
-        previous_transformed = set()
+        # previous_transformed = set()
         for i in self.json['index_entries_list']:
             di = IndexEntries()
             di.video = self.video
             di.algorithm = i['algorithm']
             # defaults only for backward compatibility
-            di.indexer_shasum =i.get('indexer_shasum',self.name_to_shasum[i['algorithm']])
+            if 'indexer_shasum' in i:
+                di.indexer_shasum = i['indexer_shasum']
+            elif i['algorithm'] in self.name_to_shasum:
+                di.indexer_shasum = self.name_to_shasum[i['algorithm']]
+            else:
+                di.indexer_shasum = 'UNKNOWN'
+            if 'approximator_shasum' in i:
+                di.approximator_shasum = i['approximator_shasum']
             di.count = i['count']
             di.contains_detections = i['contains_detections']
             di.contains_frames = i['contains_frames']
             di.approximate = i['approximate']
             di.created = i['created']
             di.features_file_name = i['features_file_name']
-            di.entries_file_name = i['entries_file_name']
-            di.detection_name = i['detection_name']
-            signature = "{}".format(di.entries_file_name)
-            if signature in previous_transformed:
-                logging.warning("repeated index entries found, skipping {}".format(signature))
+            if 'entries_file_name' in i:
+                entries = json.load(file('{}/indexes/{}'.format(self.root, i['entries_file_name'])))
             else:
-                previous_transformed.add(signature)
-                entries = json.load(file('{}/indexes/{}'.format(self.root, di.entries_file_name)))
-                transformed = []
-                for entry in entries:
-                    entry['video_primary_key'] = self.video.pk
-                    if 'detection_primary_key' in entry:
-                        entry['detection_primary_key'] = self.region_to_pk[entry['detection_primary_key']]
-                    if 'frame_primary_key' in entry:
-                        entry['frame_primary_key'] = self.frame_to_pk[entry['frame_primary_key']]
-                    transformed.append(entry)
-                with open('{}/indexes/{}'.format(self.root, di.entries_file_name), 'w') as output:
-                    json.dump(transformed, output)
-                di.save()
+                entries = i['entries']
+            di.detection_name = i['detection_name']
+            di.metadata = i.get('metadata',{})
+            transformed = []
+            for entry in entries:
+                entry['video_primary_key'] = self.video.pk
+                if 'detection_primary_key' in entry:
+                    entry['detection_primary_key'] = self.region_to_pk[entry['detection_primary_key']]
+                if 'frame_primary_key' in entry:
+                    entry['frame_primary_key'] = self.frame_to_pk[entry['frame_primary_key']]
+                transformed.append(entry)
+            di.entries =transformed
+            di.save()
 
     def bulk_import_frames(self):
         frame_regions = defaultdict(list)

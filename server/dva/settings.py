@@ -22,12 +22,8 @@ if DISABLE_NFS and (MEDIA_BUCKET is None):
     raise EnvironmentError("Either an NFS/Data volume or a remote S3 bucket is required!")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if 'SECRET_KEY' in os.environ:
-    SECRET_KEY = os.environ['SECRET_KEY']
-    AUTH_DISABLED = False
-else:
-    SECRET_KEY = 'changemeabblasdasbdbrp2$j&^'  # change this in prod
-    AUTH_DISABLED = os.environ.get('AUTH_DISABLED', False)
+SECRET_KEY = os.environ['SECRET_KEY']
+AUTH_DISABLED = os.environ.get('AUTH_DISABLED', False)
 
 INTERNAL_IPS = ['localhost','127.0.0.1']
 
@@ -153,7 +149,7 @@ if 'DATABASE_URL' in os.environ:
     DATABASES = {}
     db_from_env = dj_database_url.config(conn_max_age=500)
     DATABASES['default'] = db_from_env
-elif 'CONTINUOUS_INTEGRATION' in os.environ:
+elif 'CONTINUOUS_INTEGRATION' in os.environ or sys.platform == 'darwin':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -261,10 +257,11 @@ TASK_NAMES_TO_QUEUE = {
     "perform_export":Q_EXTRACTOR,
     "perform_deletion":Q_EXTRACTOR,
     "perform_sync":Q_EXTRACTOR,
-    "perform_detector_import":Q_EXTRACTOR,
     "perform_import":Q_EXTRACTOR,
     "perform_stream_capture": Q_STREAMER,
     "perform_training": Q_TRAINER,
     "perform_reduce": Q_REDUCER,
     "perform_video_decode_lambda": Q_LAMBDA
 }
+
+NON_PROCESSING_TASKS = {'perform_training','perform_training_set_creation','perform_deletion', 'perform_export'}

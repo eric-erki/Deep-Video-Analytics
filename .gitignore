@@ -14,6 +14,8 @@ creds.json
 *.pid
 *.mov
 *.pyc
+custom.env
+kubeconfig.json
 docs/experiments/private
 docs/experiments/coco/coco_annotations
 docs/experiments/yolo/yolo_test.zip
@@ -37,11 +39,6 @@ docs/experiments/yolo/yolo_test.zip
 /client/dist/
 /client/dvaclient.egg-info/
 /deploy/kube/secrets.yml
-/deploy/kube/config.py
-/deploy/gpu/aws/config.py
-/deploy/gpu/aws/host
-/deploy/gpu/gcp/config.py
-/deploy/gpu/gcp/host
 /deploy/static/
 /docs/marketing/
 /tests/training/facenet.npy

@@ -241,10 +241,13 @@ def launch_tasks(k, dt, inject_filters, map_filters = None, launch_type = ""):
         args = perform_substitution(k['arguments'], dt, inject_filters, f)
         logging.info("launching {} -> {} with args {} as specified in {}".format(dt.operation, op, args, launch_type))
         q, op = get_queue_name_and_operation(k['operation'], args)
-        if "video_selector" in k and v is None:
-            video_per_task = Video.objects.get(**k['video_selector'])
+        if op in settings.NON_PROCESSING_TASKS:
+            video_per_task = None
         else:
-            video_per_task = v
+            if "video_selector" in k:
+                video_per_task = Video.objects.get(**k['video_selector'])
+            else:
+                video_per_task = v
         if op == 'perform_sync':
             task_group_id = k.get('task_group_id',-1)
         else:

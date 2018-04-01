@@ -75,25 +75,19 @@
                     <table class="table dataTables-dict">
                         <thead>
                             <tr>
+                                <th class="text-center">Event</th>
                                 <th class="text-center">Video</th>
-                                <th class="text-center">Started</th>
                                 <th class="text-center">Completed</th>
-                                <th class="text-center">Download URL or S3 region/bucket/key</th>
+                                <th class="text-center">URL</th>
                             </tr>
                         </thead>
                         <tbody>
                         {% for e in exports %}
                             <tr>
-                                <td>{{ e.video.name }}</td>
-                                <td>{{ e.started }}</td>
-                                <td class="text-center">{{ e.completed }}</td>
-                                <td class="text-center">
-                                    {% if e.arguments.file_name %}
-                                        <a href="{{ MEDIA_URL }}exports/{{ e.arguments.file_name }}">click to download</a>
-                                    {% elif e.completed %}
-                                        s3://{{ e.arguments.bucket }}/{{ e.arugments.key }}
-                                    {% endif %}
-                                </td>
+                                <td><a href="/task_detail/{{ e.event_id }}">{{ e.event_id }}</a></td>
+                                <td>{{ e.event.arguments.video_selector }}</td>
+                                <td class="text-center">{{ e.created }}</td>
+                                <td class="text-center"><a href="{{ e.url }}" target="_blank" rel="noreferrer" rel="noopener">{{ e.url }}</a></td>
                             </tr>
                         {% endfor %}
                         </tbody>
