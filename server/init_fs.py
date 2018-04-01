@@ -35,10 +35,15 @@ if __name__ == "__main__":
         for e in json.loads(file("../configs/custom_defaults/external.json").read()):
             de,_ = ExternalServer.objects.get_or_create(name=e['name'],url=e['url'])
             de.pull()
-    if sys.platform == 'darwin':
-        default_models = json.loads(file("../configs/custom_defaults/trained_models_mac.json").read())
-    else:
-        default_models = json.loads(file("../configs/custom_defaults/trained_models.json").read())
+    local_models_path = "../configs/custom_defaults/trained_models.json"
+    if 'INIT_MODELS' in os.environ and os.environ['INIT_MODELS'].strip():
+        remote_models_path = os.environ['INIT_MODELS']
+        if not remote_models_path.startswith('/root/DVA/configs/custom_defaults/'):
+            local_models_path = 'custom_models.json'
+            get_path_to_file(remote_models_path, local_models_path)
+        else:
+            local_models_path = remote_models_path
+    default_models = json.loads(file(local_models_path).read())
     for m in default_models:
         if m['model_type'] == TrainedModel.DETECTOR:
             dm, created = TrainedModel.objects.get_or_create(name=m['name'],algorithm=m['algorithm'],mode=m['mode'],

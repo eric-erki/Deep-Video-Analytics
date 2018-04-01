@@ -47,6 +47,7 @@
        - LAUNCH_SERVER=1 # This supersedes NGINX and launches django development server with auto-reload
        - ENABLE_DEBUG=1 # Enables django debug mode
        - INIT_PROCESS=${INIT_PROCESS}
+       - INIT_MODELS=${INIT_MODELS}
        - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
        - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
        - DO_ACCESS_KEY_ID=${DO_ACCESS_KEY_ID}

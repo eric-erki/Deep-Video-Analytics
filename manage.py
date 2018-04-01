@@ -31,7 +31,7 @@ def load_envs(path):
     return {line.split('=')[0]: line.split('=')[1].strip() for line in file(path)}
 
 
-def start(deployment_type, gpu_count, init_process):
+def start(deployment_type, gpu_count, init_process, init_models):
     print "Checking if docker-compose is available"
     max_minutes = 20
     if deployment_type == 'gpu':
@@ -68,6 +68,7 @@ def start(deployment_type, gpu_count, init_process):
         print " ".join(args)
         envs = copy.deepcopy(os.environ)
         envs['INIT_PROCESS'] = init_process
+        envs['INIT_MODELS'] = init_models
         if os.path.isfile(os.path.expanduser('~/aws.env')):
             envs.update(load_envs(os.path.expanduser('~/aws.env')))
         if os.path.isfile(os.path.expanduser('~/do.env')):
@@ -160,6 +161,7 @@ def generate_multi_gpu_compose():
            - LAUNCH_SERVER_NGINX=1
            - LAUNCH_NOTEBOOK=1
            - INIT_PROCESS={INIT_PROCESS}
+           - INIT_MODELS=${INIT_MODELS}                  
          command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
          ports:
            - "127.0.0.1:8000:80"
@@ -181,6 +183,7 @@ def generate_multi_gpu_compose():
            - LAUNCH_Q_qstreamer=1
            - LAUNCH_SCHEDULER=1
            - LAUNCH_Q_GLOBAL_RETRIEVER=1
+           - INIT_MODELS=${INIT_MODELS}           
          command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
          depends_on:
            - db
@@ -198,6 +201,7 @@ def generate_multi_gpu_compose():
            - NVIDIA_VISIBLE_DEVICES={global_model_gpu_id}
            - GPU_MEMORY={global_model_memory_fraction}
            - LAUNCH_Q_GLOBAL_MODEL=1
+           - INIT_MODELS=${INIT_MODELS}           
          command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
          depends_on:
            - db
@@ -221,6 +225,7 @@ def generate_multi_gpu_compose():
            - NVIDIA_VISIBLE_DEVICES={gpu_id}
            - GPU_MEMORY={memory_fraction}
            - {env_key}={env_value}
+           - INIT_MODELS=${INIT_MODELS}           
          command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
          depends_on:
            - db
@@ -437,7 +442,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
                         help="Select action out of { start | stop | clean | clean_restart "
-                             "| jupyter (view jupyter URL) | wsgi (view logs) | generate_multi_gpu_compose }")
+                             "| jupyter (view jupyter URL) | wsgi (view logs) }")
     parser.add_argument("type", nargs='?',
                         help="select deployment type { dev | test_rfs | cpu | gpu | kube  }. If unsure "
                              "choose cpu. Required for start, stop, clean, restart, clean_restart")
@@ -445,6 +450,8 @@ if __name__ == '__main__':
                         type=int)
     parser.add_argument("--init_process", help="Initial DVAPQL path default: configs/custom_defaults/init_process.json",
                         default="/root/DVA/configs/custom_defaults/init_process.json")
+    parser.add_argument("--init_models", help="Path to trained_models.json:",
+                        default="/root/DVA/configs/custom_defaults/trained_models.json")
     args = parser.parse_args()
     if args.type and args.type == 'kube':
         if args.action == 'start':
@@ -454,23 +461,23 @@ if __name__ == '__main__':
         else:
             raise NotImplementedError("Kubernetes management only suports start and stop actions")
     else:
+        if args.type and args.type == 'gpu':
+            generate_multi_gpu_compose()
         if args.action == 'stop':
             stop(args.type, args.gpus)
         elif args.action == 'start':
-            start(args.type, args.gpus, args.init_process)
+            start(args.type, args.gpus, args.init_process, args.init_models)
         elif args.action == 'clean':
             stop(args.type, args.gpus, clean=True)
         elif args.action == 'restart':
             stop(args.type, args.gpus)
-            start(args.type, args.gpus, args.init_process)
+            start(args.type, args.gpus, args.init_process, args.init_models)
         elif args.action == 'clean_restart':
             stop(args.type, args.gpus, clean=True)
-            start(args.type, args.gpus, args.init_process)
+            start(args.type, args.gpus, args.init_process, args.init_models)
         elif args.action == 'jupyter':
             view_notebook_url()
         elif args.action == 'wsgi':
             view_uwsgi_logs()
-        elif args.action == 'generate_multi_gpu_compose':
-            generate_multi_gpu_compose()
         else:
             raise NotImplementedError("{} and {}".format(args.action, args.type))

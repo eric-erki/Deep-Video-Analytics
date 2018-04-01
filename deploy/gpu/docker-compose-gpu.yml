@@ -43,6 +43,7 @@
        - LAUNCH_SCHEDULER=1
        - LAUNCH_Q_GLOBAL_MODEL=1
        - LAUNCH_Q_GLOBAL_RETRIEVER=1
+       - INIT_MODELS=${INIT_MODELS}
        - INIT_PROCESS=${INIT_PROCESS}
      command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
      ports:
