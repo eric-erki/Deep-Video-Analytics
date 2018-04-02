@@ -224,11 +224,11 @@ def generate_multi_gpu_compose():
        - rabbit
      volumes:
        - dvadata:/root/media
- volumes:
-  dvapgdata:
-  dvadata:
-  dvarabbit:
-  dvaredis:
+  volumes:
+   dvapgdata:
+   dvadata:
+   dvarabbit:
+   dvaredis:
     """
 
     block = """   {worker_name}:
