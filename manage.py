@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import logging
 import subprocess
 import time
 import urllib2
@@ -40,21 +39,25 @@ def create_custom_env(init_process, init_models, deployment_type):
         try:
             envs.update(load_envs(os.path.expanduser('~/media.env')))
         except:
-            logging.error('~/media.env not found. required for testing rfs mode.')
+            print '~/media.env not found. required for testing rfs mode.'
         try:
             envs.update(load_envs(os.path.expanduser('~/aws.env')))
         except:
-            logging.error('~/aws.env not found. required for testing rfs mode.')
+            print '~/aws.env not found. required for testing rfs mode.'
     else:
         if os.path.isfile(os.path.expanduser('~/aws.env')):
             envs.update(load_envs(os.path.expanduser('~/aws.env')))
+        else:
+            print '{} not found. not passing AWS creds.'.format(os.path.expanduser('~/aws.env'))
         if os.path.isfile(os.path.expanduser('~/do.env')):
             envs.update(load_envs(os.path.expanduser('~/do.env')))
-    with open('custom.env','w') as out:
+        else:
+            print '{} not found. not passing Digital Ocean creds.'.format(os.path.expanduser('~/do.env'))
+    with open('custom.env', 'w') as out:
         out.write(file('default.env').read())
         out.write('\n')
-        for k,v in envs.items():
-            out.write("{}={}\n".format(k,v))
+        for k, v in envs.items():
+            out.write("{}={}\n".format(k, v))
 
 
 def start(deployment_type, gpu_count, init_process, init_models):

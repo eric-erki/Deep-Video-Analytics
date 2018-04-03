@@ -62,17 +62,19 @@ if __name__ == "__main__":
                                                              model_type=m['model_type'])
             if created:
                 dm.download()
-    if 'INIT_PROCESS' in os.environ and DVAPQL.objects.count() == 0:
-        path = os.environ.get('INIT_PROCESS',None)
-        p = DVAPQLProcess()
-        if path and path.strip():
-            if not path.startswith('/root/DVA/configs/custom_defaults/'):
-                get_path_to_file(path,"temp.json")
-                path = 'temp.json'
-            try:
-                jspec = json.load(file(path))
-            except:
-                logging.exception("could not load : {}".format(path))
-            else:
-                p.create_from_json(jspec)
-                p.launch()
+    if 'LAUNCH_SERVER' in os.environ or 'LAUNCH_SERVER_NGINX' in os.environ:
+        if 'INIT_PROCESS' in os.environ:
+            path = os.environ.get('INIT_PROCESS',None)
+            if path and path.strip():
+                if not path.startswith('/root/DVA/configs/custom_defaults/'):
+                    get_path_to_file(path,"temp.json")
+                    path = 'temp.json'
+                try:
+                    jspec = json.load(file(path))
+                except:
+                    logging.exception("could not load : {}".format(path))
+                else:
+                    p = DVAPQLProcess()
+                    if DVAPQL.objects.count() == 0:
+                        p.create_from_json(jspec)
+                        p.launch()
