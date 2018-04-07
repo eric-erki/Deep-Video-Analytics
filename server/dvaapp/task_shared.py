@@ -61,7 +61,6 @@ def count_framelist(dv):
 
 def load_dva_export_file(dv):
     video_id = dv.pk
-    video_obj = Video.objects.get(pk=video_id)
     if settings.DISABLE_NFS:
         fname = "/{}/{}.zip".format(video_id, video_id)
         logging.info("Downloading {}".format(fname))
@@ -80,9 +79,9 @@ def load_dva_export_file(dv):
             break
     with open("{}/{}/table_data.json".format(settings.MEDIA_ROOT, video_id)) as input_json:
         video_json = json.load(input_json)
-    importer = serializers.VideoImporter(video=video_obj, json=video_json, root_dir=video_root_dir)
+    importer = serializers.VideoImporter(video=dv, json=video_json, root_dir=video_root_dir)
     importer.import_video()
-    source_zip = "{}/{}.zip".format(video_root_dir, video_obj.pk)
+    source_zip = "{}/{}.zip".format(video_root_dir, video_id)
     os.remove(source_zip)
 
 
