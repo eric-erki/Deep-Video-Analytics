@@ -393,30 +393,27 @@ def gather_results(r, rids_to_names, results):
 def get_url(r):
     if r.detection_id:
         dd = r.detection
+        frame_index = r.frame.frame_index
         if dd.materialized:
             return '{}{}/regions/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.detection_id)
         else:
-            frame_url = get_frame_url(r)
-            if frame_url.startswith('http'):
-                cached_frame = fs.get_from_cache('/{}/frames/{}.jpg'.format(r.video_id,r.frame_index))
+            if settings.DISABLE_NFS:
+                cached_frame = fs.get_from_cache('/{}/frames/{}.jpg'.format(r.video_id,frame_index))
                 if cached_frame:
                     content = cStringIO.StringIO(cached_frame)
                 else:
+                    frame_url = '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, frame_index)
                     response = requests.get(frame_url)
                     content = cStringIO.StringIO(response.content)
                 img = Image.open(content)
             else:
-                img = Image.open('{}/{}/frames/{}.jpg'.format(settings.MEDIA_ROOT, r.video_id, r.frame_index))
+                img = Image.open('{}/{}/frames/{}.jpg'.format(settings.MEDIA_ROOT, r.video_id, frame_index))
             cropped = img.crop((dd.x, dd.y, dd.x + dd.w, dd.y + dd.h))
             ibuffer = cStringIO.StringIO()
             cropped.save(ibuffer, format="JPEG")
             return "data:image/jpeg;base64, {}".format(base64.b64encode(ibuffer.getvalue()))
     else:
         return '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.frame.frame_index)
-
-
-def get_frame_url(r):
-    return '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.frame.frame_index)
 
 
 def get_sequence_name(i, r):
