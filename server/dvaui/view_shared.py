@@ -1,4 +1,4 @@
-import os, json, requests, cStringIO, base64, uuid
+import os, json, requests, cStringIO, base64, uuid, logging
 from copy import deepcopy
 import dvaapp.models
 from django.conf import settings
@@ -400,8 +400,12 @@ def get_url(r):
             if settings.DISABLE_NFS:
                 cached_frame = fs.get_from_cache('/{}/frames/{}.jpg'.format(r.video_id,frame_index))
                 if cached_frame:
+                    if settings.DEBUG:
+                        logging.info("Cache used!")
                     content = cStringIO.StringIO(cached_frame)
                 else:
+                    if settings.DEBUG:
+                        logging.info("Cache NOT used!")
                     frame_url = '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, frame_index)
                     response = requests.get(frame_url)
                     content = cStringIO.StringIO(response.content)
