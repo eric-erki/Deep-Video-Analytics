@@ -265,3 +265,11 @@ TASK_NAMES_TO_QUEUE = {
 }
 
 NON_PROCESSING_TASKS = {'perform_training','perform_training_set_creation','perform_deletion', 'perform_export'}
+
+
+# How many video segments should we process at a time?
+DEFAULT_SEGMENTS_BATCH_SIZE = int(os.environ.get('DEFAULT_SEGMENTS_BATCH_SIZE',10))
+# How many frames/images in a dataset should we process at a time?
+DEFAULT_FRAMES_BATCH_SIZE = int(os.environ.get('DEFAULT_FRAMES_BATCH_SIZE',500))
+# Default video decoding 1 frame per 30 frames AND all i-frames
+DEFAULT_RATE = int(os.environ.get('DEFAULT_RATE',30))

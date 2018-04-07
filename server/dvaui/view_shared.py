@@ -7,7 +7,6 @@ from collections import defaultdict
 from dvaapp import processing
 from dvaapp import fs
 from PIL import Image
-import defaults
 from dvaapp.processing import DVAPQLProcess
 
 
@@ -100,7 +99,7 @@ def delete_video_object(video_pk, deleter):
 
 def handle_uploaded_file(f, name, user=None, rate=None):
     if rate is None:
-        rate = defaults.DEFAULT_RATE
+        rate = settings.DEFAULT_RATE
     filename = f.name
     filename = filename.lower()
     vuid = str(uuid.uuid1()).replace('-', '_')
@@ -190,7 +189,7 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                                     {
                                         'operation': 'perform_frame_download',
                                         'arguments': {
-                                            'frames_batch_size': defaults.DEFAULT_FRAMES_BATCH_SIZE,
+                                            'frames_batch_size': settings.DEFAULT_FRAMES_BATCH_SIZE,
                                             'map': json.load(
                                                 file("../configs/custom_defaults/framelist_processing.json"))
                                         },
@@ -223,7 +222,7 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                                             'map': [
                                                 {'operation': 'perform_video_decode',
                                                  'arguments': {
-                                                     'segments_batch_size': defaults.DEFAULT_SEGMENTS_BATCH_SIZE,
+                                                     'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
                                                      'rate': rate,
                                                      'map': json.load(
                                                          file("../configs/custom_defaults/video_processing.json"))
@@ -399,10 +398,15 @@ def get_url(r):
         else:
             frame_url = get_frame_url(r)
             if frame_url.startswith('http'):
-                response = requests.get(frame_url)
-                img = Image.open(cStringIO.StringIO(response.content))
+                cached_frame = fs.get_from_cache('/{}/frames/{}.jpg'.format(r.video_id,r.frame_index))
+                if cached_frame:
+                    content = cStringIO.StringIO(cached_frame)
+                else:
+                    response = requests.get(frame_url)
+                    content = cStringIO.StringIO(response.content)
+                img = Image.open(content)
             else:
-                img = Image.open('{}/{}/frames/{}.jpg'.format(settings.MEDIA_ROOT, r.video_id, r.frame.frame_index))
+                img = Image.open('{}/{}/frames/{}.jpg'.format(settings.MEDIA_ROOT, r.video_id, r.frame_index))
             cropped = img.crop((dd.x, dd.y, dd.x + dd.w, dd.y + dd.h))
             ibuffer = cStringIO.StringIO()
             cropped.save(ibuffer, format="JPEG")

@@ -1,9 +1,6 @@
 from django.conf.urls import url, include
 import views
-from django.conf import settings
 from django.contrib.auth import views as auth_views
-import sys
-
 
 
 urlpatterns = [
@@ -41,7 +38,6 @@ urlpatterns = [
     url(r'^submit_process', views.submit_process, name='submit_process'),
     url(r'^validate_process', views.validate_process, name='validate_process'),
     url(r'^assign_video_labels', views.assign_video_labels, name='assign_video_labels'),
-    # url(r'^delete_labels', views.delete_label, name='delete_labels'),
     url(r'^videos/$', views.VideoList.as_view(), name="video_list"),
     url(r'^queries/$', views.VisualSearchList.as_view()),
     url(r'^Search$', views.search),
