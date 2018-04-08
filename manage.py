@@ -454,6 +454,13 @@ def setup_kube():
         ).replace('\n\n', '\n'))
 
 
+def clear_media_bucket():
+    envs = load_envs(os.path.expanduser('~/media.env'))
+    print "Erasing bucket {}".format(envs['MEDIA_BUCKET'])
+    subprocess.check_call(['aws','s3','rm','--recursive','--quiet','s3://{}'.format(envs['MEDIA_BUCKET'])])
+    print "Bucket erased"
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
@@ -485,11 +492,15 @@ if __name__ == '__main__':
             start(args.type, args.gpus, args.init_process, args.init_models)
         elif args.action == 'clean':
             stop(args.type, args.gpus, clean=True)
+            if args.type == 'test_rfs':
+                clear_media_bucket()
         elif args.action == 'restart':
             stop(args.type, args.gpus)
             start(args.type, args.gpus, args.init_process, args.init_models)
         elif args.action == 'clean_restart':
             stop(args.type, args.gpus, clean=True)
+            if args.type == 'test_rfs':
+                clear_media_bucket()
             start(args.type, args.gpus, args.init_process, args.init_models)
         elif args.action == 'jupyter':
             view_notebook_url()
