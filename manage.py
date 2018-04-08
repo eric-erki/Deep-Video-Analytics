@@ -465,7 +465,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
                         help="Select action out of { start | stop | clean | clean_restart "
-                             "| jupyter (view jupyter URL) | wsgi (view logs) }")
+                             "| notebook (view jupyter notebook URL) | wsgi (view WSGI logs) }")
     parser.add_argument("type", nargs='?',
                         help="select deployment type { dev | test_rfs | cpu | gpu | kube  }. If unsure "
                              "choose cpu. Required for start, stop, clean, restart, clean_restart")
@@ -502,7 +502,7 @@ if __name__ == '__main__':
             if args.type == 'test_rfs':
                 clear_media_bucket()
             start(args.type, args.gpus, args.init_process, args.init_models)
-        elif args.action == 'jupyter':
+        elif args.action == 'notebook':
             view_notebook_url()
         elif args.action == 'wsgi':
             view_uwsgi_logs()
