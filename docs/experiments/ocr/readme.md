@@ -22,6 +22,8 @@ using following command and open the url show in terminal.
 nvidia-docker run -p 8888:8888 -it akshayubhat/dva-auto:gpu bash
 # Else if DONT have a GPU run following docker command
 docker run -p 8888:8888 -it akshayubhat/dva-auto:latest bash
+# Switch to Master branch and pull
+git reset --hard && git checkout --track origin/master && git pull
 cd /root/DVA/docs/experiments/ocr
 jupyter notebook --ip=0.0.0.0 --no-browser --allow-root
 # Above command will give you a url in form of http://0.0.0.0:8888/?token=824231234fbb231231231d438465f
