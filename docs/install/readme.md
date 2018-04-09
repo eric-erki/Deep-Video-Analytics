@@ -6,6 +6,9 @@
 - packer_ami.json : Contains Packer script to automatically create AWS EC2 AMI using AWS Deep Learning AMI
                     in us-east-1 region.
 
+
+- packer_gco.json : Contains Packer script to automatically create GCP image in us-west-1b region.
+
 - install_cuda_drivers.sh install CUDA along with drivers on GCP Ubuntu Xenial VM
   ( Not needed for AWS since the DL AMI contains pre-installed drivers.)
 

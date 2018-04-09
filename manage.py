@@ -316,7 +316,7 @@ def launch_kube(gpu=False):
                                'kubectl create -f deploy/kube/inception_retriever.yaml',
                                'kubectl create -f deploy/kube/global_retriever.yaml',
                                'kubectl create -f deploy/kube/textbox.yaml',
-                               'kubectl create -f deploy/kube/scheduler.yaml,'
+                               'kubectl create -f deploy/kube/scheduler.yaml',
                                'kubectl create -f deploy/kube/crnn.yaml',
                                'kubectl create -f deploy/kube/tagger.yaml']
     else:
@@ -329,7 +329,7 @@ def launch_kube(gpu=False):
                                'kubectl create -f deploy/kube/inception_retriever.yaml',
                                'kubectl create -f deploy/kube/global_retriever.yaml',
                                'kubectl create -f deploy/kube/textbox.yaml',
-                               'kubectl create -f deploy/kube/scheduler.yaml,'
+                               'kubectl create -f deploy/kube/scheduler.yaml',
                                'kubectl create -f deploy/kube/crnn.yaml',
                                'kubectl create -f deploy/kube/tagger.yaml']
     run_commands(deployment_commands)
