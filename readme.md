@@ -83,6 +83,7 @@ We provide instructions for deploying DVA in three scenarios.
 | faiss | [BSD + PATENTS License](https://github.com/facebookresearch/faiss/blob/master/LICENSE) |
 
 
+
 ### Additional libraries & frameworks
 
 * FFmpeg (not linked, called via a Subprocess)
