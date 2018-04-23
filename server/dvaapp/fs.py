@@ -41,10 +41,11 @@ if 'DO_ACCESS_KEY_ID' in os.environ and 'DO_SECRET_ACCESS_KEY' and os.environ:
 
 
 def cacheable(path):
-    return path.startswith('/queries/') or '/segments/' in path or ('/frames/' in path and (path.endswith('.jpg') or path.endswith('.png')))
+    return path.startswith('/queries/') or '/indexes/' in path or '/segments/' in path \
+           or ('/frames/' in path and (path.endswith('.jpg') or path.endswith('.png')))
 
 
-def cache_path(path,expire_in_seconds=120):
+def cache_path(path,expire_in_seconds=600):
     """
     :param path:
     :return:
@@ -70,6 +71,21 @@ def get_from_cache(path):
         body = redis_client.get(path)
         return body
     return None
+
+
+def get_from_remote_fs(src,path,dlpath,original_path,safe):
+    if S3_MODE:
+        try:
+            BUCKET.download_file(src, dlpath)
+        except:
+            raise ValueError("{} to {}".format(path, dlpath))
+    else:
+        with open(dlpath, 'w') as fout:
+            BUCKET.get_blob(src).download_to_file(fout)
+    if safe:
+        os.rename(dlpath, original_path)
+    # checks and puts the object back in cache
+    cache_path(path)
 
 
 def mkdir_safe(dlpath):
@@ -137,16 +153,10 @@ def ensure(path, dirnames=None, media_root=None, safe=False, event_id=None):
             if body:
                 with open(dlpath,'w') as fout:
                     fout.write(body)
-            elif S3_MODE:
-                try:
-                    BUCKET.download_file(src,dlpath)
-                except:
-                    raise ValueError("{} to {}".format(path, dlpath))
+                if safe:
+                    os.rename(dlpath, original_path)
             else:
-                with open(dlpath,'w') as fout:
-                    BUCKET.get_blob(src).download_to_file(fout)
-        if safe:
-            os.rename(dlpath,original_path)
+                get_from_remote_fs(src,path,dlpath,original_path,safe)
 
 
 def get_path_to_file(path,local_path):
