@@ -479,10 +479,12 @@ if __name__ == '__main__':
     if args.type and args.type == 'kube':
         if args.action == 'start':
             launch_kube()
-        elif args.action == 'stop':
+        elif args.action == 'stop' or args.action == 'clean':
             delete_kube()
+            if args.action == 'clean':
+                erase_kube_bucket()
         else:
-            raise NotImplementedError("Kubernetes management only suports start and stop actions")
+            raise NotImplementedError("Kubernetes management only suports start, stop and clean actions")
     else:
         if args.type and args.type == 'gpu':
             generate_multi_gpu_compose()
