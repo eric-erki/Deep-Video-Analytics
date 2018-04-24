@@ -407,7 +407,7 @@ def kube_create_premptible_node_pool():
 
 
 def generate_deployments():
-    with open('deploy/kube/common.yml') as f:
+    with open('deploy/kube/common.yaml') as f:
         common_env = f.read()
     for fname in glob.glob('./deploy/kube/*.template'):
         with open(fname.replace('.template',''),'w') as out:
