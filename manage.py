@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import glob
 import subprocess
 import time
 import urllib2
@@ -405,7 +406,16 @@ def kube_create_premptible_node_pool():
     subprocess.check_call(shlex.split(command))
 
 
+def generate_deployments():
+    with open('deploy/kube/common.yml') as f:
+        common_env = f.read()
+    for fname in glob.glob('./deploy/kube/*.template'):
+        with open(fname.replace('.template',''),'w') as out:
+            out.write(file(fname).read().format(common=common_env))
+
+
 def setup_kube():
+    generate_deployments()
     config = get_kube_config()
     print "attempting to create bucket"
     try:

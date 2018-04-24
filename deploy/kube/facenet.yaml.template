@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: coco
+  name: facenet
   labels:
-    name: coco
+    name: facenet
 spec:
   replicas: 1
   progressDeadlineSeconds: 600
@@ -12,15 +12,17 @@ spec:
   template:
     metadata:
       labels:
-        name: coco
+        name: facenet
+        role: cpuworker
     spec:
       containers:
       - image: akshayubhat/dva-auto:latest
         imagePullPolicy: "IfNotPresent"
-        name: coco
+        name: facenet
         env:
-        - name: LAUNCH_BY_NAME_detector_coco
+        - name: LAUNCH_BY_NAME_indexer_facenet
           value: "1"
+{common}
         args:
           - bash
           - -c

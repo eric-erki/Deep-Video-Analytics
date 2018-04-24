@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: retinception
+  name: scheduler
   labels:
-    name: retinception
+    name: scheduler
 spec:
   replicas: 1
   progressDeadlineSeconds: 600
@@ -12,16 +12,17 @@ spec:
   template:
     metadata:
       labels:
-        name: retinception
+        name: scheduler
         role: cpuworker
     spec:
       containers:
       - image: akshayubhat/dva-auto:latest
         imagePullPolicy: "IfNotPresent"
-        name: retinception
+        name: scheduler
         env:
-        - name: LAUNCH_BY_NAME_retriever_inception
+        - name: LAUNCH_SCHEDULER
           value: "1"
+{common}
         args:
           - bash
           - -c

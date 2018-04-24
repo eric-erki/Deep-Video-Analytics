@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: scheduler
+  name: retfacenet
   labels:
-    name: scheduler
+    name: retfacenet
 spec:
   replicas: 1
   progressDeadlineSeconds: 600
@@ -12,16 +12,17 @@ spec:
   template:
     metadata:
       labels:
-        name: scheduler
+        name: retfacenet
         role: cpuworker
     spec:
       containers:
       - image: akshayubhat/dva-auto:latest
         imagePullPolicy: "IfNotPresent"
-        name: scheduler
+        name: retfacenet
         env:
-        - name: LAUNCH_SCHEDULER
+        - name: LAUNCH_BY_NAME_retriever_facenet
           value: "1"
+{common}
         args:
           - bash
           - -c

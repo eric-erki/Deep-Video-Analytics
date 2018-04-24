@@ -1,27 +1,27 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: extractor
+  name: coco
   labels:
-    name: extractor
+    name: coco
 spec:
-  replicas: 3
+  replicas: 1
   progressDeadlineSeconds: 600
   minReadySeconds: 15
   revisionHistoryLimit: 5
   template:
     metadata:
       labels:
-        name: extractor
-        role: cpuworker
+        name: coco
     spec:
       containers:
       - image: akshayubhat/dva-auto:latest
         imagePullPolicy: "IfNotPresent"
-        name: dvaextractor
+        name: coco
         env:
-        - name: LAUNCH_Q_qextract
-          value: "2"
+        - name: LAUNCH_BY_NAME_detector_coco
+          value: "1"
+{common}
         args:
           - bash
           - -c

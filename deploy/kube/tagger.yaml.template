@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: crnn
+  name: tagger
   labels:
-    name: crnn
+    name: tagger
 spec:
   replicas: 1
   progressDeadlineSeconds: 600
@@ -12,17 +12,18 @@ spec:
   template:
     metadata:
       labels:
-        name: crnn
+        name: tagger
         role: cpuworker
     spec:
       containers:
       - image: akshayubhat/dva-auto:latest
         imagePullPolicy: "IfNotPresent"
-        name: crnn
+        name: tagger
         env:
-        - name: LAUNCH_BY_NAME_analyzer_crnn
+        - name: LAUNCH_BY_NAME_analyzer_tagger
           value: "1"
+{common}
         args:
           - bash
           - -c
-          - git reset --hard && git pull && sleep 15  && ./start_container.py
+          - git reset --hard && git pull && sleep 15 && ./start_container.py

@@ -22,6 +22,7 @@ spec:
         env:
         - name: LAUNCH_BY_NAME_detector_textbox
           value: "1"
+{common}
         args:
           - bash
           - -c

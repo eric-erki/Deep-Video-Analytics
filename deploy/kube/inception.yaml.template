@@ -22,6 +22,7 @@ spec:
         env:
         - name: LAUNCH_BY_NAME_indexer_inception
           value: "1"
+{common}
         args:
           - bash
           - -c
