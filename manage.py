@@ -298,7 +298,8 @@ def run_commands(command_list):
 def launch_kube(gpu=False):
     setup_kube()
     init_commands = ['kubectl create -f deploy/kube/secrets.yml', 'kubectl create -f deploy/kube/postgres.yaml',
-                     'kubectl create -f deploy/kube/rabbitmq.yaml', 'kubectl create -f deploy/kube/redis.yaml']
+                     'kubectl create -f deploy/kube/rabbitmq.yaml', 'kubectl create -f deploy/kube/redis.yaml',
+                     'kubectl create -f deploy/kube/cpuworker_presets.yaml']
     run_commands(init_commands)
     print "sleeping for 120 seconds"
     time.sleep(120)
@@ -337,6 +338,7 @@ def launch_kube(gpu=False):
 
 def delete_kube():
     delete_commands = ['kubectl delete -f deploy/kube/secrets.yml',
+                       'kubectl delete -f deploy/kube/cpuworker_presets.yaml',
                        'kubectl delete -f deploy/kube/coco.yaml',
                        'kubectl delete -f deploy/kube/redis.yaml',
                        'kubectl delete -f deploy/kube/extractor.yaml',
