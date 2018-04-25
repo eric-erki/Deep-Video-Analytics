@@ -18,6 +18,13 @@ spec:
       containers:
       - image: akshayubhat/dva-auto:latest
         imagePullPolicy: "IfNotPresent"
+        resources:
+          requests:
+            memory: "2000Mi"
+            cpu: "1"
+          limits:
+            memory: "4000Mi"
+            cpu: "4"
         name: inception
         env:
         - name: LAUNCH_BY_NAME_indexer_inception

@@ -18,6 +18,13 @@ spec:
       containers:
       - image: akshayubhat/dva-auto:latest
         imagePullPolicy: "IfNotPresent"
+        resources:
+          requests:
+            memory: "3000Mi"
+            cpu: "2"
+          limits:
+            memory: "8000Mi"
+            cpu: "4"
         name: textbox
         env:
         - name: LAUNCH_BY_NAME_detector_textbox
