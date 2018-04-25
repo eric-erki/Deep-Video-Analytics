@@ -14,6 +14,8 @@
           value: postgres
         - name: DISABLE_DEBUG
           value: "1"
+        - name: GLOBAL_MODEL
+          value: "1"
         - name: DISABLE_NFS
           value: "1"
         - name: DOCKER_MODE

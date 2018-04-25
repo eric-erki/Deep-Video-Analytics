@@ -1,0 +1,64 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dvawebserver
+  labels:
+    name: dvawebserver
+spec:
+  replicas: 2
+  progressDeadlineSeconds: 600
+  minReadySeconds: 15
+  revisionHistoryLimit: 5
+  template:
+    metadata:
+      labels:
+        name: dvawebserver
+    spec:
+      containers:
+      - image: akshayubhat/dva-auto:latest
+        imagePullPolicy: "IfNotPresent"
+        name: dvawebserver
+        env:
+        - name: LAUNCH_SERVER_NGINX
+          value: "1"
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: secretkey
+        - name: SUPERUSER
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: superuser
+        - name: SUPERPASS
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: superpass
+        - name: SUPEREMAIL
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: superemail
+{common}
+        ports:
+        - containerPort: 80
+        args:
+          - bash
+          - -c
+          - git reset --hard && git pull && sleep 10 && ./start_container.py
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dvawebserver
+  labels:
+    name: dvawebserver
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    name: dvawebserver

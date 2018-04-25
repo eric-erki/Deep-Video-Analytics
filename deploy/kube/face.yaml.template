@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: textbox
+  name: face
   labels:
-    name: textbox
+    name: face
 spec:
   replicas: 1
   progressDeadlineSeconds: 600
@@ -12,15 +12,15 @@ spec:
   template:
     metadata:
       labels:
-        name: textbox
+        name: face
         role: cpuworker
     spec:
       containers:
       - image: akshayubhat/dva-auto:latest
         imagePullPolicy: "IfNotPresent"
-        name: textbox
+        name: face
         env:
-        - name: LAUNCH_BY_NAME_detector_textbox
+        - name: LAUNCH_BY_NAME_detector_face
           value: "1"
 {common}
         args:

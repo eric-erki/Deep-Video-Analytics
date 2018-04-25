@@ -316,6 +316,7 @@ def launch_kube(gpu=False):
                                'kubectl create -f deploy/kube/inception.yaml',
                                'kubectl create -f deploy/kube/inception_retriever.yaml',
                                'kubectl create -f deploy/kube/global_retriever.yaml',
+                               'kubectl create -f deploy/kube/global_model.yaml',
                                'kubectl create -f deploy/kube/textbox.yaml',
                                'kubectl create -f deploy/kube/scheduler.yaml',
                                'kubectl create -f deploy/kube/crnn.yaml',
@@ -329,6 +330,7 @@ def launch_kube(gpu=False):
                                'kubectl create -f deploy/kube/inception.yaml',
                                'kubectl create -f deploy/kube/inception_retriever.yaml',
                                'kubectl create -f deploy/kube/global_retriever.yaml',
+                               'kubectl create -f deploy/kube/global_model.yaml',
                                'kubectl create -f deploy/kube/textbox.yaml',
                                'kubectl create -f deploy/kube/scheduler.yaml',
                                'kubectl create -f deploy/kube/crnn.yaml',
@@ -353,7 +355,8 @@ def delete_kube():
                        'kubectl delete -f deploy/kube/scheduler.yaml',
                        'kubectl delete -f deploy/kube/crnn.yaml',
                        'kubectl delete -f deploy/kube/tagger.yaml',
-                       'kubectl delete -f deploy/kube/global_retriever.yaml', ]
+                       'kubectl delete -f deploy/kube/global_retriever.yaml',
+                       'kubectl delete -f deploy/kube/global_model.yaml', ]
     run_commands(delete_commands)
 
 
