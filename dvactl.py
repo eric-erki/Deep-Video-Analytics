@@ -315,7 +315,7 @@ def launch_kube(gpu=False):
     run_commands(init_commands)
     print "sleeping for 120 seconds"
     time.sleep(120)
-    webserver_commands = ['kubectl create -f deploy/kube/webserver.yaml', ]
+    webserver_commands = ['kubectl create -n {} -f deploy/kube/webserver.yaml'.format(namespace), ]
     run_commands(webserver_commands)
     print "sleeping for 60 seconds"
     time.sleep(60)
@@ -333,8 +333,9 @@ def launch_kube(gpu=False):
     run_commands(commands)
 
 
-def delete_kube(namespace='nsdva'):
-    delete_commands = ['kubectl -n {} delete po,svc,pvc,pd --all'.format(namespace), ]
+def delete_kube():
+    namespace = get_namespace()
+    delete_commands = ['kubectl -n {} delete po,svc,pvc,deployment,statefulset,secrets --all'.format(namespace), ]
     run_commands(delete_commands)
 
 
