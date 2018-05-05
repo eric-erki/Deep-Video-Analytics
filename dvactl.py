@@ -307,7 +307,7 @@ def launch_kube(gpu=False):
         print "Attempting to create namespace {}".format(namespace)
         run_commands(['kubectl create -f deploy/kube/namespace.json',])
     except:
-        print "Could not create namespace {}, potentially".format(namespace)
+        print "Could not create namespace {}, it might already exist".format(namespace)
     init_deployments = ['secrets.yml', 'postgres.yaml', 'rabbitmq.yaml', 'redis.yaml']
     init_commands = []
     for k in init_deployments:
