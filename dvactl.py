@@ -296,10 +296,22 @@ def run_commands(command_list):
         subprocess.check_call(shlex.split(k))
 
 
+def get_namespace():
+    return json.load(file('deploy/kube/namespace.json'))['metadata']['name']
+
+
 def launch_kube(gpu=False):
     setup_kube()
-    init_commands = ['kubectl create -f deploy/kube/secrets.yml', 'kubectl create -f deploy/kube/postgres.yaml',
-                     'kubectl create -f deploy/kube/rabbitmq.yaml', 'kubectl create -f deploy/kube/redis.yaml']
+    namespace = get_namespace()
+    try:
+        print "Attempting to create namespace {}".format(namespace)
+        run_commands(['kubectl create -f deploy/kube/namespace.json',])
+    except:
+        print "Could not create namespace {}, potentially".format(namespace)
+    init_deployments = ['secrets.yml', 'postgres.yaml', 'rabbitmq.yaml', 'redis.yaml']
+    init_commands = []
+    for k in init_deployments:
+        init_commands.append("kubectl create -n {} -f deploy/kube/{}".format(namespace,k))
     run_commands(init_commands)
     print "sleeping for 120 seconds"
     time.sleep(120)
@@ -308,55 +320,21 @@ def launch_kube(gpu=False):
     print "sleeping for 60 seconds"
     time.sleep(60)
     if gpu:
-        deployment_commands = ['kubectl create -f deploy/kube/coco_gpu.yaml',
-                               'kubectl create -f deploy/kube/extractor.yaml',
-                               'kubectl create -f deploy/kube/face.yaml',
-                               'kubectl create -f deploy/kube/facenet.yaml',
-                               'kubectl create -f deploy/kube/facenet_retriever.yaml',
-                               'kubectl create -f deploy/kube/inception.yaml',
-                               'kubectl create -f deploy/kube/inception_retriever.yaml',
-                               'kubectl create -f deploy/kube/global_retriever.yaml',
-                               'kubectl create -f deploy/kube/global_model.yaml',
-                               'kubectl create -f deploy/kube/textbox.yaml',
-                               'kubectl create -f deploy/kube/scheduler.yaml',
-                               'kubectl create -f deploy/kube/crnn.yaml',
-                               'kubectl create -f deploy/kube/tagger.yaml']
+        deployments = ['coco_gpu.yaml','extractor.yaml','face.yaml','facenet.yaml','facenet_retriever.yaml',
+                       'inception.yaml','inception_retriever.yaml','global_retriever.yaml','global_model.yaml',
+                       'textbox.yaml','scheduler.yaml','crnn.yaml','tagger.yaml']
     else:
-        deployment_commands = ['kubectl create -f deploy/kube/coco.yaml',
-                               'kubectl create -f deploy/kube/extractor.yaml',
-                               'kubectl create -f deploy/kube/face.yaml',
-                               'kubectl create -f deploy/kube/facenet.yaml',
-                               'kubectl create -f deploy/kube/facenet_retriever.yaml',
-                               'kubectl create -f deploy/kube/inception.yaml',
-                               'kubectl create -f deploy/kube/inception_retriever.yaml',
-                               'kubectl create -f deploy/kube/global_retriever.yaml',
-                               'kubectl create -f deploy/kube/global_model.yaml',
-                               'kubectl create -f deploy/kube/textbox.yaml',
-                               'kubectl create -f deploy/kube/scheduler.yaml',
-                               'kubectl create -f deploy/kube/crnn.yaml',
-                               'kubectl create -f deploy/kube/tagger.yaml']
-    run_commands(deployment_commands)
+        deployments = ['coco.yaml','extractor.yaml','face.yaml','facenet.yaml','facenet_retriever.yaml',
+                       'inception.yaml','inception_retriever.yaml','global_retriever.yaml','global_model.yaml',
+                       'textbox.yaml','scheduler.yaml','crnn.yaml','tagger.yaml']
+    commands = []
+    for k in deployments:
+        commands.append("kubectl create -n {} -f deploy/kube/{}".format(namespace,k))
+    run_commands(commands)
 
 
-def delete_kube():
-    delete_commands = ['kubectl delete -f deploy/kube/secrets.yml',
-                       'kubectl delete -f deploy/kube/postgres.yaml',
-                       'kubectl delete -f deploy/kube/rabbitmq.yaml',
-                       'kubectl delete -f deploy/kube/redis.yaml',
-                       'kubectl delete -f deploy/kube/coco.yaml',
-                       'kubectl delete -f deploy/kube/extractor.yaml',
-                       'kubectl delete -f deploy/kube/face.yaml',
-                       'kubectl delete -f deploy/kube/facenet.yaml',
-                       'kubectl delete -f deploy/kube/facenet_retriever.yaml',
-                       'kubectl delete -f deploy/kube/inception.yaml',
-                       'kubectl delete -f deploy/kube/inception_retriever.yaml',
-                       'kubectl delete -f deploy/kube/textbox.yaml',
-                       'kubectl delete -f deploy/kube/webserver.yaml',
-                       'kubectl delete -f deploy/kube/scheduler.yaml',
-                       'kubectl delete -f deploy/kube/crnn.yaml',
-                       'kubectl delete -f deploy/kube/tagger.yaml',
-                       'kubectl delete -f deploy/kube/global_retriever.yaml',
-                       'kubectl delete -f deploy/kube/global_model.yaml', ]
+def delete_kube(namespace='nsdva'):
+    delete_commands = ['kubectl -n {} delete po,svc,pvc,pd --all'.format(namespace), ]
     run_commands(delete_commands)
 
 
