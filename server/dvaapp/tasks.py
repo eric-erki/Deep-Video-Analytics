@@ -97,6 +97,22 @@ def perform_reduce(task_id):
         app.send_task(dt.operation, args=[dt.pk, ], queue=dt.queue, eta=eta)
 
 
+@app.task(track_started=True, name="perform_process_monitoring")
+def perform_process_monitoring(task_id):
+    dt = get_and_check_task(task_id, skip_started_check=True)
+    if dt is None:
+        raise ValueError("task is None")
+    timeout_seconds = dt.arguments.get('timeout', settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
+    # Following is "1" instead of "0" since the current task is marked as pending.
+    if models.TEvent.objects.filter(parent_process=dt.parent_process, completed=False).count() == 1:
+        dt.parent_process.completed = True
+        dt.parent_process.save()
+        mark_as_completed(dt)
+    else:
+        eta = datetime.utcnow() + timedelta(seconds=timeout_seconds)
+        app.send_task(dt.operation, args=[dt.pk, ], queue=dt.queue, eta=eta)
+
+
 @app.task(track_started=True, name="perform_indexing")
 def perform_indexing(task_id):
     dt = get_and_check_task(task_id)
@@ -631,10 +647,6 @@ def monitor_system():
     This task used by scheduler to monitor state of the system.
     :return:
     """
-    for p in models.DVAPQL.objects.filter(completed=False):
-        if models.TEvent.objects.filter(parent_process=p, completed=False).count() == 0:
-            p.completed = True
-            p.save()
     last_action = models.ManagementAction.objects.filter(ping_index__isnull=False).last()
     if last_action:
         ping_index = last_action.ping_index + 1

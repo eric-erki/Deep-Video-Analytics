@@ -246,6 +246,7 @@ GLOBAL_RETRIEVER = 'qglobal_retriever' # if a retriever specific queue does not 
 DEFAULT_REDUCER_TIMEOUT_SECONDS = 60 # Reducer tasks checks every 60 seconds if map tasks are finished.
 
 TASK_NAMES_TO_QUEUE = {
+    "perform_process_monitoring":Q_REDUCER,
     "perform_training_set_creation":Q_EXTRACTOR,
     "perform_region_import":Q_EXTRACTOR,
     "perform_model_import":Q_EXTRACTOR,
