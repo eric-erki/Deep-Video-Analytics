@@ -347,7 +347,7 @@ def create_cluster():
     path = 'https://container.googleapis.com/v1/projects/{project_name}/zones/{zone}/clusters'.format(
         project_name=config['project_name'],zone=config['zone'])
     cluster_config = file('deploy/kube/cluster.json').read()
-    cluster_config = cluster_config.format(zone=config['zone'],project=config['project'])
+    cluster_config = cluster_config.format(zone=config['zone'],cluster_name=config['cluster_name'])
     r = requests.post(path,data=json.loads(cluster_config))
     print r.raise_for_status()
 
