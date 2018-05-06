@@ -9,6 +9,7 @@ import webbrowser
 import shlex
 import json
 import base64
+import requests
 
 
 def launch_gcp():
@@ -454,6 +455,21 @@ def clear_media_bucket():
     print "Bucket erased"
 
 
+def create_cluster():
+    """
+    Create a GKE cluster
+    :return:
+    """
+    config = get_kube_config()
+    path = 'https://container.googleapis.com/v1/projects/{project_name}/zones/{zone}/clusters'.format(
+        project_name=config['project_name'],zone=config['zone'])
+    cluster_config = file('deploy/kube/cluster.json').read()
+    cluster_config = cluster_config.format(zone=config['zone'],project=config['project'])
+    r = requests.post(path,data=json.loads(cluster_config))
+    print r.raise_for_status()
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
@@ -470,6 +486,8 @@ if __name__ == '__main__':
                         default="/root/DVA/configs/custom_defaults/trained_models.json")
     args = parser.parse_args()
     if args.type and args.type == 'kube':
+        if args.action == 'create':
+            create_cluster()
         if args.action == 'start':
             launch_kube()
         elif args.action == 'stop' or args.action == 'clean':
