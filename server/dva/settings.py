@@ -266,7 +266,8 @@ TASK_NAMES_TO_QUEUE = {
 
 NON_PROCESSING_TASKS = {'perform_training','perform_training_set_creation','perform_deletion', 'perform_export'}
 
-
+# Is the code running on kubernetes?
+KUBE_MODE = 'KUBE_MODE' in os.environ
 # How many video segments should we process at a time?
 DEFAULT_SEGMENTS_BATCH_SIZE = int(os.environ.get('DEFAULT_SEGMENTS_BATCH_SIZE',10))
 # How many frames/images in a dataset should we process at a time?

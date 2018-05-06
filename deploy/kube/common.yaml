@@ -32,6 +32,8 @@
               key: mediaurl
         - name: RABBIT_HOST
           value: rabbitmq-master
+        - name: KUBE_MODE
+          value: "1"
         - name: RABBIT_USER
           valueFrom:
             secretKeyRef:
