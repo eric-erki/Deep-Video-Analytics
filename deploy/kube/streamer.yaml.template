@@ -1,0 +1,29 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: streamer
+  labels:
+    name: streamer
+spec:
+  replicas: 3
+  progressDeadlineSeconds: 600
+  minReadySeconds: 15
+  revisionHistoryLimit: 5
+  template:
+    metadata:
+      labels:
+        name: streamer
+        role: cpuworker
+    spec:
+      containers:
+      - image: akshayubhat/dva-auto:latest
+        imagePullPolicy: "IfNotPresent"
+        name: dvastreamer
+        env:
+        - name: LAUNCH_Q_qstreamer
+          value: "1"
+{common}
+        args:
+          - bash
+          - -c
+          - git reset --hard && git pull && sleep 15  && ./start_container.py

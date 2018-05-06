@@ -320,11 +320,12 @@ def launch_kube(gpu=False):
     print "sleeping for 60 seconds"
     time.sleep(60)
     if gpu:
-        deployments = ['coco_gpu.yaml','extractor.yaml','face.yaml','facenet.yaml','facenet_retriever.yaml',
+        deployments = ['coco_gpu.yaml','extractor.yaml','streamer.yaml','face.yaml','facenet.yaml',
+                       'facenet_retriever.yaml',
                        'inception.yaml','inception_retriever.yaml','global_retriever.yaml','global_model.yaml',
                        'textbox.yaml','scheduler.yaml','crnn.yaml','tagger.yaml']
     else:
-        deployments = ['coco.yaml','extractor.yaml','face.yaml','facenet.yaml','facenet_retriever.yaml',
+        deployments = ['coco.yaml','extractor.yaml','streamer.yaml','face.yaml','facenet.yaml','facenet_retriever.yaml',
                        'inception.yaml','inception_retriever.yaml','global_retriever.yaml','global_model.yaml',
                        'textbox.yaml','scheduler.yaml','crnn.yaml','tagger.yaml']
     commands = []
