@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import argparse
-import logging
+import glob
 import subprocess
 import time
 import urllib2
@@ -40,21 +40,25 @@ def create_custom_env(init_process, init_models, deployment_type):
         try:
             envs.update(load_envs(os.path.expanduser('~/media.env')))
         except:
-            logging.error('~/media.env not found. required for testing rfs mode.')
+            print '~/media.env not found. required for testing rfs mode.'
         try:
             envs.update(load_envs(os.path.expanduser('~/aws.env')))
         except:
-            logging.error('~/aws.env not found. required for testing rfs mode.')
+            print '~/aws.env not found. required for testing rfs mode.'
     else:
         if os.path.isfile(os.path.expanduser('~/aws.env')):
             envs.update(load_envs(os.path.expanduser('~/aws.env')))
+        else:
+            print '{} not found. not passing AWS creds.'.format(os.path.expanduser('~/aws.env'))
         if os.path.isfile(os.path.expanduser('~/do.env')):
             envs.update(load_envs(os.path.expanduser('~/do.env')))
-    with open('custom.env','w') as out:
+        else:
+            print '{} not found. not passing Digital Ocean creds.'.format(os.path.expanduser('~/do.env'))
+    with open('custom.env', 'w') as out:
         out.write(file('default.env').read())
         out.write('\n')
-        for k,v in envs.items():
-            out.write("{}={}\n".format(k,v))
+        for k, v in envs.items():
+            out.write("{}={}\n".format(k, v))
 
 
 def start(deployment_type, gpu_count, init_process, init_models):
@@ -148,88 +152,87 @@ def view_uwsgi_logs():
 
 
 def generate_multi_gpu_compose():
-    skeleton = """
-     version: '3'
-     services:
-       db:
-         image: postgres:9.6.6
-         container_name: dva-pg
-         volumes:
-          - dvapgdata:/var/lib/postgresql/data
-         env_file:
-           - ../../custom.env
-       rabbit:
-         image: rabbitmq
-         container_name: dva-rmq
-         env_file:
-           - ../../custom.env
-         volumes:
-           - dvarabbit:/var/lib/rabbitmq
-       redis:
-         image: bitnami/redis:latest
-         container_name: dva-redis
-         env_file:
-           - ../../custom.env
-         volumes:
-           - dvaredis:/bitnami       
-       webserver:
-         image: akshayubhat/dva-auto:gpu
-         container_name: webserver
-         env_file:
-           - ../../custom.env
-         environment:
-           - LAUNCH_SERVER_NGINX=1
-           - LAUNCH_NOTEBOOK=1
-         command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
-         ports:
-           - "127.0.0.1:8000:80"
-           - "127.0.0.1:8888:8888"
-         depends_on:
-           - db
-           - redis       
-           - rabbit
-         volumes:
-           - dvadata:/root/media
-       non-gpu-workers:
-         image: akshayubhat/dva-auto:gpu
-         env_file:
-           - ../../custom.env
-         environment:
-           - LAUNCH_BY_NAME_retriever_inception=1
-           - LAUNCH_BY_NAME_retriever_facenet=1
-           - LAUNCH_Q_qextract=1
-           - LAUNCH_Q_qstreamer=1
-           - LAUNCH_SCHEDULER=1
-           - LAUNCH_Q_GLOBAL_RETRIEVER=1
-         command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
-         depends_on:
-           - db
-           - redis       
-           - rabbit
-         volumes:
-           - dvadata:/root/media
-    {gpu_workers}
-       global-model:
-         image: akshayubhat/dva-auto:gpu
-         env_file:
-           - ../../custom.env
-         environment:
-           - GPU_AVAILABLE=1     
-           - NVIDIA_VISIBLE_DEVICES={global_model_gpu_id}
-           - GPU_MEMORY={global_model_memory_fraction}
-           - LAUNCH_Q_GLOBAL_MODEL=1
-         command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
-         depends_on:
-           - db
-           - redis       
-           - rabbit
-         volumes:
-           - dvadata:/root/media
+    skeleton = """  version: '3'
+  services:
+   db:
+     image: postgres:9.6.6
+     container_name: dva-pg
      volumes:
-      dvapgdata:
-      dvadata:
-      dvarabbit:
-      dvaredis:
+      - dvapgdata:/var/lib/postgresql/data
+     env_file:
+       - ../../custom.env
+   rabbit:
+     image: rabbitmq
+     container_name: dva-rmq
+     env_file:
+       - ../../custom.env
+     volumes:
+       - dvarabbit:/var/lib/rabbitmq
+   redis:
+     image: bitnami/redis:latest
+     container_name: dva-redis
+     env_file:
+       - ../../custom.env
+     volumes:
+       - dvaredis:/bitnami       
+   webserver:
+     image: akshayubhat/dva-auto:gpu
+     container_name: webserver
+     env_file:
+       - ../../custom.env
+     environment:
+       - LAUNCH_SERVER_NGINX=1
+       - LAUNCH_NOTEBOOK=1
+     command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
+     ports:
+       - "127.0.0.1:8000:80"
+       - "127.0.0.1:8888:8888"
+     depends_on:
+       - db
+       - redis       
+       - rabbit
+     volumes:
+       - dvadata:/root/media
+   non-gpu-workers:
+     image: akshayubhat/dva-auto:gpu
+     env_file:
+       - ../../custom.env
+     environment:
+       - LAUNCH_BY_NAME_retriever_inception=1
+       - LAUNCH_BY_NAME_retriever_facenet=1
+       - LAUNCH_Q_qextract=1
+       - LAUNCH_Q_qstreamer=1
+       - LAUNCH_SCHEDULER=1
+       - LAUNCH_Q_GLOBAL_RETRIEVER=1
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
+     depends_on:
+       - db
+       - redis       
+       - rabbit
+     volumes:
+       - dvadata:/root/media
+{gpu_workers}
+   global-model:
+     image: akshayubhat/dva-auto:gpu
+     env_file:
+       - ../../custom.env
+     environment:
+       - GPU_AVAILABLE=1     
+       - NVIDIA_VISIBLE_DEVICES={global_model_gpu_id}
+       - GPU_MEMORY={global_model_memory_fraction}
+       - LAUNCH_Q_GLOBAL_MODEL=1
+     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
+     depends_on:
+       - db
+       - redis       
+       - rabbit
+     volumes:
+       - dvadata:/root/media
+  volumes:
+   dvapgdata:
+   dvadata:
+   dvarabbit:
+   dvaredis:
     """
 
     block = """   {worker_name}:
@@ -293,64 +296,46 @@ def run_commands(command_list):
         subprocess.check_call(shlex.split(k))
 
 
+def get_namespace():
+    return json.load(file('deploy/kube/namespace.json'))['metadata']['name']
+
+
 def launch_kube(gpu=False):
     setup_kube()
-    init_commands = ['kubectl create -f deploy/kube/secrets.yml', 'kubectl create -f deploy/kube/postgres.yaml',
-                     'kubectl create -f deploy/kube/rabbitmq.yaml', 'kubectl create -f deploy/kube/redis.yaml']
+    namespace = get_namespace()
+    try:
+        print "Attempting to create namespace {}".format(namespace)
+        run_commands(['kubectl create -f deploy/kube/namespace.json',])
+    except:
+        print "Could not create namespace {}, it might already exist".format(namespace)
+    init_deployments = ['secrets.yml', 'postgres.yaml', 'rabbitmq.yaml', 'redis.yaml']
+    init_commands = []
+    for k in init_deployments:
+        init_commands.append("kubectl create -n {} -f deploy/kube/{}".format(namespace,k))
     run_commands(init_commands)
     print "sleeping for 120 seconds"
     time.sleep(120)
-    webserver_commands = ['kubectl create -f deploy/kube/webserver.yaml', ]
+    webserver_commands = ['kubectl create -n {} -f deploy/kube/webserver.yaml'.format(namespace), ]
     run_commands(webserver_commands)
     print "sleeping for 60 seconds"
     time.sleep(60)
     if gpu:
-        deployment_commands = ['kubectl create -f deploy/kube/coco_gpu.yaml',
-                               'kubectl create -f deploy/kube/extractor.yaml',
-                               'kubectl create -f deploy/kube/face.yaml',
-                               'kubectl create -f deploy/kube/facenet.yaml',
-                               'kubectl create -f deploy/kube/facenet_retriever.yaml',
-                               'kubectl create -f deploy/kube/inception.yaml',
-                               'kubectl create -f deploy/kube/inception_retriever.yaml',
-                               'kubectl create -f deploy/kube/global_retriever.yaml',
-                               'kubectl create -f deploy/kube/textbox.yaml',
-                               'kubectl create -f deploy/kube/scheduler.yaml,'
-                               'kubectl create -f deploy/kube/crnn.yaml',
-                               'kubectl create -f deploy/kube/tagger.yaml']
+        deployments = ['coco_gpu.yaml','extractor.yaml','face.yaml','facenet.yaml','facenet_retriever.yaml',
+                       'inception.yaml','inception_retriever.yaml','global_retriever.yaml','global_model.yaml',
+                       'textbox.yaml','scheduler.yaml','crnn.yaml','tagger.yaml']
     else:
-        deployment_commands = ['kubectl create -f deploy/kube/coco.yaml',
-                               'kubectl create -f deploy/kube/extractor.yaml',
-                               'kubectl create -f deploy/kube/face.yaml',
-                               'kubectl create -f deploy/kube/facenet.yaml',
-                               'kubectl create -f deploy/kube/facenet_retriever.yaml',
-                               'kubectl create -f deploy/kube/inception.yaml',
-                               'kubectl create -f deploy/kube/inception_retriever.yaml',
-                               'kubectl create -f deploy/kube/global_retriever.yaml',
-                               'kubectl create -f deploy/kube/textbox.yaml',
-                               'kubectl create -f deploy/kube/scheduler.yaml,'
-                               'kubectl create -f deploy/kube/crnn.yaml',
-                               'kubectl create -f deploy/kube/tagger.yaml']
-    run_commands(deployment_commands)
+        deployments = ['coco.yaml','extractor.yaml','face.yaml','facenet.yaml','facenet_retriever.yaml',
+                       'inception.yaml','inception_retriever.yaml','global_retriever.yaml','global_model.yaml',
+                       'textbox.yaml','scheduler.yaml','crnn.yaml','tagger.yaml']
+    commands = []
+    for k in deployments:
+        commands.append("kubectl create -n {} -f deploy/kube/{}".format(namespace,k))
+    run_commands(commands)
 
 
 def delete_kube():
-    delete_commands = ['kubectl delete -f deploy/kube/secrets.yml',
-                       'kubectl delete -f deploy/kube/coco.yaml',
-                       'kubectl delete -f deploy/kube/redis.yaml',
-                       'kubectl delete -f deploy/kube/extractor.yaml',
-                       'kubectl delete -f deploy/kube/face.yaml',
-                       'kubectl delete -f deploy/kube/facenet.yaml',
-                       'kubectl delete -f deploy/kube/facenet_retriever.yaml',
-                       'kubectl delete -f deploy/kube/inception.yaml',
-                       'kubectl delete -f deploy/kube/inception_retriever.yaml',
-                       'kubectl delete -f deploy/kube/postgres.yaml',
-                       'kubectl delete -f deploy/kube/rabbitmq.yaml',
-                       'kubectl delete -f deploy/kube/textbox.yaml',
-                       'kubectl delete -f deploy/kube/webserver.yaml',
-                       'kubectl delete -f deploy/kube/scheduler.yaml',
-                       'kubectl delete -f deploy/kube/crnn.yaml',
-                       'kubectl delete -f deploy/kube/tagger.yaml',
-                       'kubectl delete -f deploy/kube/global_retriever.yaml', ]
+    namespace = get_namespace()
+    delete_commands = ['kubectl -n {} delete po,svc,pvc,deployment,statefulset,secrets --all'.format(namespace), ]
     run_commands(delete_commands)
 
 
@@ -401,7 +386,16 @@ def kube_create_premptible_node_pool():
     subprocess.check_call(shlex.split(command))
 
 
+def generate_deployments():
+    with open('deploy/kube/common.yaml') as f:
+        common_env = f.read()
+    for fname in glob.glob('./deploy/kube/*.template'):
+        with open(fname.replace('.template',''),'w') as out:
+            out.write(file(fname).read().format(common=common_env))
+
+
 def setup_kube():
+    generate_deployments()
     config = get_kube_config()
     print "attempting to create bucket"
     try:
@@ -452,11 +446,18 @@ def setup_kube():
         ).replace('\n\n', '\n'))
 
 
+def clear_media_bucket():
+    envs = load_envs(os.path.expanduser('~/media.env'))
+    print "Erasing bucket {}".format(envs['MEDIA_BUCKET'])
+    subprocess.check_call(['aws','s3','rm','--recursive','--quiet','s3://{}'.format(envs['MEDIA_BUCKET'])])
+    print "Bucket erased"
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
                         help="Select action out of { start | stop | clean | clean_restart "
-                             "| jupyter (view jupyter URL) | wsgi (view logs) }")
+                             "| notebook (view jupyter notebook URL) | wsgi (view WSGI logs) }")
     parser.add_argument("type", nargs='?',
                         help="select deployment type { dev | test_rfs | cpu | gpu | kube  }. If unsure "
                              "choose cpu. Required for start, stop, clean, restart, clean_restart")
@@ -470,10 +471,12 @@ if __name__ == '__main__':
     if args.type and args.type == 'kube':
         if args.action == 'start':
             launch_kube()
-        elif args.action == 'stop':
+        elif args.action == 'stop' or args.action == 'clean':
             delete_kube()
+            if args.action == 'clean':
+                erase_kube_bucket()
         else:
-            raise NotImplementedError("Kubernetes management only suports start and stop actions")
+            raise NotImplementedError("Kubernetes management only suports start, stop and clean actions")
     else:
         if args.type and args.type == 'gpu':
             generate_multi_gpu_compose()
@@ -483,13 +486,17 @@ if __name__ == '__main__':
             start(args.type, args.gpus, args.init_process, args.init_models)
         elif args.action == 'clean':
             stop(args.type, args.gpus, clean=True)
+            if args.type == 'test_rfs':
+                clear_media_bucket()
         elif args.action == 'restart':
             stop(args.type, args.gpus)
             start(args.type, args.gpus, args.init_process, args.init_models)
         elif args.action == 'clean_restart':
             stop(args.type, args.gpus, clean=True)
+            if args.type == 'test_rfs':
+                clear_media_bucket()
             start(args.type, args.gpus, args.init_process, args.init_models)
-        elif args.action == 'jupyter':
+        elif args.action == 'notebook':
             view_notebook_url()
         elif args.action == 'wsgi':
             view_uwsgi_logs()

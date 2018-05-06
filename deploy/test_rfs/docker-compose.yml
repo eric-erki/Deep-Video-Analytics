@@ -29,6 +29,7 @@
        - ../../custom.env
      environment:
        - LAUNCH_SERVER_NGINX=1
+       - ENABLE_DEBUG=1 # Enables django debug mode
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80" # Since Docker messes up iptables, ufw has no effect as a result bind to localhost and tunnel / Port forward through SSH

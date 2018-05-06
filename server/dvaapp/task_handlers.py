@@ -47,7 +47,8 @@ def handle_perform_indexing(start):
         indexing.Indexers.index_queryset(di, visual_index, start, target, queryset)
     elif target == 'frames':
         queryset, target = task_shared.build_queryset(args=start.arguments, video_id=start.video_id)
-        if visual_index.cloud_fs_support and settings.DISABLE_NFS:
+        if visual_index.cloud_fs_support and settings.DISABLE_NFS and (not settings.KUBE_MODE):
+            # TODO Re-enable this in Kube Mode when issues with GCS are resolved.
             # if NFS is disabled and index supports cloud file systems natively (e.g. like Tensorflow)
             indexing.Indexers.index_queryset(di, visual_index, start, target, queryset, cloud_paths=True)
         else:

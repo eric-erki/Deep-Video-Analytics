@@ -1,5 +1,5 @@
 # Deep Video Analytics &nbsp; &nbsp; [![Build Status](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics.svg?branch=master)](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics) [![Build Status](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics.svg?branch=stable)](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics/branches)
-#### by [Akshay Bhat, Cornell University.](http://www.akshaybhat.com)
+#### by [Akshay Bhat](http://www.akshaybhat.com)
 
 ![UI Screenshot](docs/figures/emma.png "Emma Watson, from poster of her latest subject appropriate movie The Circle")
 
@@ -81,6 +81,7 @@ We provide instructions for deploying DVA in three scenarios.
 | -------- | ------------------- |
 | pqkmeans |  [MIT License](https://github.com/DwangoMediaVillage/pqkmeans/blob/master/LICENSE) |
 | faiss | [BSD + PATENTS License](https://github.com/facebookresearch/faiss/blob/master/LICENSE) |
+
 
 
 ### Additional libraries & frameworks

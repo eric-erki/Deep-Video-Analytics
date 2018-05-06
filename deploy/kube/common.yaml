@@ -1,29 +1,3 @@
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: cocogpu
-  labels:
-    name: cocogpu
-spec:
-  replicas: 1
-  progressDeadlineSeconds: 600
-  minReadySeconds: 15
-  revisionHistoryLimit: 5
-  template:
-    metadata:
-      labels:
-        name: cocogpu
-    spec:
-      containers:
-      - image: akshayubhat/dva-auto:gpu
-        imagePullPolicy: "IfNotPresent"
-        name: cocogpu
-        resources:
-          limits:
-           nvidia.com/gpu: 1
-        env:
-        - name: LAUNCH_BY_NAME_detector_coco
-          value: "1"
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
@@ -40,12 +14,8 @@ spec:
           value: postgres
         - name: DISABLE_DEBUG
           value: "1"
-        - name: GPU_MEMORY
-          value: "0.95"
-        - name: GPU_AVAILABLE
+        - name: GLOBAL_MODEL
           value: "1"
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: "0"
         - name: DISABLE_NFS
           value: "1"
         - name: DOCKER_MODE
@@ -62,6 +32,8 @@ spec:
               key: mediaurl
         - name: RABBIT_HOST
           value: rabbitmq-master
+        - name: KUBE_MODE
+          value: "1"
         - name: RABBIT_USER
           valueFrom:
             secretKeyRef:
@@ -102,7 +74,3 @@ spec:
             secretKeyRef:
               name: redis-secret
               key: redispassword
-        args:
-          - bash
-          - -c
-          - git reset --hard && git pull && sleep 15  && ./start_container.py
