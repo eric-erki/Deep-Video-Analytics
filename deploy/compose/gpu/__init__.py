@@ -1,3 +1,6 @@
+"""
+Code in this file assumes that it is being run via dvactl and git repo root as current directory
+"""
 CONFIG = {
     "deploy/gpu/docker-compose-2-gpus.yml": {"global_model_gpu_id": 0,
                                              "global_model_memory_fraction": 0.1,
@@ -32,26 +35,26 @@ SKELETON = """  version: '3'
      volumes:
       - dvapgdata:/var/lib/postgresql/data
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
    rabbit:
      image: rabbitmq
      container_name: dva-rmq
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      volumes:
        - dvarabbit:/var/lib/rabbitmq
    redis:
      image: bitnami/redis:latest
      container_name: dva-redis
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      volumes:
        - dvaredis:/bitnami       
    webserver:
      image: akshayubhat/dva-auto:gpu
      container_name: webserver
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_SERVER_NGINX=1
        - LAUNCH_NOTEBOOK=1
@@ -68,7 +71,7 @@ SKELETON = """  version: '3'
    non-gpu-workers:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_BY_NAME_retriever_inception=1
        - LAUNCH_BY_NAME_retriever_facenet=1
@@ -87,7 +90,7 @@ SKELETON = """  version: '3'
    global-model:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - GPU_AVAILABLE=1     
        - NVIDIA_VISIBLE_DEVICES={global_model_gpu_id}
@@ -110,7 +113,7 @@ SKELETON = """  version: '3'
 BLOCK = """   {worker_name}:
          image: akshayubhat/dva-auto:gpu
          env_file:
-           - ../../custom.env
+           - ../../../custom.env
          environment:
            - GPU_AVAILABLE=1
            - NVIDIA_VISIBLE_DEVICES={gpu_id}
@@ -123,3 +126,17 @@ BLOCK = """   {worker_name}:
            - rabbit
          volumes:
            - dvadata:/root/media"""
+
+
+def generate_multi_gpu_compose():
+    for fname in CONFIG:
+        blocks = []
+        worker_specs = CONFIG[fname]['workers']
+        for gpu_id, fraction, env_key, worker_name, in worker_specs:
+            blocks.append(
+                BLOCK.format(worker_name=worker_name, gpu_id=gpu_id, memory_fraction=fraction, env_key=env_key,
+                             env_value=1))
+        with open(fname, 'w') as out:
+            out.write(SKELETON.format(gpu_workers="\n".join(blocks),
+                                      global_model_gpu_id=CONFIG[fname]['global_model_gpu_id'],
+                                      global_model_memory_fraction=CONFIG[fname]['global_model_memory_fraction']))

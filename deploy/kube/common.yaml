@@ -16,7 +16,7 @@
           value: "1"
         - name: GLOBAL_MODEL
           value: "1"
-        - name: DISABLE_NFS
+        - name: ENABLE_CLOUDFS
           value: "1"
         - name: DOCKER_MODE
           value: "true"

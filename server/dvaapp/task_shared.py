@@ -61,7 +61,7 @@ def count_framelist(dv):
 
 def load_dva_export_file(dv):
     video_id = dv.pk
-    if settings.DISABLE_NFS:
+    if settings.ENABLE_CLOUDFS:
         fname = "/{}/{}.zip".format(video_id, video_id)
         logging.info("Downloading {}".format(fname))
         ensure(fname)
@@ -86,7 +86,7 @@ def load_dva_export_file(dv):
 
 
 def export_video_to_file(video_obj,export,task_obj):
-    if settings.DISABLE_NFS:
+    if settings.ENABLE_CLOUDFS:
         download_video_from_remote_to_local(video_obj)
     video_id = video_obj.pk
     export_uuid = str(uuid.uuid4())
@@ -118,7 +118,7 @@ def export_video_to_file(video_obj,export,task_obj):
         os.remove(local_path)
         export.url = path
     else:
-        if settings.DISABLE_NFS:
+        if settings.ENABLE_CLOUDFS:
             upload_file_to_remote("/exports/{}".format(file_name))
         export.url = "{}/exports/{}".format(settings.MEDIA_URL,file_name).replace('//exports','/exports')
 

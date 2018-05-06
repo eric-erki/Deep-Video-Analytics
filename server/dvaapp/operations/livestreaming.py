@@ -129,7 +129,7 @@ class LivestreamCapture(object):
         ds.metadata = segment_json
         ds.save()
         self.last_processed_segment_index = segment_index
-        if settings.DISABLE_NFS:
+        if settings.ENABLE_CLOUDFS:
             upload_file_to_remote(ds.path(""))
         self.dv.segments = self.last_processed_segment_index + 1
         self.dv.save()

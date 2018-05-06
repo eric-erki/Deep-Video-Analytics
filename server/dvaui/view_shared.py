@@ -110,7 +110,7 @@ def handle_uploaded_file(f, name, user=None, rate=None):
         with open(local_fname, 'wb+') as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
-        if settings.DISABLE_NFS:
+        if settings.ENABLE_CLOUDFS:
             fs.upload_file_to_remote(fpath)
             os.remove(local_fname)
         p = processing.DVAPQLProcess()
@@ -138,7 +138,7 @@ def handle_uploaded_file(f, name, user=None, rate=None):
         with open(local_fname, 'wb+') as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
-        if settings.DISABLE_NFS:
+        if settings.ENABLE_CLOUDFS:
             fs.upload_file_to_remote(fpath)
             os.remove(local_fname)
         p = processing.DVAPQLProcess()
@@ -397,7 +397,7 @@ def get_url(r):
         if dd.materialized:
             return '{}{}/regions/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.detection_id)
         else:
-            if settings.DISABLE_NFS:
+            if settings.ENABLE_CLOUDFS:
                 cached_frame = fs.get_from_cache('/{}/frames/{}.jpg'.format(r.video_id,frame_index))
                 if cached_frame:
                     if settings.DEBUG:
