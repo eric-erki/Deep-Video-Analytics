@@ -1,7 +1,7 @@
 {
   "cluster": {
-    "name": "{cluster_name}",
-    "zone": "{zone}",
+    "name": "",
+    "zone": "",
     "network": "default",
     "nodePools": [
       {
