@@ -166,7 +166,7 @@ def get_path_to_file(path,local_path):
     :param local_path:
     :return:
     """
-    if settings.DISABLE_NFS and path.startswith('/ingest/'):
+    if settings.ENABLE_CLOUDFS and path.startswith('/ingest/'):
         if S3_MODE:
             path = "s3://{}{}".format(settings.MEDIA_BUCKET,path)
         elif GS_MODE:

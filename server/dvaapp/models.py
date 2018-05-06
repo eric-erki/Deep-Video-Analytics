@@ -254,7 +254,7 @@ class TrainedModel(models.Model):
 
     def upload(self):
         for m in self.files:
-            if settings.DISABLE_NFS and sys.platform != 'darwin':
+            if settings.ENABLE_CLOUDFS and sys.platform != 'darwin':
                 fs.upload_file_to_remote("/models/{}/{}".format(self.uuid,m['filename']))
 
     def download(self):

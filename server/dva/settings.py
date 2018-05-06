@@ -16,10 +16,10 @@ DVA_PRIVATE_ENABLE = 'DVA_PRIVATE_ENABLE' in os.environ
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MEDIA_BUCKET = os.environ.get('MEDIA_BUCKET', None)
 CLOUD_FS_PREFIX = os.environ.get('CLOUD_FS_PREFIX', 's3') # By default AWS "s3", Tensorflow also supports "gs" for GCS
-DISABLE_NFS = os.environ.get('DISABLE_NFS',False)
+ENABLE_CLOUDFS = os.environ.get('ENABLE_CLOUDFS',False)
 
-if DISABLE_NFS and (MEDIA_BUCKET is None):
-    raise EnvironmentError("Either an NFS/Data volume or a remote S3 bucket is required!")
+if ENABLE_CLOUDFS and (MEDIA_BUCKET is None):
+    raise EnvironmentError("Either data volume (do not enable cloud fs) or a remote S3/GCS bucket is required!")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ['SECRET_KEY']
@@ -211,7 +211,7 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 MEDIA_ROOT = os.path.expanduser('~/media/') if sys.platform == 'darwin' or os.environ.get('TRAVISTEST',False) else "/root/media/"
 
-if DISABLE_NFS and ('LAUNCH_SERVER' in os.environ or 'LAUNCH_SERVER_NGINX' in os.environ) and 'MEDIA_URL' not in os.environ:
+if ENABLE_CLOUDFS and ('LAUNCH_SERVER' in os.environ or 'LAUNCH_SERVER_NGINX' in os.environ) and 'MEDIA_URL' not in os.environ:
     raise EnvironmentError('You must set MEDIA_URL (e.g. http://s3bucketname.s3-website-us-east-1.amazonaws.com/)'
                            ' or similar google storage bucket URL when launching websever in NFS disabled mode.')
 

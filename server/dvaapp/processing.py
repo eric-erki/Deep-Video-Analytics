@@ -268,7 +268,7 @@ def process_next(dt,inject_filters=None,custom_next_tasks=None,sync=True,launch_
     next_tasks = args.get('map',[]) if args and launch_next else []
     if sync and settings.MEDIA_BUCKET:
         for k in SYNC_TASKS.get(dt.operation,[]):
-            if settings.DISABLE_NFS:
+            if settings.ENABLE_CLOUDFS:
                 dirname = k['arguments'].get('dirname',None)
                 task_shared.upload(dirname,task_id,dt.video_id)
             else:
@@ -322,7 +322,7 @@ class DVAPQLProcess(object):
                 redis_client.set("/queries/{}.png".format(self.process.uuid),image_data,ex=1200)
                 with open(query_path, 'w') as fh:
                     fh.write(image_data)
-                if settings.DISABLE_NFS:
+                if settings.ENABLE_CLOUDFS:
                     query_key = "/queries/{}.png".format(self.process.uuid)
                     fs.upload_file_to_remote(query_key)
                     os.remove(query_path)
