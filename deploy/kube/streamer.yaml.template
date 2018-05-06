@@ -5,7 +5,7 @@ metadata:
   labels:
     name: streamer
 spec:
-  replicas: 3
+  replicas: 1
   progressDeadlineSeconds: 600
   minReadySeconds: 15
   revisionHistoryLimit: 5
