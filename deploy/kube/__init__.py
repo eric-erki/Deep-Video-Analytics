@@ -10,6 +10,15 @@ import os
 import base64
 import glob
 
+CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" clusters create 
+"{cluster_name}" --zone "{zone}" --username "admin" --cluster-version "1.8.8-gke.0" --machine-type "custom-22-84480"  
+--image-type "COS" --disk-size "100" --num-nodes "1" 
+--scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_write","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" \
+--network "default" --enable-cloud-logging --enable-cloud-monitoring --subnetwork "default" 
+--addons HorizontalPodAutoscaling,HttpLoadBalancing,KubernetesDashboard --enable-autorepair
+"""
+
+AUTH_COMMAND = "gcloud container clusters get-credentials {cluster_name} --zone {zone} --project {project_name}"
 
 def run_commands(command_list):
     for k in command_list:
@@ -196,15 +205,17 @@ def create_cluster():
     Create a GKE cluster
     :return:
     """
-    import requests
     config = get_kube_config()
-    path = 'https://container.googleapis.com/v1/projects/{project_name}/zones/{zone}/clusters'.format(
-        project_name=config['project_name'],zone=config['zone'])
-    cluster_config = json.load(file('deploy/kube/cluster.json'))
-    cluster_config['cluster']['name'] = config['cluster_name']
-    cluster_config['cluster']['zone'] = config['zone']
-    r = requests.post(path,data=cluster_config)
-    print r.raise_for_status()
+    command = CLUSTER_CREATE_COMMAND.replace('\n','').format(cluster_name=config['cluster_name'],
+                                                             project_name=config['project_name'],
+                                                             zone=config['zone'])
+    print "Creating cluster by running {}".format(command)
+    subprocess.check_call(shlex.split(command))
+    command = AUTH_COMMAND.replace('\n','').format(cluster_name=config['cluster_name'],
+                                                             project_name=config['project_name'],
+                                                             zone=config['zone'])
+    print "Authenticating with cluster by running {}".format(command)
+    subprocess.check_call(shlex.split(command))
 
 
 def handle_kube_operations(args):

@@ -359,44 +359,65 @@ class DVAPQLProcess(object):
 
     def launch(self):
         if self.process.script['process_type'] == DVAPQL.PROCESS:
-            for d in self.process.script.get('delete',[]):
-                if d['MODEL'] == 'Video':
-                    d_copy = copy.deepcopy(d)
-                    m = apps.get_model(app_label='dvaapp',model_name=d['MODEL'])
-                    instance = m.objects.get(**d_copy['selector'])
-                    DeletedVideo.objects.create(deleter=self.process.user, video_uuid=instance.pk)
-                    instance.delete()
-                else:
-                    self.process.failed = True
-                    self.process.error_message = "Cannot delete {}; Only video deletion implemented.".format(d['MODEL'])
-            for c in self.process.script.get('create',[]):
-                c_copy = copy.deepcopy(c)
-                m = apps.get_model(app_label='dvaapp',model_name=c['MODEL'])
-                for k,v in c['spec'].iteritems():
-                    if v == '__timezone.now__':
-                        c_copy['spec'][k] = timezone.now()
-                instance = m.objects.create(**c_copy['spec'])
-                self.created_objects.append(instance)
-                self.assign_task_group_id(c.get('tasks',[]))
-                for t in copy.deepcopy(c.get('tasks',[])):
-                    self.launch_task(t,instance.pk)
-            self.assign_task_group_id(self.process.script.get('tasks',[]))
-            for t in self.process.script.get('tasks',[]):
-                self.launch_task(t)
+            self.delete_instances()
+            self.create_instances()
+            self.launch_processing_tasks()
+            self.launch_process_monitor()
         elif self.process.script['process_type'] == DVAPQL.QUERY:
-            self.assign_task_group_id(self.process.script.get('tasks', []))
-            for t in self.process.script['tasks']:
-                operation = t['operation']
-                arguments = t.get('arguments',{})
-                queue_name, operation = get_queue_name_and_operation(operation,arguments)
-                next_task = TEvent.objects.create(parent_process=self.process, operation=operation,arguments=arguments,
-                                                  queue=queue_name,task_group_id=t['task_group_id'])
-                self.task_results[next_task.pk] = app.send_task(name=operation,args=[next_task.pk, ],queue=queue_name,priority=5)
+            self.launch_query_tasks()
         else:
             raise NotImplementedError
         self.process.script['task_group_name_to_index'] = self.task_group_name_to_index
         self.process.script['parent_task_group_index'] = self.parent_task_group_index
         self.process.save()
+
+    def delete_instances(self):
+        for d in self.process.script.get('delete', []):
+            if d['MODEL'] == 'Video':
+                d_copy = copy.deepcopy(d)
+                m = apps.get_model(app_label='dvaapp', model_name=d['MODEL'])
+                instance = m.objects.get(**d_copy['selector'])
+                DeletedVideo.objects.create(deleter=self.process.user, video_uuid=instance.pk)
+                instance.delete()
+            else:
+                self.process.failed = True
+                self.process.error_message = "Cannot delete {}; Only video deletion implemented.".format(d['MODEL'])
+
+    def create_instances(self):
+        for c in self.process.script.get('create', []):
+            c_copy = copy.deepcopy(c)
+            m = apps.get_model(app_label='dvaapp', model_name=c['MODEL'])
+            for k, v in c['spec'].iteritems():
+                if v == '__timezone.now__':
+                    c_copy['spec'][k] = timezone.now()
+            instance = m.objects.create(**c_copy['spec'])
+            self.created_objects.append(instance)
+            self.assign_task_group_id(c.get('tasks', []))
+            for t in copy.deepcopy(c.get('tasks', [])):
+                self.launch_task(t, instance.pk)
+
+    def launch_processing_tasks(self):
+        self.assign_task_group_id(self.process.script.get('tasks', []))
+        for t in self.process.script.get('tasks', []):
+            self.launch_task(t)
+
+    def launch_query_tasks(self):
+        self.assign_task_group_id(self.process.script.get('tasks', []))
+        for t in self.process.script['tasks']:
+            operation = t['operation']
+            arguments = t.get('arguments', {})
+            queue_name, operation = get_queue_name_and_operation(operation, arguments)
+            next_task = TEvent.objects.create(parent_process=self.process, operation=operation, arguments=arguments,
+                                              queue=queue_name, task_group_id=t['task_group_id'])
+            self.task_results[next_task.pk] = app.send_task(name=operation, args=[next_task.pk, ], queue=queue_name,
+                                                            priority=5)
+
+    def launch_process_monitor(self):
+        monitoring_task = TEvent.objects.create(operation="perform_process_monitoring",arguments={}, parent=None,
+                                                task_group_id=-1, parent_process=self.process,
+                                                queue=settings.Q_REDUCER)
+        app.send_task(name=monitoring_task.operation, args=[monitoring_task.pk, ],
+                      queue=monitoring_task.queue)
 
     def wait(self,timeout=60):
         for _, result in self.task_results.iteritems():
