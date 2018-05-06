@@ -18,6 +18,7 @@ CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" cl
 --addons HorizontalPodAutoscaling,HttpLoadBalancing,KubernetesDashboard --enable-autorepair
 """
 
+AUTH_COMMAND = "gcloud container clusters get-credentials {cluster_name} --zone {zone} --project {project_name}"
 
 def run_commands(command_list):
     for k in command_list:
@@ -209,6 +210,11 @@ def create_cluster():
                                                              project_name=config['project_name'],
                                                              zone=config['zone'])
     print "Creating cluster by running {}".format(command)
+    subprocess.check_call(shlex.split(command))
+    command = AUTH_COMMAND.replace('\n','').format(cluster_name=config['cluster_name'],
+                                                             project_name=config['project_name'],
+                                                             zone=config['zone'])
+    print "Authenticating with cluster by running {}".format(command)
     subprocess.check_call(shlex.split(command))
 
 
