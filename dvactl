@@ -9,24 +9,8 @@ import webbrowser
 import shlex
 import json
 import base64
-import requests
-
-
-def launch_gcp():
-    command = 'gcloud beta compute --project "{project}" instances create "{name}" ' \
-              '--zone "us-west1-b" --machine-type "custom-12-46080" --subnet "default" --maintenance-policy' \
-              ' "TERMINATE" --service-account "{service-_ccount}"' \
-              ' --scopes "https://www.googleapis.com/auth/devstorage.read_only",' \
-              '"https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring.write",' \
-              '"https://www.googleapis.com/auth/servicecontrol",' \
-              '"https://www.googleapis.com/auth/service.management.readonly",' \
-              '"https://www.googleapis.com/auth/trace.append" ' \
-              '--accelerator type=nvidia-tesla-p100,count=2 --min-cpu-platform "Automatic" --image "{image_name}" ' \
-              '--image-project "{image_project}" --boot-disk-size "128" ' \
-              '--boot-disk-type "pd-ssd" --boot-disk-device-name "{name}"'
-    print "running {}".format(command)
-    subprocess.check_call(shlex.split(command))
-
+import random
+from deploy import gpu
 
 def load_envs(path):
     return {line.split('=')[0]: line.split('=')[1].strip() for line in file(path)}
@@ -153,142 +137,17 @@ def view_uwsgi_logs():
 
 
 def generate_multi_gpu_compose():
-    skeleton = """  version: '3'
-  services:
-   db:
-     image: postgres:9.6.6
-     container_name: dva-pg
-     volumes:
-      - dvapgdata:/var/lib/postgresql/data
-     env_file:
-       - ../../custom.env
-   rabbit:
-     image: rabbitmq
-     container_name: dva-rmq
-     env_file:
-       - ../../custom.env
-     volumes:
-       - dvarabbit:/var/lib/rabbitmq
-   redis:
-     image: bitnami/redis:latest
-     container_name: dva-redis
-     env_file:
-       - ../../custom.env
-     volumes:
-       - dvaredis:/bitnami       
-   webserver:
-     image: akshayubhat/dva-auto:gpu
-     container_name: webserver
-     env_file:
-       - ../../custom.env
-     environment:
-       - LAUNCH_SERVER_NGINX=1
-       - LAUNCH_NOTEBOOK=1
-     command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
-     ports:
-       - "127.0.0.1:8000:80"
-       - "127.0.0.1:8888:8888"
-     depends_on:
-       - db
-       - redis       
-       - rabbit
-     volumes:
-       - dvadata:/root/media
-   non-gpu-workers:
-     image: akshayubhat/dva-auto:gpu
-     env_file:
-       - ../../custom.env
-     environment:
-       - LAUNCH_BY_NAME_retriever_inception=1
-       - LAUNCH_BY_NAME_retriever_facenet=1
-       - LAUNCH_Q_qextract=1
-       - LAUNCH_Q_qstreamer=1
-       - LAUNCH_SCHEDULER=1
-       - LAUNCH_Q_GLOBAL_RETRIEVER=1
-     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
-     depends_on:
-       - db
-       - redis       
-       - rabbit
-     volumes:
-       - dvadata:/root/media
-{gpu_workers}
-   global-model:
-     image: akshayubhat/dva-auto:gpu
-     env_file:
-       - ../../custom.env
-     environment:
-       - GPU_AVAILABLE=1     
-       - NVIDIA_VISIBLE_DEVICES={global_model_gpu_id}
-       - GPU_MEMORY={global_model_memory_fraction}
-       - LAUNCH_Q_GLOBAL_MODEL=1
-     command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
-     depends_on:
-       - db
-       - redis       
-       - rabbit
-     volumes:
-       - dvadata:/root/media
-  volumes:
-   dvapgdata:
-   dvadata:
-   dvarabbit:
-   dvaredis:
-    """
-
-    block = """   {worker_name}:
-         image: akshayubhat/dva-auto:gpu
-         env_file:
-           - ../../custom.env
-         environment:
-           - GPU_AVAILABLE=1
-           - NVIDIA_VISIBLE_DEVICES={gpu_id}
-           - GPU_MEMORY={memory_fraction}
-           - {env_key}={env_value}
-         command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
-         depends_on:
-           - db
-           - redis       
-           - rabbit
-         volumes:
-           - dvadata:/root/media"""
-
-    config = {
-        "deploy/gpu/docker-compose-2-gpus.yml": {"global_model_gpu_id": 0,
-                                                 "global_model_memory_fraction": 0.1,
-                                                 "workers":
-                                                     [(0, 0.25, "LAUNCH_BY_NAME_indexer_inception", "inception"),
-                                                      (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
-                                                      (0, 0.5, "LAUNCH_BY_NAME_detector_coco", "coco"),
-                                                      (1, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
-                                                      (1, 0.19, "LAUNCH_BY_NAME_detector_face", "face"),
-                                                      (1, 0.15, "LAUNCH_BY_NAME_indexer_facenet", "facenet"),
-                                                      (1, 0.15, "LAUNCH_BY_NAME_analyzer_tagger", "tagger")]
-                                                 },
-        "deploy/gpu/docker-compose-4-gpus.yml": {"global_model_gpu_id": 2,
-                                                 "global_model_memory_fraction": 0.29,
-                                                 "workers":
-                                                     [(0, 0.3, "LAUNCH_BY_NAME_indexer_inception", "inception"),
-                                                      (0, 0.4, "LAUNCH_BY_NAME_analyzer_tagger", "tagger"),
-                                                      (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
-                                                      (1, 1.0, "LAUNCH_BY_NAME_detector_coco", "coco"),
-                                                      (2, 0.7, "LAUNCH_BY_NAME_detector_face", "face"),
-                                                      (3, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
-                                                      (3, 0.45, "LAUNCH_BY_NAME_indexer_facenet", "facenet")
-                                                      ]
-                                                 },
-    }
-    for fname in config:
+    for fname in gpu.CONFIG:
         blocks = []
-        worker_specs = config[fname]['workers']
+        worker_specs = gpu.CONFIG[fname]['workers']
         for gpu_id, fraction, env_key, worker_name, in worker_specs:
             blocks.append(
-                block.format(worker_name=worker_name, gpu_id=gpu_id, memory_fraction=fraction, env_key=env_key,
+                gpu.BLOCK.format(worker_name=worker_name, gpu_id=gpu_id, memory_fraction=fraction, env_key=env_key,
                              env_value=1))
         with open(fname, 'w') as out:
-            out.write(skeleton.format(gpu_workers="\n".join(blocks),
-                                      global_model_gpu_id=config[fname]['global_model_gpu_id'],
-                                      global_model_memory_fraction=config[fname]['global_model_memory_fraction']))
+            out.write(gpu.SKELETON.format(gpu_workers="\n".join(blocks),
+                                      global_model_gpu_id=gpu.CONFIG[fname]['global_model_gpu_id'],
+                                      global_model_memory_fraction=gpu.CONFIG[fname]['global_model_memory_fraction']))
 
 
 def run_commands(command_list):
@@ -364,7 +223,29 @@ def get_kube_config():
             "kubeconfig.json not found, edit kubeconfig.example.json and store it as kubeconfig.json")
     else:
         with open('kubeconfig.json') as fh:
-            return json.load(fh)
+            configs = json.load(fh)
+    if 'GOOGLE_CLOUD_PROJECT' in os.environ:
+        configs['project_name'] = os.environ['GOOGLE_CLOUD_PROJECT']
+    else:
+        EnvironmentError("Could not find GOOGLE_CLOUD_PROJECT in environment")
+    return configs
+
+
+def configure_kube():
+    config = {}
+    print "Creating configuration for kubernetes from kubeconfig.example.json"
+    config_template = json.load(file('kubeconfig.example.json'))
+    for k,v in config_template.items():
+        if "{random_string}" in v:
+            v = v.format(random_string=random.randint(0,10000000))
+        new_value = raw_input("Enter value for {} (Current value is '{}' press enter to keep current value) >>".format(k,v))
+        if new_value.strip():
+            config[k] = new_value
+        else:
+            config[k] = v
+    with open('kubeconfig.json','w') as fout:
+        json.dump(config,fout,indent=4)
+    print "Save kubeconfig.json"
 
 
 def kube_create_premptible_node_pool():
@@ -400,8 +281,9 @@ def setup_kube():
     generate_deployments()
     config = get_kube_config()
     print "attempting to create bucket"
+    region = '-'.join(config['zone'].split('-')[:2])
     try:
-        subprocess.check_call(shlex.split('gsutil mb -c regional -l {} gs://{}'.format(config['region'],
+        subprocess.check_call(shlex.split('gsutil mb -c regional -l {} gs://{}'.format(region,
                                                                                        config['mediabucket'])))
     except:
         print "failed to create bucket, assuming it already exists"
@@ -460,6 +342,7 @@ def create_cluster():
     Create a GKE cluster
     :return:
     """
+    import requests
     config = get_kube_config()
     path = 'https://container.googleapis.com/v1/projects/{project_name}/zones/{zone}/clusters'.format(
         project_name=config['project_name'],zone=config['zone'])
@@ -467,7 +350,6 @@ def create_cluster():
     cluster_config = cluster_config.format(zone=config['zone'],project=config['project'])
     r = requests.post(path,data=json.loads(cluster_config))
     print r.raise_for_status()
-
 
 
 if __name__ == '__main__':
@@ -488,14 +370,16 @@ if __name__ == '__main__':
     if args.type and args.type == 'kube':
         if args.action == 'create':
             create_cluster()
-        if args.action == 'start':
+        elif args.action == 'configure':
+            configure_kube()
+        elif args.action == 'start':
             launch_kube()
         elif args.action == 'stop' or args.action == 'clean':
             delete_kube()
             if args.action == 'clean':
                 erase_kube_bucket()
         else:
-            raise NotImplementedError("Kubernetes management only suports start, stop and clean actions")
+            raise NotImplementedError("Kubernetes management does not support {}".format(args.action))
     else:
         if args.type and args.type == 'gpu':
             generate_multi_gpu_compose()
