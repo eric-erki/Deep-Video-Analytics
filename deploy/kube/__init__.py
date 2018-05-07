@@ -22,7 +22,7 @@ AUTH_COMMAND = "gcloud container clusters get-credentials {cluster_name} --zone 
 
 POD_COMMAND = "kubectl get -n {namespace} pods"
 
-SERVER_COMMAND = "kubectl get -n {namespace} services"
+SERVER_COMMAND = "kubectl get -n {namespace} service --output json"
 
 TOKEN_COMMAND = "kubectl exec -n {namespace} -it {pod_name} -c dvawebserver scripts/generate_testing_token.py"
 
@@ -239,14 +239,20 @@ def get_webserver_pod():
 
 
 def get_service_ip():
-    pass
+    namespace = get_namespace()
+    output = json.loads(subprocess.check_output(shlex.split(SERVER_COMMAND.format(namespace=namespace))))
+    for i in output['items']:
+        if i['metadata']['name'] == 'dvawebserver':
+            return i['status']['loadBalancer']['ingress']['ip']
+    raise ValueError("Service IP could not be found? Check if allocated.")
 
 
 def exec_script():
     pod_name = get_webserver_pod()
     namespace = get_namespace()
     token = subprocess.check_output(shlex.split(TOKEN_COMMAND.format(namespace=namespace,pod_name=pod_name))).strip()
-    print token
+    ip = get_service_ip()
+    print ip, token
 
 
 
