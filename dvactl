@@ -4,6 +4,23 @@ from deploy import compose, kube
 
 
 if __name__ == '__main__':
+    help_text = """
+    Available options
+    # Kuberentes cluster using GKE
+    
+    ./dvactl configure kube #
+    ./dvactl create kube #
+    ./dvactl start kube  #
+    ./dvactl exec kube --script_path script.json  #
+    ./dvactl stop kube   #
+    ./dvactl clean kube  #
+     
+    # Single machine options 
+        
+    ./dvactl start {dev|test|cpu|gpu}  #
+    ./dvactl stop {dev|test|cpu|gpu}   #
+    ./dvactl clean {dev|test|cpu|gpu}  # 
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
                         help="Select action out of { start | stop | clean | clean_restart "
@@ -15,6 +32,8 @@ if __name__ == '__main__':
                         type=int)
     parser.add_argument("--init_process", help="Initial DVAPQL path default: configs/custom_defaults/init_process.json",
                         default="/root/DVA/configs/custom_defaults/init_process.json")
+    parser.add_argument("--script_path", help="path to script to exec, e.g. process_livestream.json",
+                        default="")
     parser.add_argument("--init_models", help="Path to trained_models.json:",
                         default="/root/DVA/configs/custom_defaults/trained_models.json")
     args = parser.parse_args()

@@ -9,6 +9,11 @@ import json
 import os
 import base64
 import glob
+try:
+    import requests
+except ImportError:
+    print "Warning! requests module is required to use exec functionality."
+
 
 CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" clusters create 
 "{cluster_name}" --zone "{zone}" --username "admin" --cluster-version "1.8.8-gke.0" --machine-type "custom-22-84480"  
@@ -247,13 +252,18 @@ def get_service_ip():
     raise ValueError("Service IP could not be found? Check if allocated.")
 
 
-def exec_script():
+def exec_script(script_path):
     pod_name = get_webserver_pod()
     namespace = get_namespace()
     token = subprocess.check_output(shlex.split(TOKEN_COMMAND.format(namespace=namespace,pod_name=pod_name))).strip()
     ip = get_service_ip()
-    print ip, token
-
+    server = 'http://{}:8000/api/'.format(ip)
+    headers = {'Authorization': 'Token {}'.format(token)}
+    r = requests.post("{server}queries/".format(server=server), data={'script': file(script_path).read()},
+                      headers=headers)
+    r.raise_for_status()
+    if r.ok():
+        print r.json()
 
 
 def handle_kube_operations(args):
@@ -262,7 +272,7 @@ def handle_kube_operations(args):
     elif args.action == 'configure':
         configure_kube()
     elif args.action == 'exec':
-        exec_script()
+        exec_script(args.script_path)
     elif args.action == 'start':
         launch_kube()
     elif args.action == 'stop' or args.action == 'clean':
