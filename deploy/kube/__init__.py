@@ -257,7 +257,7 @@ def exec_script(script_path):
     namespace = get_namespace()
     token = subprocess.check_output(shlex.split(TOKEN_COMMAND.format(namespace=namespace,pod_name=pod_name))).strip()
     ip = get_service_ip()
-    server = 'http://{}:8000/api/'.format(ip)
+    server = 'http://{}/api/'.format(ip)
     headers = {'Authorization': 'Token {}'.format(token)}
     r = requests.post("{server}queries/".format(server=server), data={'script': file(script_path).read()},
                       headers=headers)
