@@ -8,7 +8,10 @@ from rest_framework.authtoken.models import Token
 
 if __name__ == '__main__':
     u = User.objects.create_user("test_token_user", email="test@test.com", password=str(uuid.uuid1()))
-    token, _ = Token.objects.get_or_create(user=u)
+    try:
+        token, _ = Token.objects.get_or_create(user=u)
+    except:
+        token = Token.objects.get(user=u)
     with open('creds.json', 'w') as creds:
         creds.write(json.dumps({'token': token.key}))
     print token.key
