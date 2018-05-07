@@ -262,7 +262,7 @@ def exec_script(script_path):
     r = requests.post("{server}queries/".format(server=server), data={'script': file(script_path).read()},
                       headers=headers)
     r.raise_for_status()
-    if r.ok():
+    if r.ok:
         print r.json()
 
 
