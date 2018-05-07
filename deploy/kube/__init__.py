@@ -243,7 +243,7 @@ def get_service_ip():
     output = json.loads(subprocess.check_output(shlex.split(SERVER_COMMAND.format(namespace=namespace))))
     for i in output['items']:
         if i['metadata']['name'] == 'dvawebserver':
-            return i['status']['loadBalancer']['ingress']['ip']
+            return i['status']['loadBalancer']['ingress'][0]['ip']
     raise ValueError("Service IP could not be found? Check if allocated.")
 
 
