@@ -47,7 +47,7 @@ spec:
         args:
           - bash
           - -c
-          - git reset --hard && git pull && sleep 10 && ./start_container.py
+          - {command}
 ---
 apiVersion: v1
 kind: Service

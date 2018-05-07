@@ -131,8 +131,13 @@
                 <table class="table dataTables">
                 <thead>
                 <tr>
+                    <th>id</th>
                     <th>Processes</th>
                     <th>Total / Pending / Completed tasks</th>
+                    <th>Redis hits / misses</th>
+                    <th>Redis expired / evicted keys</th>
+                    <th>Redis clients</th>
+                    <th>Redis memory</th>
                     <th>Timestamp</th>
                     <th>Since</th>
                 </tr>
@@ -140,10 +145,15 @@
                 <tbody>
                     {% for k in state %}
                         <tr>
+                            <td>{{ k.pk }} </td>
                             <td>{{ k.process_stats.processes }} </td>
                             <td>{{ k.process_stats.tasks }} / {{ k.process_stats.pending_tasks }} / {{ k.process_stats.completed_tasks }}</td>
-                            <td>{{ k.process_stats.created }}</td>
-                            <td>{{ k.process_stats.created|timesince }}</td>
+                            <td>{{ k.redis_stats.keyspace_hits }} / {{ k.redis_stats.keyspace_misses }}</td>
+                            <td>{{ k.redis_stats.expired_keys }} / {{ k.redis_stats.evicted_keys }}</td>
+                            <td>{{ k.redis_stats.connected_clients }}</td>
+                            <td>{{ k.redis_stats.used_memory_human }}</td>
+                            <td>{{ k.created }}</td>
+                            <td>{{ k.created|timesince }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

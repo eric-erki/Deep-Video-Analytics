@@ -140,11 +140,16 @@ def kube_create_premptible_node_pool():
 
 
 def generate_deployments():
+    configs = get_kube_config()
     with open('deploy/kube/common.yaml') as f:
         common_env = f.read()
+    if configs['branch'] == 'stable':
+        command = 'git reset --hard && git pull && sleep 15  && ./start_container.py'
+    else:
+        command = 'git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py'
     for fname in glob.glob('./deploy/kube/*.template'):
         with open(fname.replace('.template',''),'w') as out:
-            out.write(file(fname).read().format(common=common_env))
+            out.write(file(fname).read().format(common=common_env,command=command))
 
 
 def setup_kube():
