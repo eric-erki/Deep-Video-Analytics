@@ -7,10 +7,11 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 
 if __name__ == '__main__':
-    u = User.objects.create_user("test_token_user", email="test@test.com", password=str(uuid.uuid1()))
     try:
+        u = User.objects.create_user("test_token_user", email="test@test.com", password=str(uuid.uuid1()))
         token, _ = Token.objects.get_or_create(user=u)
     except:
+        u = User.objects.get(email="test@test.com")
         token = Token.objects.get(user=u)
     with open('creds.json', 'w') as creds:
         creds.write(json.dumps({'token': token.key}))
