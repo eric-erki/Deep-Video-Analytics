@@ -20,6 +20,13 @@ CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" cl
 
 AUTH_COMMAND = "gcloud container clusters get-credentials {cluster_name} --zone {zone} --project {project_name}"
 
+POD_COMMAND = "kubectl get -n {namespace} pods"
+
+SERVER_COMMAND = "kubectl get -n {namespace} services"
+
+TOKEN_COMMAND = "kubectl exec -n {namespace} -it {pod_name} -c dvawebserver scripts/generate_testing_token.py"
+
+
 def run_commands(command_list):
     for k in command_list:
         print "running {}".format(k)
@@ -223,11 +230,33 @@ def create_cluster():
     subprocess.check_call(shlex.split(command))
 
 
+def get_webserver_pod():
+    namespace = get_namespace()
+    output = subprocess.check_output(shlex.split(POD_COMMAND.format(namespace=namespace))).splitlines()
+    for line in output:
+        if line.startswith('dvawebserver'):
+            return line.strip().split()[0]
+
+
+def get_service_ip():
+    pass
+
+
+def exec_script():
+    pod_name = get_webserver_pod()
+    namespace = get_namespace()
+    token = subprocess.check_output(shlex.split(TOKEN_COMMAND.format(namespace=namespace,pod_name=pod_name))).strip()
+    print token
+
+
+
 def handle_kube_operations(args):
     if args.action == 'create':
         create_cluster()
     elif args.action == 'configure':
         configure_kube()
+    elif args.action == 'exec':
+        exec_script()
     elif args.action == 'start':
         launch_kube()
     elif args.action == 'stop' or args.action == 'clean':

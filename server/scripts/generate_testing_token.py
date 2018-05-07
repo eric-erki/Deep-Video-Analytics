@@ -11,3 +11,4 @@ if __name__ == '__main__':
     token, _ = Token.objects.get_or_create(user=u)
     with open('creds.json', 'w') as creds:
         creds.write(json.dumps({'token': token.key}))
+    print token.key
