@@ -41,7 +41,7 @@ if 'DO_ACCESS_KEY_ID' in os.environ and 'DO_SECRET_ACCESS_KEY' and os.environ:
 
 
 def cacheable(path):
-    return path.startswith('/queries/') or '/indexes/' in path or '/segments/' in path \
+    return path.startswith('/queries/') or '/segments/' in path \
            or ('/frames/' in path and (path.endswith('.jpg') or path.endswith('.png')))
 
 

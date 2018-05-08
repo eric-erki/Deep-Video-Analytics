@@ -303,6 +303,10 @@ class DVAPQLProcess(object):
         self.task_group_index = 0
         self.task_group_name_to_index = {}
         self.parent_task_group_index = {}
+        self.root_task = None
+
+    def launch_root_task(self):
+        pass
 
     def create_from_json(self, j, user=None):
         if self.process is None:
