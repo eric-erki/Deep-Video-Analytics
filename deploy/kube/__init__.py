@@ -113,23 +113,6 @@ def get_kube_config():
     return configs
 
 
-def configure_kube():
-    config = {}
-    print "Creating configuration for kubernetes from kubeconfig.example.json"
-    config_template = json.load(file('kubeconfig.example.json'))
-    for k,v in config_template.items():
-        if "{random_string}" in v:
-            v = v.format(random_string=random.randint(0,10000000))
-        new_value = raw_input("Enter value for {} (Current value is '{}' press enter to keep current value) >>".format(k,v))
-        if new_value.strip():
-            config[k] = new_value
-        else:
-            config[k] = v
-    with open('kubeconfig.json','w') as fout:
-        json.dump(config,fout,indent=4)
-    print "Save kubeconfig.json"
-
-
 def kube_create_premptible_node_pool():
     config = get_kube_config()
     command = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}"' \
@@ -269,8 +252,6 @@ def exec_script(script_path):
 def handle_kube_operations(args):
     if args.action == 'create':
         create_cluster()
-    elif args.action == 'configure':
-        configure_kube()
     elif args.action == 'exec':
         exec_script(args.script_path)
     elif args.action == 'start':

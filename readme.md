@@ -23,18 +23,17 @@ locally (even without a GPU) using a single command.
 
 ### Deployment
 
-We provide instructions for deploying DVA in three scenarios.
+We provide instructions for developing, testing and deploying DVA.
 
-1. [deploy/cpu](/deploy/cpu) contains docker-compose files for non-GPU single machine deployments on Linode, AWS, GCP etc.
+0. [deploy/compose/dev](/deploy/compose/dev) contains docker-compose files for interactively developing DVA by using  host server directory mapped as a volume.
 
-2. [deploy/gpu](/deploy/gpu) contains docker-compose files for GPU single machine deployments on GCP, AWS etc.
+1. [deploy/compose/test](/deploy/compose/test) contains docker-compose files for testing cloud filesystem (s3, gcs) support.
 
-3. [deploy/kube](/deploy/kube) contains files used for launching DVA in a scalable GKE + GCS setup, with and without GPUs.
+2. [deploy/compose/cpu](/deploy/compose/cpu) contains docker-compose files for non-GPU single machine deployments on Linode, AWS, GCP etc.
 
+3. [deploy/compose/gpu](/deploy/compose/gpu) contains docker-compose files for GPU single machine deployments on GCP, AWS etc.
 
-### Development
-
-- [deploy/dev](/deploy/dev) contains docker-compose files for interactively developing DVA by using  host server directory mapped as a volume.
+4. [deploy/kube](/deploy/kube) contains files used for launching DVA in a scalable GKE + GCS setup, with and without GPUs.
 
 
 ### Code organization
