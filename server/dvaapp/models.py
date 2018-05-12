@@ -660,6 +660,7 @@ class VideoLabel(models.Model):
 class DeletedVideo(models.Model):
     deleter = models.ForeignKey(User,related_name="user_deleter",null=True)
     video_uuid = models.UUIDField(default=uuid.uuid4,null=True)
+    created = models.DateTimeField('date created', auto_now_add=True)
 
     def __unicode__(self):
         return u'Deleted {} by {}'.format(self.video_uuid,self.deleter)

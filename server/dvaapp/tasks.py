@@ -29,6 +29,7 @@ except ImportError:
 
 W = None
 TASK_ID_TO_OBJECT = {}
+DELETED_COUNT = None
 
 
 @celeryd_init.connect
@@ -611,8 +612,10 @@ def manage_host(self, op, ping_index=None, worker_name=None):
     2. Gather GPU memory utilization info
     3. (TODO) Cleanly shutdown the worker by sending a signal to worker process.
     """
+    global DELETED_COUNT
     host_name = self.request.hostname
     if op == "list":
+        DELETED_COUNT = task_shared.collect_garbage(DELETED_COUNT)
         models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message="", host=host_name,
                                                ping_index=ping_index)
         for w in models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True):
