@@ -435,10 +435,10 @@ class DVAPQLProcess(object):
         return self.created_objects[int(arg.split('__created__')[-1])].pk
 
     def launch_task(self,t):
-        if t.get('video_id','').startswith('__created__'):
+        if type(t.get('video_id',None)) is str and t.get('video_id','').startswith('__created__'):
             t['video_id'] = self.get_created_object_pk(t.get('video_id', ''))
         for k, v in t.get('arguments',{}).iteritems():
-            if v.startswith('__created__'):
+            if type(v) is str and v.startswith('__created__'):
                 t['arguments'][k] = self.get_created_object_pk(v)
         if 'video_id' in t:
             v = Video.objects.get(pk=t['video_id'])
