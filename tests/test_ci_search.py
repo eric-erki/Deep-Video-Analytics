@@ -12,7 +12,7 @@ if __name__ == '__main__':
     query_dict = {
         'process_type': DVAPQL.QUERY,
         'image_data_b64': base64.encodestring(file('queries/query.png').read()),
-        'tasks': [
+        'map': [
             {
                 'operation': 'perform_indexing',
                 'arguments': {
