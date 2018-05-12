@@ -49,7 +49,7 @@ class DVAQuery(object):
             self.results = self.context.get_results(self.query_id)
         if not self.results['completed']:
             self.results = self.context.get_results(self.query_id)  # refresh results
-            if all([t['completed'] for t in self.results['tasks']]):
+            if all([t['completed'] for t in self.results['map']]):
                 # dont wait for scheduler just check if all launched tasks have completed.
                 self.results['completed'] = True
         return self.results['completed']
@@ -58,7 +58,7 @@ class DVAQuery(object):
         if self.query_json['process_type'] != constants.QUERY:
             raise ValueError("Process is not of type query")
         else:
-            for t in self.results['tasks']:
+            for t in self.results['map']:
                 if t['query_results']:
                     self.search_results.append(visual_search_results.VisualSearchResults(self, task=t))
 
@@ -77,84 +77,84 @@ class ProcessVideoURL(DVAQuery):
                      "name": self.name,
                      "dataset": False,
                      "url": self.url
-                 },
-                 "tasks": [{
-                     "operation": "perform_import",
-                     "video_id": "__pk__",
-                     "arguments": {
-                         "name": self.name,
-                         "map": [
-                             {
-                                 "operation": "perform_video_segmentation",
-                                 "arguments": {
-                                     "map": [
-                                         {
-                                             "operation": "perform_video_decode",
-                                             "arguments": {
-                                                 "segments_batch_size": 10,
-                                                 "rate": 30,
-                                                 "rescale": 0,
-                                                 "map": [
-                                                     {
-                                                         "operation": "perform_indexing",
-                                                         "arguments": {
-                                                             "index": "inception",
-                                                             "target": "frames",
-                                                             "filters": "__parent__"
-                                                         }
-                                                     },
-                                                     {
-                                                         "operation": "perform_detection",
-                                                         "arguments": {
-                                                             "filters": "__parent__",
-                                                             "detector": "coco",
-                                                             "map": [
-                                                                 {
-                                                                     "operation": "perform_indexing",
-                                                                     "arguments": {
-                                                                         "index": "inception",
-                                                                         "target": "regions",
-                                                                         "filters": {
-                                                                             "event_id": "__parent_event__",
-                                                                             "w__gte": 50,
-                                                                             "h__gte": 50
-                                                                         }
-                                                                     }
-                                                                 }
-                                                             ]
-                                                         }
-                                                     },
-                                                     {
-                                                         "operation": "perform_detection",
-                                                         "arguments": {
-                                                             "filters": "__parent__",
-                                                             "detector": "face",
-                                                             "map": [
-                                                                 {
-                                                                     "operation": "perform_indexing",
-                                                                     "arguments": {
-                                                                         "index": "facenet",
-                                                                         "target": "regions",
-                                                                         "filters": {
-                                                                             "event_id": "__parent_event__"
-                                                                         }
-                                                                     }
-                                                                 }
-                                                             ]
-                                                         }
-                                                     }
-                                                 ]
-                                             }
-                                         }
-                                     ]
-                                 }
-                             }
-                         ]
-                     }
                  }
-                 ]
+
                  }
-            ]
+            ],
+            "map": [{
+                "operation": "perform_import",
+                "video_id": "__created__0",
+                "arguments": {
+                    "name": self.name,
+                    "map": [
+                        {
+                            "operation": "perform_video_segmentation",
+                            "arguments": {
+                                "map": [
+                                    {
+                                        "operation": "perform_video_decode",
+                                        "arguments": {
+                                            "segments_batch_size": 10,
+                                            "rate": 30,
+                                            "rescale": 0,
+                                            "map": [
+                                                {
+                                                    "operation": "perform_indexing",
+                                                    "arguments": {
+                                                        "index": "inception",
+                                                        "target": "frames",
+                                                        "filters": "__parent__"
+                                                    }
+                                                },
+                                                {
+                                                    "operation": "perform_detection",
+                                                    "arguments": {
+                                                        "filters": "__parent__",
+                                                        "detector": "coco",
+                                                        "map": [
+                                                            {
+                                                                "operation": "perform_indexing",
+                                                                "arguments": {
+                                                                    "index": "inception",
+                                                                    "target": "regions",
+                                                                    "filters": {
+                                                                        "event_id": "__parent_event__",
+                                                                        "w__gte": 50,
+                                                                        "h__gte": 50
+                                                                    }
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "operation": "perform_detection",
+                                                    "arguments": {
+                                                        "filters": "__parent__",
+                                                        "detector": "face",
+                                                        "map": [
+                                                            {
+                                                                "operation": "perform_indexing",
+                                                                "arguments": {
+                                                                    "index": "facenet",
+                                                                    "target": "regions",
+                                                                    "filters": {
+                                                                        "event_id": "__parent_event__"
+                                                                    }
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }]
         }
 
 
@@ -165,7 +165,7 @@ class FindSimilarImages(DVAQuery):
         self.query_json = {
             'process_type': constants.QUERY,
             'image_data_b64': base64.encodestring(file(self.query_image_path).read()),
-            'tasks': [
+            'map': [
                 {
                     'operation': 'perform_indexing',
                     'arguments': {
@@ -191,7 +191,7 @@ class DetectAndFindSimilarImages(DVAQuery):
         self.query_json = {
             'process_type': constants.QUERY,
             'image_data_b64': base64.encodestring(file(self.query_image_path).read()),
-            'tasks': [
+            'map': [
                 {'operation': 'perform_detection',
                  'arguments': {
                      'target': 'query',

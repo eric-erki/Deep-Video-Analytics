@@ -74,12 +74,6 @@
         "spec": {},
         "MODEL": {
           "type": "string"
-        },
-        "tasks": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/task"
-          }
         }
       },
       "required": [
@@ -105,10 +99,16 @@
         "$ref": "#/definitions/create"
       }
     },
-    "tasks": {
+    "map": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/task"
+      }
+    },
+    "reduce": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/reduce_task"
       }
     },
     "delete": {

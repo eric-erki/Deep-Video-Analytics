@@ -396,18 +396,15 @@ class DVAPQLProcess(object):
                     c_copy['spec'][k] = timezone.now()
             instance = m.objects.create(**c_copy['spec'])
             self.created_objects.append(instance)
-            self.assign_task_group_id(c.get('tasks', []))
-            for t in copy.deepcopy(c.get('tasks', [])):
-                self.launch_task(t, instance.pk)
 
     def launch_processing_tasks(self):
-        self.assign_task_group_id(self.process.script.get('tasks', []))
-        for t in self.process.script.get('tasks', []):
+        self.assign_task_group_id(self.process.script.get('map', []))
+        for t in self.process.script.get('map', []):
             self.launch_task(t)
 
     def launch_query_tasks(self):
-        self.assign_task_group_id(self.process.script.get('tasks', []))
-        for t in self.process.script['tasks']:
+        self.assign_task_group_id(self.process.script.get('map', []))
+        for t in self.process.script['map']:
             operation = t['operation']
             arguments = t.get('arguments', {})
             queue_name, operation = get_queue_name_and_operation(operation, arguments)
@@ -434,13 +431,15 @@ class DVAPQLProcess(object):
             except Exception, e:
                 raise ValueError(e)
 
-    def launch_task(self,t,created_pk=None):
-        if created_pk:
-            if t.get('video_id','') == '__pk__':
-                t['video_id'] = created_pk
-            for k, v in t.get('arguments',{}).iteritems():
-                if v == '__pk__':
-                    t['arguments'][k] = created_pk
+    def get_created_object_pk(self,arg):
+        return self.created_objects[int(arg.split('__created__')[-1])].pk
+
+    def launch_task(self,t):
+        if t.get('video_id','').startswith('__created__'):
+            t['video_id'] = self.get_created_object_pk(t.get('video_id', ''))
+        for k, v in t.get('arguments',{}).iteritems():
+            if v.startswith('__created__'):
+                t['arguments'][k] = self.get_created_object_pk(v)
         if 'video_id' in t:
             v = Video.objects.get(pk=t['video_id'])
             map_filters = get_map_filters(t, v)

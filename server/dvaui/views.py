@@ -622,30 +622,30 @@ def yt(request):
                             'created': '__timezone.now__'
                         },
                         'MODEL': 'Video',
-                        'tasks': [
-                            {'video_id': '__pk__',
-                             'operation': 'perform_import',
-                             'arguments': {
-                                 'force_youtube_dl': True,
-                                 'map': [{
-                                     'operation': 'perform_video_segmentation',
-                                     'arguments': {
-                                         'map': [
-                                             {'operation': 'perform_video_decode',
-                                              'arguments': {
-                                                  'rate': settings.DEFAULT_RATE,
-                                                  'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
-                                                  'map': json.load(
-                                                      file("../configs/custom_defaults/video_processing.json"))
-                                              }
-                                              }
-                                         ]},
-                                 }, ]
-                             }
-                             },
-                        ]
                     },
                 ],
+                'map': [
+                    {'video_id': '__created__0',
+                     'operation': 'perform_import',
+                     'arguments': {
+                         'force_youtube_dl': True,
+                         'map': [{
+                             'operation': 'perform_video_segmentation',
+                             'arguments': {
+                                 'map': [
+                                     {'operation': 'perform_video_decode',
+                                      'arguments': {
+                                          'rate': settings.DEFAULT_RATE,
+                                          'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
+                                          'map': json.load(
+                                              file("../configs/custom_defaults/video_processing.json"))
+                                      }
+                                      }
+                                 ]},
+                         }, ]
+                     }
+                     },
+                ]
             }
             p = DVAPQLProcess()
             p.create_from_json(process_spec, user)
@@ -673,7 +673,7 @@ def export_video(request):
             if export_method == 's3':
                 path = request.POST.get('path')
                 process_spec = {'process_type': DVAPQL.PROCESS,
-                                'tasks': [
+                                'map': [
                                     {
                                         'video_id': video.pk,
                                         'operation': 'perform_export',
@@ -682,7 +682,7 @@ def export_video(request):
                                 ]}
             else:
                 process_spec = {'process_type': DVAPQL.PROCESS,
-                                'tasks': [
+                                'map': [
                                     {
                                         'video_id': video.pk,
                                         'operation': 'perform_export',
@@ -816,10 +816,13 @@ def expire_token(request):
 
 @user_passes_test(user_check)
 def import_s3(request):
+
     if request.method == 'POST':
         keys = request.POST.get('key')
         user = request.user if request.user.is_authenticated else None
         create = []
+        map_tasks = []
+        counter = 0
         for key in keys.strip().split('\n'):
             dataset_type = False
             if key.startswith('gs://') or key.startswith('s3://'):
@@ -848,7 +851,7 @@ def import_s3(request):
                         dataset_type = True
                     else:
                         next_tasks = [segment_decode_task, ]
-                    tasks.append({'video_id': '__pk__',
+                    tasks.append({'video_id': '__created__{}'.format(counter),
                                   'operation': 'perform_import',
                                   'arguments': {
                                       'source': 'REMOTE',
@@ -857,12 +860,15 @@ def import_s3(request):
                     create.append({'MODEL': 'Video',
                                    'spec': {'uploader_id': user.pk if user else None, 'dataset': dataset_type,
                                             'name': key, 'url': key},
-                                   'tasks': tasks
                                    })
+                    map_tasks.append(tasks)
+                    counter += 1
             else:
                 raise NotImplementedError("{} startswith an unknown remote store prefix".format(key))
         process_spec = {'process_type': DVAPQL.PROCESS,
-                        'create': create}
+                        'create': create,
+                        'map':map_tasks
+                        }
         p = DVAPQLProcess()
         p.create_from_json(process_spec, user)
         p.launch()
@@ -895,7 +901,7 @@ def retry_task(request):
     event = TEvent.objects.get(pk=int(pk))
     spec = {
         'process_type': DVAPQL.PROCESS,
-        'tasks': [
+        'map': [
             {
                 'operation': event.operation,
                 'arguments': event.arguments
