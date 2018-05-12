@@ -397,10 +397,23 @@ class DVAPQLProcess(object):
             instance = m.objects.create(**c_copy['spec'])
             self.created_objects.append(instance)
 
+    def create_root_task(self):
+        self.root_task = TEvent.objects.create(operation="perform_launch",task_group_id = self.task_group_index,
+                                                completed=True, started=True,
+                                               parent_process_id=self.process.pk, queue="sync")
+        self.task_group_index += 1
+
     def launch_processing_tasks(self):
-        self.assign_task_group_id(self.process.script.get('map', []))
+        self.assign_task_group_id(self.process.script.get('map', []), 0)
         for t in self.process.script.get('map', []):
             self.launch_task(t)
+        self.assign_task_group_id(self.process.script.get('reduce', []), 0)
+        for t in self.process.script.get('reduce', []):
+            if t['operation'] != 'perform_reduce':
+                self.launch_task(t)
+            else:
+                raise ValueError('{} is not a valid reduce operation, only "perform_reduce" is valid'.format(
+                    t['operation']))
 
     def launch_query_tasks(self):
         self.assign_task_group_id(self.process.script.get('map', []))
