@@ -826,7 +826,6 @@ def import_s3(request):
         for key in keys.strip().split('\n'):
             dataset_type = False
             if key.startswith('gs://') or key.startswith('s3://'):
-                tasks = []
                 key = key.strip()
                 if key:
                     extract_task = {
@@ -851,7 +850,7 @@ def import_s3(request):
                         dataset_type = True
                     else:
                         next_tasks = [segment_decode_task, ]
-                    tasks.append({'video_id': '__created__{}'.format(counter),
+                    map_tasks.append({'video_id': '__created__{}'.format(counter),
                                   'operation': 'perform_import',
                                   'arguments': {
                                       'source': 'REMOTE',
@@ -861,7 +860,6 @@ def import_s3(request):
                                    'spec': {'uploader_id': user.pk if user else None, 'dataset': dataset_type,
                                             'name': key, 'url': key},
                                    })
-                    map_tasks.append(tasks)
                     counter += 1
             else:
                 raise NotImplementedError("{} startswith an unknown remote store prefix".format(key))
