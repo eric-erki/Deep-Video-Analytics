@@ -47,10 +47,14 @@ def configure(mode=None):
     if mode == 'kube':
         configure_kube()
     else:
-        init_process = raw_input("Please specify init process or press enter to keep default"
+        process = raw_input("Please specify init process or press enter to keep default"
                                  " ( /root/DVA/configs/custom_defaults/init_process.json ) >>").strip()
-        init_models = raw_input("Please specify default models or press enter to keep default"
-                                " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
+        if process.strip():
+            init_process = process
+        models = raw_input("Please specify default models or press enter to keep default"
+                                 " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
+        if process.strip():
+            init_models = models
         if mode == 'gpu':
             gpu_count = int(raw_input("Please select number of GPUs >>").strip())
     with open("mode.json",'w') as f:
