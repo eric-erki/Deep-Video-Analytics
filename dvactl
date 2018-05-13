@@ -22,7 +22,7 @@ def configure_kube():
         config_template = json.load(file('kubeconfig.json'))
     else:
         config_template = json.load(file('kubeconfig.example.json'))
-    for k,v in config_template.items():
+    for k,v in sorted(config_template.items()):
         if "{random_string}" in v:
             v = v.format(random_string=random.randint(0,10000000))
         new_value = raw_input("Enter value for {} (Current value is '{}' press enter to keep current value) >>".format(k,v))
