@@ -404,6 +404,7 @@ class DVAPQLProcess(object):
         self.task_group_index += 1
 
     def launch_processing_tasks(self):
+        self.create_root_task()
         self.assign_task_group_id(self.process.script.get('map', []), 0)
         for t in self.process.script.get('map', []):
             self.launch_task(t)
@@ -471,6 +472,7 @@ class DVAPQLProcess(object):
             dt = TEvent()
             dt.parent_process = self.process
             dt.task_group_id = t['task_group_id']
+            dt.parent = self.root_task
             if 'video_id' in t:
                 dt.video_id = t['video_id']
             dt.arguments = args
