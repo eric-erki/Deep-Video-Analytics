@@ -15,6 +15,7 @@ def get_mode():
         return configure()
     return json.load(file("mode.json"))
 
+
 def configure_kube():
     config = {}
     print "Creating configuration for kubernetes from kubeconfig.example.json"
@@ -37,18 +38,25 @@ def configure_kube():
 
 def configure(mode=None):
     gpu_count = 0
+    init_process = '/root/DVA/configs/custom_defaults/init_process.json'
+    init_models = '/root/DVA/configs/custom_defaults/trained_models.json'
     if mode is None or not mode:
         mode = raw_input("Please select mode { dev, test, cpu, gpu, kube } >>").strip()
     if mode not in {'dev','test','cpu','gpu','kube'}:
         raise ValueError("{} is not a valid mode".format(mode))
     if mode == 'kube':
         configure_kube()
-    if mode == 'gpu':
-        gpu_count = int(raw_input("Please select number of GPUs >>").strip())
+    else:
+        init_process = raw_input("Please specify init process or press enter to keep default"
+                                 " ( /root/DVA/configs/custom_defaults/init_process.json ) >>").strip()
+        init_models = raw_input("Please specify default models or press enter to keep default"
+                                " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
+        if mode == 'gpu':
+            gpu_count = int(raw_input("Please select number of GPUs >>").strip())
     with open("mode.json",'w') as f:
-        mode_dict = {"mode":mode,'gpus':gpu_count}
+        mode_dict = {"mode":mode,'gpus':gpu_count, 'init_process':init_process, 'init_models':init_models}
         json.dump(mode_dict,f)
-    return {"mode":mode,'gpus':gpu_count}
+    return {"mode":mode, 'gpus':gpu_count, 'init_process':init_process, 'init_models':init_models }
 
 
 def exec_script(script_path):
@@ -69,7 +77,7 @@ if __name__ == '__main__':
     ./dvactl create      
     ./dvactl start 
     ./dvactl auth  # recreates creds.json  
-    ./dvactl exec --script_path script.json  # run process using creds.json and REST API
+    ./dvactl exec -f script.json  # run process using creds.json and REST API
     ./dvactl stop 
     ./dvactl clean 
     """
@@ -77,17 +85,16 @@ if __name__ == '__main__':
     parser.add_argument("action",
                         help="Select action out of { configure | create | start | auth | exec | stop | clean "
                              "| clean_restart ")
-    parser.add_argument("--init_process", help="Initial DVAPQL path default: configs/custom_defaults/init_process.json",
-                        default="/root/DVA/configs/custom_defaults/init_process.json")
-    parser.add_argument("--script_path", help="path to script to exec, e.g. process_livestream.json",
+    parser.add_argument("-f", help="path to script to exec, e.g. process_livestream.json",
                         default="")
-    parser.add_argument("--init_models", help="Path to trained_models.json:",
-                        default="/root/DVA/configs/custom_defaults/trained_models.json")
     args = parser.parse_args()
     if args.action == 'configure':
         configure()
     elif args.action == 'exec':
-        exec_script(args.script_path)
+        if args.script_path.strip():
+            exec_script(args.script_path)
+        else:
+            raise ValueError("Please specify script path e.g. ./dvactl exec -f test.json")
     else:
         mode_dict = get_mode()
         if mode_dict['mode'] == 'kube':
@@ -95,4 +102,5 @@ if __name__ == '__main__':
         else:
             if args.action == 'create':
                 raise ValueError("create  is not required for compose, its used in kube mdoe to create GKE cluster")
-            compose.handle_compose_operations(args,mode_dict['mode'],mode_dict['gpus'])
+            compose.handle_compose_operations(args,mode_dict['mode'],mode_dict['gpus'],
+                                              mode_dict['init_process'],mode_dict['init_models'])

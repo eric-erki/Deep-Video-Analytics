@@ -131,13 +131,13 @@ def get_auth():
     print "token and server information are stored in creds.json"
 
 
-def handle_compose_operations(args,mode,gpus):
+def handle_compose_operations(args,mode,gpus,init_process,init_models):
     if mode == 'gpu':
         gpu.generate_multi_gpu_compose()
     if args.action == 'stop':
         stop_docker_compose(mode, gpus)
     elif args.action == 'start':
-        start_docker_compose(mode, gpus, args.init_process, args.init_models)
+        start_docker_compose(mode, gpus, init_process, init_models)
         get_auth()
     elif args.action == 'auth':
         get_auth()
@@ -147,12 +147,12 @@ def handle_compose_operations(args,mode,gpus):
             test.clear_media_bucket()
     elif args.action == 'restart':
         stop_docker_compose(mode, gpus)
-        start_docker_compose(mode, gpus, args.init_process, args.init_models)
+        start_docker_compose(mode, gpus, init_process, init_models)
     elif args.action == 'clean_restart':
         stop_docker_compose(mode, gpus, clean=True)
         if mode == 'test':
             test.clear_media_bucket()
-            start_docker_compose(mode, gpus, args.init_process, args.init_models)
+            start_docker_compose(mode, gpus, init_process, init_models)
     elif args.action == 'wsgi':
         view_uwsgi_logs()
     else:
