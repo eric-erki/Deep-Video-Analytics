@@ -5,6 +5,7 @@ import subprocess
 import time
 import urllib2
 import os
+import json
 import webbrowser
 from . import test, gpu
 
@@ -128,6 +129,14 @@ def view_uwsgi_logs():
         ["docker", "exec", "-it", "webserver", "bash", '-c ', "'cat /var/log/supervisor/app-*'"])
 
 
+def get_auth():
+    token = subprocess.check_output(["docker", "exec", "-it", "webserver", "scripts/generate_testing_token.py"])
+    server = 'http://localhost:8000/api/'
+    with open('creds.json','w') as fh:
+        json.dump({'server':server,'token':token},fh)
+    print "token and server information are stored in creds.json"
+
+
 def handle_compose_operations(args,mode,gpus):
     if mode == 'gpu':
         gpu.generate_multi_gpu_compose()
@@ -135,6 +144,9 @@ def handle_compose_operations(args,mode,gpus):
         stop_docker_compose(mode, gpus)
     elif args.action == 'start':
         start_docker_compose(mode, gpus, args.init_process, args.init_models)
+        get_auth()
+    elif args.action == 'auth':
+        get_auth()
     elif args.action == 'clean':
         stop_docker_compose(mode, gpus, clean=True)
         if mode == 'test':

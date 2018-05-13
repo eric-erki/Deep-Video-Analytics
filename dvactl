@@ -4,6 +4,10 @@ import os
 import json
 import random
 from deploy import compose, kube
+try:
+    import requests
+except ImportError:
+    print "Warning! requests module is required to use exec functionality."
 
 
 def get_mode():
@@ -47,13 +51,26 @@ def configure(mode=None):
     return {"mode":mode,'gpus':gpu_count}
 
 
+def exec_script(script_path):
+    creds = json.load(file('creds.json'))
+    server, token = creds['server'], creds['token']
+    headers = {'Authorization': 'Token {}'.format(token)}
+    r = requests.post("{server}queries/".format(server=server), data={'script': file(script_path).read()},
+                      headers=headers)
+    r.raise_for_status()
+    if r.ok:
+        print r.json()
+
+
+
 if __name__ == '__main__':
     help_text = """
     Available options
     ./dvactl configure   
     ./dvactl create     
     ./dvactl start 
-    ./dvactl exec --script_path script.json  
+    ./dvactl auth  # recreates creds.json  
+    ./dvactl exec --script_path script.json  # run process using creds.json and REST API
     ./dvactl stop 
     ./dvactl clean 
     """
@@ -70,6 +87,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.action == 'configure':
         configure()
+    elif args.action == 'exec':
+        exec_script(args.script_path)
     else:
         mode_dict = get_mode()
         if mode_dict['mode'] == 'kube':

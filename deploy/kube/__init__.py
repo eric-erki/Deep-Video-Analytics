@@ -9,10 +9,6 @@ import json
 import os
 import base64
 import glob
-try:
-    import requests
-except ImportError:
-    print "Warning! requests module is required to use exec functionality."
 
 
 CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" clusters create 
@@ -74,6 +70,8 @@ def launch_kube(gpu=False):
     for k in deployments:
         commands.append("kubectl create -n {} -f deploy/kube/{}".format(namespace,k))
     run_commands(commands)
+    print "Waiting another 120 minutes to get auth token and ingress IP address"
+    get_auth()
 
 
 def delete_kube():
@@ -235,25 +233,22 @@ def get_service_ip():
     raise ValueError("Service IP could not be found? Check if allocated.")
 
 
-def exec_script(script_path):
+def get_auth():
     pod_name = get_webserver_pod()
     namespace = get_namespace()
     token = subprocess.check_output(shlex.split(TOKEN_COMMAND.format(namespace=namespace,pod_name=pod_name))).strip()
     ip = get_service_ip()
     server = 'http://{}/api/'.format(ip)
-    headers = {'Authorization': 'Token {}'.format(token)}
-    r = requests.post("{server}queries/".format(server=server), data={'script': file(script_path).read()},
-                      headers=headers)
-    r.raise_for_status()
-    if r.ok:
-        print r.json()
+    with open('creds.json','w') as fh:
+        json.dump({'server':server,'token':token},fh)
+    print "Token and server stored in creds.json"
 
 
 def handle_kube_operations(args):
     if args.action == 'create':
         create_cluster()
-    elif args.action == 'exec':
-        exec_script(args.script_path)
+    elif args.action == 'auth':
+        get_auth()
     elif args.action == 'start':
         launch_kube()
     elif args.action == 'stop' or args.action == 'clean':
