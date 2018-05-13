@@ -130,7 +130,7 @@ def view_uwsgi_logs():
 
 
 def get_auth():
-    token = subprocess.check_output(["docker", "exec", "-it", "webserver", "scripts/generate_testing_token.py"])
+    token = subprocess.check_output(["docker", "exec", "-it", "webserver", "scripts/generate_testing_token.py"]).strip()
     server = 'http://localhost:8000/api/'
     with open('creds.json','w') as fh:
         json.dump({'server':server,'token':token},fh)

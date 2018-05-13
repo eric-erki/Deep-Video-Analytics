@@ -6,7 +6,7 @@ class DVAContext(object):
         if server:
             if not server.endswith('/'):
                 server = "{}/".format(server)
-            self.server = "{server}api/".format(server=server)
+            self.server = server
         else:
             self.server = 'http://localhost:8000/api/'
         if token:
