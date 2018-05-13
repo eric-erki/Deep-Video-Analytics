@@ -56,8 +56,7 @@ SKELETON = """  version: '3'
      env_file:
        - ../../../custom.env
      environment:
-       - LAUNCH_SERVER_NGINX=1
-       - LAUNCH_NOTEBOOK=1
+       - LAUNCH_SERVER_NGINX=1       
      command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80"

@@ -27,7 +27,6 @@
      env_file:
        - ../../../custom.env
      environment:
-       - LAUNCH_NOTEBOOK=1
        - LAUNCH_SERVER_NGINX=1
        - LAUNCH_Q_GLOBAL_MODEL=1
        - LAUNCH_Q_GLOBAL_RETRIEVER=1
@@ -47,7 +46,7 @@
      command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80" # Since Docker messes up iptables, ufw has no effect as a result bind to localhost and tunnel / Port forward through SSH
-       - "127.0.0.1:8888:8888" # Since Docker messes up iptables, ufw has no effect as a result bind to localhost and tunnel / Port forward through SSH
+       - "127.0.0.1:8889:8888" # Since Docker messes up iptables, ufw has no effect as a result bind to localhost and tunnel / Port forward through SSH
      depends_on:
        - db
        - rabbit
