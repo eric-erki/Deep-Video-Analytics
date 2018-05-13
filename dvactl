@@ -4,6 +4,7 @@ import os
 import json
 import random
 from deploy import compose, kube
+
 try:
     import requests
 except ImportError:
@@ -17,22 +18,42 @@ def get_mode():
 
 
 def configure_kube():
+    config_template = {
+        "dbusername": "pguser",
+        "dbpassword": "pgpass",
+        "rabbithost": "rbbit",
+        "rabbitusername": "rabbituser",
+        "rabbitpassword": "rabbitpass",
+        "awskey": "none",
+        "awssecret": "none",
+        "mediabucket": "dvamedia_{random_string}",
+        "secretkey": "{random_string}",
+        "superuser": "admin",
+        "superpass": "super",
+        "superemail": "admin@test.com",
+        "cloudfsprefix": "gs",
+        "cors_origin": "*",
+        "redishost": "redis-master",
+        "redispassword": "1234567890",
+        "zone": "us-west1-b",
+        "cluster_name": "dvacluster",
+        "branch": "stable"
+    }
     config = {}
     print "Creating configuration for kubernetes from kubeconfig.example.json"
     if os.path.isfile('kubeconfig.json'):
         config_template = json.load(file('kubeconfig.json'))
-    else:
-        config_template = json.load(file('kubeconfig.example.json'))
-    for k,v in sorted(config_template.items()):
+    for k, v in sorted(config_template.items()):
         if "{random_string}" in v:
-            v = v.format(random_string=random.randint(0,10000000))
-        new_value = raw_input("Enter value for {} (Current value is '{}' press enter to keep current value) >>".format(k,v))
+            v = v.format(random_string=random.randint(0, 10000000))
+        new_value = raw_input(
+            "Enter value for {} (Current value is '{}' press enter to keep current value) >>".format(k, v))
         if new_value.strip():
             config[k] = new_value
         else:
             config[k] = v
-    with open('kubeconfig.json','w') as fout:
-        json.dump(config,fout,indent=4)
+    with open('kubeconfig.json', 'w') as fout:
+        json.dump(config, fout, indent=4)
     print "Save kubeconfig.json"
 
 
@@ -42,25 +63,25 @@ def configure(mode=None):
     init_models = '/root/DVA/configs/custom_defaults/trained_models.json'
     if mode is None or not mode:
         mode = raw_input("Please select mode { dev, test, cpu, gpu, kube } >>").strip()
-    if mode not in {'dev','test','cpu','gpu','kube'}:
+    if mode not in {'dev', 'test', 'cpu', 'gpu', 'kube'}:
         raise ValueError("{} is not a valid mode".format(mode))
     if mode == 'kube':
         configure_kube()
     else:
         process = raw_input("Please specify init process or press enter to keep default"
-                                 " ( /root/DVA/configs/custom_defaults/init_process.json ) >>").strip()
+                            " ( /root/DVA/configs/custom_defaults/init_process.json ) >>").strip()
         if process.strip():
             init_process = process
         models = raw_input("Please specify default models or press enter to keep default"
-                                 " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
+                           " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
         if process.strip():
             init_models = models
         if mode == 'gpu':
             gpu_count = int(raw_input("Please select number of GPUs >>").strip())
-    with open("mode.json",'w') as f:
-        mode_dict = {"mode":mode,'gpus':gpu_count, 'init_process':init_process, 'init_models':init_models}
-        json.dump(mode_dict,f)
-    return {"mode":mode, 'gpus':gpu_count, 'init_process':init_process, 'init_models':init_models }
+    with open("mode.json", 'w') as f:
+        mode_dict = {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models}
+        json.dump(mode_dict, f)
+    return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models}
 
 
 def exec_script(script_path):
@@ -106,5 +127,5 @@ if __name__ == '__main__':
         else:
             if args.action == 'create':
                 raise ValueError("create  is not required for compose, its used in kube mdoe to create GKE cluster")
-            compose.handle_compose_operations(args,mode_dict['mode'],mode_dict['gpus'],
-                                              mode_dict['init_process'],mode_dict['init_models'])
+            compose.handle_compose_operations(args, mode_dict['mode'], mode_dict['gpus'],
+                                              mode_dict['init_process'], mode_dict['init_models'])
