@@ -29,7 +29,7 @@ def configure_kube():
         "mediabucket": "dvamedia_{random_string}",
         "secretkey": "{random_string}",
         "superuser": "admin",
-        "superpass": "super",
+        "superpass": "please_change_this",
         "superemail": "admin@test.com",
         "cloudfsprefix": "gs",
         "cors_origin": "*",
@@ -37,6 +37,8 @@ def configure_kube():
         "redispassword": "1234567890",
         "zone": "us-west1-b",
         "cluster_name": "dvacluster",
+        "machine_type": "custom-22-84480",
+        "nodes": 1,
         "branch": "stable"
     }
     config = {}
@@ -49,7 +51,10 @@ def configure_kube():
         new_value = raw_input(
             "Enter value for {} (Current value is '{}' press enter to keep current value) >>".format(k, v))
         if new_value.strip():
-            config[k] = new_value
+            if type(v) is int:
+                config[k] = int(new_value)
+            else:
+                config[k] = new_value
         else:
             config[k] = v
     with open('kubeconfig.json', 'w') as fout:

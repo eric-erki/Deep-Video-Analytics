@@ -12,8 +12,8 @@ import glob
 
 
 CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" clusters create 
-"{cluster_name}" --zone "{zone}" --username "admin" --cluster-version "1.8.8-gke.0" --machine-type "custom-22-84480"  
---image-type "COS" --disk-size "100" --num-nodes "1" 
+"{cluster_name}" --zone "{zone}" --username "admin" --cluster-version "1.8.8-gke.0" --machine-type "{machine_type}"  
+--image-type "COS" --disk-size "100" --num-nodes "{nodes}" 
 --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_write","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" \
 --network "default" --enable-cloud-logging --enable-cloud-monitoring --subnetwork "default" 
 --addons HorizontalPodAutoscaling,HttpLoadBalancing,KubernetesDashboard --enable-autorepair
@@ -207,6 +207,8 @@ def create_cluster():
     config = get_kube_config()
     command = CLUSTER_CREATE_COMMAND.replace('\n','').format(cluster_name=config['cluster_name'],
                                                              project_name=config['project_name'],
+                                                             machine_type=config['machine_type'],
+                                                             nodes=config['nodes'],
                                                              zone=config['zone'])
     print "Creating cluster by running {}".format(command)
     subprocess.check_call(shlex.split(command))
@@ -235,6 +237,7 @@ def get_service_ip():
 
 
 def get_auth():
+    config = get_kube_config()
     pod_name = get_webserver_pod()
     namespace = get_namespace()
     token = subprocess.check_output(shlex.split(TOKEN_COMMAND.format(namespace=namespace,pod_name=pod_name))).strip()
@@ -243,6 +246,7 @@ def get_auth():
     with open('creds.json','w') as fh:
         json.dump({'server':server,'token':token},fh)
     print "Token and server stored in creds.json"
+    print "Visit web UI on http://{} \nusername: {}\npassword {}".format(ip, config['superuser'], config['superpass'])
 
 
 def handle_kube_operations(args):
