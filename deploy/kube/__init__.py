@@ -70,7 +70,8 @@ def launch_kube(gpu=False):
     for k in deployments:
         commands.append("kubectl create -n {} -f deploy/kube/{}".format(namespace,k))
     run_commands(commands)
-    print "Waiting another 120 minutes to get auth token and ingress IP address"
+    print "Waiting another 120 seconds to get auth token and ingress IP address"
+    time.sleep(120)
     get_auth()
 
 

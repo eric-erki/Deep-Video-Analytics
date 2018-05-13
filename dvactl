@@ -91,8 +91,8 @@ if __name__ == '__main__':
     if args.action == 'configure':
         configure()
     elif args.action == 'exec':
-        if args.script_path.strip():
-            exec_script(args.script_path)
+        if args.f.strip():
+            exec_script(args.f)
         else:
             raise ValueError("Please specify script path e.g. ./dvactl exec -f test.json")
     else:
