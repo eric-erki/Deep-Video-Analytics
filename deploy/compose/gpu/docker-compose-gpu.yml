@@ -39,14 +39,13 @@
        - LAUNCH_Q_qextract=1
        - LAUNCH_Q_qtrainer=1
        - LAUNCH_Q_qstreamer=1
-       - LAUNCH_NOTEBOOK=1
        - LAUNCH_SCHEDULER=1
        - LAUNCH_Q_GLOBAL_MODEL=1
        - LAUNCH_Q_GLOBAL_RETRIEVER=1
      command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
      ports:
        - "127.0.0.1:8000:80"
-       - "127.0.0.1:8888:8888"
+       - "127.0.0.1:8889:8888"
      depends_on:
        - db
        - rabbit

@@ -303,6 +303,10 @@ class DVAPQLProcess(object):
         self.task_group_index = 0
         self.task_group_name_to_index = {}
         self.parent_task_group_index = {}
+        self.root_task = None
+
+    def launch_root_task(self):
+        pass
 
     def create_from_json(self, j, user=None):
         if self.process is None:
@@ -392,18 +396,29 @@ class DVAPQLProcess(object):
                     c_copy['spec'][k] = timezone.now()
             instance = m.objects.create(**c_copy['spec'])
             self.created_objects.append(instance)
-            self.assign_task_group_id(c.get('tasks', []))
-            for t in copy.deepcopy(c.get('tasks', [])):
-                self.launch_task(t, instance.pk)
+
+    def create_root_task(self):
+        self.root_task = TEvent.objects.create(operation="perform_launch",task_group_id = self.task_group_index,
+                                                completed=True, started=True,
+                                               parent_process_id=self.process.pk, queue="sync")
+        self.task_group_index += 1
 
     def launch_processing_tasks(self):
-        self.assign_task_group_id(self.process.script.get('tasks', []))
-        for t in self.process.script.get('tasks', []):
+        self.create_root_task()
+        self.assign_task_group_id(self.process.script.get('map', []), 0)
+        for t in self.process.script.get('map', []):
             self.launch_task(t)
+        self.assign_task_group_id(self.process.script.get('reduce', []), 0)
+        for t in self.process.script.get('reduce', []):
+            if t['operation'] != 'perform_reduce':
+                self.launch_task(t)
+            else:
+                raise ValueError('{} is not a valid reduce operation, only "perform_reduce" is valid'.format(
+                    t['operation']))
 
     def launch_query_tasks(self):
-        self.assign_task_group_id(self.process.script.get('tasks', []))
-        for t in self.process.script['tasks']:
+        self.assign_task_group_id(self.process.script.get('map', []))
+        for t in self.process.script['map']:
             operation = t['operation']
             arguments = t.get('arguments', {})
             queue_name, operation = get_queue_name_and_operation(operation, arguments)
@@ -430,14 +445,16 @@ class DVAPQLProcess(object):
             except Exception, e:
                 raise ValueError(e)
 
-    def launch_task(self,t,created_pk=None):
-        if created_pk:
-            if t.get('video_id','') == '__pk__':
-                t['video_id'] = created_pk
-            for k, v in t.get('arguments',{}).iteritems():
-                if v == '__pk__':
-                    t['arguments'][k] = created_pk
+    def get_created_object_pk(self,arg):
+        return self.created_objects[int(arg.split('__created__')[-1])].pk
+
+    def launch_task(self,t):
+        for k, v in t.get('arguments',{}).iteritems():
+            if (type(v) is str or type(v) is unicode) and v.startswith('__created__'):
+                t['arguments'][k] = self.get_created_object_pk(v)
         if 'video_id' in t:
+            if (type(t['video_id']) is str or type(t['video_id']) is unicode) and t['video_id'].startswith('__created__'):
+                t['video_id'] = self.get_created_object_pk(t['video_id'])
             v = Video.objects.get(pk=t['video_id'])
             map_filters = get_map_filters(t, v)
         else:
@@ -455,6 +472,7 @@ class DVAPQLProcess(object):
             dt = TEvent()
             dt.parent_process = self.process
             dt.task_group_id = t['task_group_id']
+            dt.parent = self.root_task
             if 'video_id' in t:
                 dt.video_id = t['video_id']
             dt.arguments = args

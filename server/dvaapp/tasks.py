@@ -29,6 +29,7 @@ except ImportError:
 
 W = None
 TASK_ID_TO_OBJECT = {}
+DELETED_COUNT = None
 
 
 @celeryd_init.connect
@@ -599,19 +600,22 @@ def perform_decompression(task_id):
 
 
 @app.task(track_started=True, name="manage_host", bind=True)
-def manage_host(self, op, ping_index=None, worker_name=None, queue_name=None):
+def manage_host(self, op, ping_index=None, worker_name=None):
     """
     Manage host
     This task is handled by workers consuming from a broadcast management queue.
-    It  allows quick inspection of GPU memory utilization launch of additional queues.
+    It allows quick inspection of GPU memory utilization launch of additional queues.
     Since TensorFlow workers need to be in SOLO concurrency mode, having additional set of workers
     enables easy management without a long timeout.
     Example use
-    1. Launch worker to consume from a specific queue
+    1. Monitor worker (single manager per worker in case of kube mode) / workers launched. Restart or Kill
     2. Gather GPU memory utilization info
+    3. (TODO) Cleanly shutdown the worker by sending a signal to worker process.
     """
+    global DELETED_COUNT
     host_name = self.request.hostname
     if op == "list":
+        DELETED_COUNT = task_shared.collect_garbage(DELETED_COUNT)
         models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message="", host=host_name,
                                                ping_index=ping_index)
         for w in models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True):
@@ -623,15 +627,21 @@ def manage_host(self, op, ping_index=None, worker_name=None, queue_name=None):
                     t.errored = True
                     t.save()
                 if w.queue_name != 'manager':
-                    task_shared.launch_worker(w.queue_name, worker_name)
-                    message = "worker processing {} is dead, restarting".format(w.queue_name)
-                    models.ManagementAction.objects.create(op='worker_restart', parent_task=self.request.id,
-                                                           message=message, host=host_name)
-    elif op == "launch":
-        if worker_name == host_name:
-            message = task_shared.launch_worker(queue_name, worker_name)
-            models.ManagementAction.objects.create(op='worker_launch', parent_task=self.request.id,
-                                                   message=message, host=host_name)
+                    if settings.KUBE_MODE:
+
+                        models.ManagementAction.objects.create(op=op, parent_task=self.request.id,
+                                                               message="Worker died manager exiting.",
+                                                               host=host_name)
+                        wm = models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True,
+                                                          queue_name="manager")[0]
+                        wm.alive = False
+                        wm.save()
+                        sys.exit()
+                    else:
+                        task_shared.launch_worker(w.queue_name, worker_name)
+                        message = "worker processing {} is dead, restarting".format(w.queue_name)
+                        models.ManagementAction.objects.create(op='worker_restart', parent_task=self.request.id,
+                                                               message=message, host=host_name)
     elif op == "gpuinfo":
         try:
             message = subprocess.check_output(
@@ -639,6 +649,10 @@ def manage_host(self, op, ping_index=None, worker_name=None, queue_name=None):
         except:
             message = "No GPU available"
         models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message=message, host=host_name)
+    elif op == "shutdown":
+        raise NotImplementedError(op)
+    else:
+        raise NotImplementedError(op)
 
 
 @app.task(track_started=True, name="monitor_system")
@@ -654,10 +668,10 @@ def monitor_system():
         ping_index = 0
     # TODO: Handle the case where host manager has not responded to last and itself has died
     _ = app.send_task('manage_host', args=['list', ping_index], exchange='qmanager')
-    s = models.SystemState()
-    s.processes = models.DVAPQL.objects.count()
-    s.completed_processes = models.DVAPQL.objects.filter(completed=True).count()
-    s.tasks = models.TEvent.objects.count()
-    s.pending_tasks = models.TEvent.objects.filter(started=False).count()
-    s.completed_tasks = models.TEvent.objects.filter(started=True, completed=True).count()
-    s.save()
+    process_stats = {'processes': models.DVAPQL.objects.count(),
+                     'completed_processes': models.DVAPQL.objects.filter(completed=True).count(),
+                     'tasks': models.TEvent.objects.count(),
+                     'pending_tasks': models.TEvent.objects.filter(started=False).count(),
+                     'completed_tasks': models.TEvent.objects.filter(started=True, completed=True).count()}
+    _ = models.SystemState.objects.create(redis_stats=redis_client.info(),process_stats=process_stats)
+

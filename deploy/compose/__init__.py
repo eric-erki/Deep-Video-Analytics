@@ -5,6 +5,7 @@ import subprocess
 import time
 import urllib2
 import os
+import json
 import webbrowser
 from . import test, gpu
 
@@ -83,7 +84,6 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models):
         try:
             r = urllib2.urlopen("http://localhost:8000")
             if r.getcode() == 200:
-                view_notebook_url()
                 print "Open browser window and go to http://localhost:8000 to access DVA Web UI"
                 print 'For windows you might need to replace "localhost" with ip address of docker-machine'
                 webbrowser.open("http://localhost:8000")
@@ -117,39 +117,43 @@ def stop_docker_compose(deployment_type, gpu_count, clean=False):
         raise SystemError("Could not stop containers")
 
 
-def view_notebook_url():
-    print 'Use following url containing pre-auth token to use jupyter notebook'
-    print subprocess.check_output(["docker", "exec", "-it", "webserver", "jupyter", 'notebook', 'list'])
-
-
 def view_uwsgi_logs():
     print 'Use following auth code to use jupyter notebook on  '
     print subprocess.check_output(
         ["docker", "exec", "-it", "webserver", "bash", '-c ', "'cat /var/log/supervisor/app-*'"])
 
 
-def handle_compose_operations(args):
-    if args.type and args.type == 'gpu':
+def get_auth():
+    token = subprocess.check_output(["docker", "exec", "-it", "webserver", "scripts/generate_testing_token.py"]).strip()
+    server = 'http://localhost:8000/api/'
+    with open('creds.json','w') as fh:
+        json.dump({'server':server,'token':token},fh)
+    print "token and server information are stored in creds.json"
+
+
+def handle_compose_operations(args,mode,gpus):
+    if mode == 'gpu':
         gpu.generate_multi_gpu_compose()
     if args.action == 'stop':
-        stop_docker_compose(args.type, args.gpus)
+        stop_docker_compose(mode, gpus)
     elif args.action == 'start':
-        start_docker_compose(args.type, args.gpus, args.init_process, args.init_models)
+        start_docker_compose(mode, gpus, args.init_process, args.init_models)
+        get_auth()
+    elif args.action == 'auth':
+        get_auth()
     elif args.action == 'clean':
-        stop_docker_compose(args.type, args.gpus, clean=True)
-        if args.type == 'test':
+        stop_docker_compose(mode, gpus, clean=True)
+        if mode == 'test':
             test.clear_media_bucket()
     elif args.action == 'restart':
-        stop_docker_compose(args.type, args.gpus)
-        start_docker_compose(args.type, args.gpus, args.init_process, args.init_models)
+        stop_docker_compose(mode, gpus)
+        start_docker_compose(mode, gpus, args.init_process, args.init_models)
     elif args.action == 'clean_restart':
-        stop_docker_compose(args.type, args.gpus, clean=True)
-        if args.type == 'test':
+        stop_docker_compose(mode, gpus, clean=True)
+        if mode == 'test':
             test.clear_media_bucket()
-            start_docker_compose(args.type, args.gpus, args.init_process, args.init_models)
-    elif args.action == 'notebook':
-        view_notebook_url()
+            start_docker_compose(mode, gpus, args.init_process, args.init_models)
     elif args.action == 'wsgi':
         view_uwsgi_logs()
     else:
-        raise NotImplementedError("{} and {}".format(args.action, args.type))
+        raise NotImplementedError("{} and {}".format(args.action, mode))

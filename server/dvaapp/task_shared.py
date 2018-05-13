@@ -1,6 +1,7 @@
-import os, json, requests, copy, time, subprocess, logging, shutil, zipfile, uuid, calendar, shlex, sys, tempfile, uuid
-from models import Video, QueryRegion, QueryRegionIndexVector, DVAPQL, Region, Frame, Segment, IndexEntries, TEvent,\
-    Worker, TrainedModel
+import os, json, copy, time, subprocess, logging, shutil, zipfile, uuid
+from models import  QueryRegion, QueryRegionIndexVector, DVAPQL, Region, Frame, Segment, IndexEntries, TEvent, \
+    DeletedVideo
+
 from django.conf import settings
 from PIL import Image
 from . import serializers
@@ -16,6 +17,21 @@ def pid_exists(pid):
         return False
     else:
         return True
+
+
+def collect_garbage(deleted_count):
+    if deleted_count is None:
+        deleted_count = 0
+    new_deleted_count = DeletedVideo.objects.count()
+    if new_deleted_count > deleted_count:
+        for k in DeletedVideo.objects.all().order_by('-created')[:((new_deleted_count+1)-deleted_count)]:
+            video_dir = '{}/{}'.format(settings.MEDIA_ROOT,k.video_uuid)
+            if os.path.isdir(video_dir):
+                shutil.rmtree(video_dir)
+                logging.info("Deleteing directory {}".format(video_dir))
+            else:
+                logging.info("Video directory {} was never synced on this host".format(video_dir))
+    return new_deleted_count
 
 
 def relaunch_failed_task(old, app):

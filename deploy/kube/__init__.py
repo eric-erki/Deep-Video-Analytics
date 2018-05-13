@@ -10,6 +10,7 @@ import os
 import base64
 import glob
 
+
 CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" clusters create 
 "{cluster_name}" --zone "{zone}" --username "admin" --cluster-version "1.8.8-gke.0" --machine-type "custom-22-84480"  
 --image-type "COS" --disk-size "100" --num-nodes "1" 
@@ -19,6 +20,13 @@ CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" cl
 """
 
 AUTH_COMMAND = "gcloud container clusters get-credentials {cluster_name} --zone {zone} --project {project_name}"
+
+POD_COMMAND = "kubectl get -n {namespace} pods"
+
+SERVER_COMMAND = "kubectl get -n {namespace} service --output json"
+
+TOKEN_COMMAND = "kubectl exec -n {namespace} -it {pod_name} -c dvawebserver scripts/generate_testing_token.py"
+
 
 def run_commands(command_list):
     for k in command_list:
@@ -62,6 +70,8 @@ def launch_kube(gpu=False):
     for k in deployments:
         commands.append("kubectl create -n {} -f deploy/kube/{}".format(namespace,k))
     run_commands(commands)
+    print "Waiting another 120 minutes to get auth token and ingress IP address"
+    get_auth()
 
 
 def delete_kube():
@@ -101,23 +111,6 @@ def get_kube_config():
     return configs
 
 
-def configure_kube():
-    config = {}
-    print "Creating configuration for kubernetes from kubeconfig.example.json"
-    config_template = json.load(file('kubeconfig.example.json'))
-    for k,v in config_template.items():
-        if "{random_string}" in v:
-            v = v.format(random_string=random.randint(0,10000000))
-        new_value = raw_input("Enter value for {} (Current value is '{}' press enter to keep current value) >>".format(k,v))
-        if new_value.strip():
-            config[k] = new_value
-        else:
-            config[k] = v
-    with open('kubeconfig.json','w') as fout:
-        json.dump(config,fout,indent=4)
-    print "Save kubeconfig.json"
-
-
 def kube_create_premptible_node_pool():
     config = get_kube_config()
     command = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}"' \
@@ -140,11 +133,16 @@ def kube_create_premptible_node_pool():
 
 
 def generate_deployments():
+    configs = get_kube_config()
     with open('deploy/kube/common.yaml') as f:
         common_env = f.read()
+    if configs['branch'] == 'stable':
+        command = 'git reset --hard && git pull && sleep 15  && ./start_container.py'
+    else:
+        command = 'git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py'
     for fname in glob.glob('./deploy/kube/*.template'):
         with open(fname.replace('.template',''),'w') as out:
-            out.write(file(fname).read().format(common=common_env))
+            out.write(file(fname).read().format(common=common_env,command=command))
 
 
 def setup_kube():
@@ -218,11 +216,39 @@ def create_cluster():
     subprocess.check_call(shlex.split(command))
 
 
+def get_webserver_pod():
+    namespace = get_namespace()
+    output = subprocess.check_output(shlex.split(POD_COMMAND.format(namespace=namespace))).splitlines()
+    for line in output:
+        if line.startswith('dvawebserver'):
+            return line.strip().split()[0]
+
+
+def get_service_ip():
+    namespace = get_namespace()
+    output = json.loads(subprocess.check_output(shlex.split(SERVER_COMMAND.format(namespace=namespace))))
+    for i in output['items']:
+        if i['metadata']['name'] == 'dvawebserver':
+            return i['status']['loadBalancer']['ingress'][0]['ip']
+    raise ValueError("Service IP could not be found? Check if allocated.")
+
+
+def get_auth():
+    pod_name = get_webserver_pod()
+    namespace = get_namespace()
+    token = subprocess.check_output(shlex.split(TOKEN_COMMAND.format(namespace=namespace,pod_name=pod_name))).strip()
+    ip = get_service_ip()
+    server = 'http://{}/api/'.format(ip)
+    with open('creds.json','w') as fh:
+        json.dump({'server':server,'token':token},fh)
+    print "Token and server stored in creds.json"
+
+
 def handle_kube_operations(args):
     if args.action == 'create':
         create_cluster()
-    elif args.action == 'configure':
-        configure_kube()
+    elif args.action == 'auth':
+        get_auth()
     elif args.action == 'start':
         launch_kube()
     elif args.action == 'stop' or args.action == 'clean':

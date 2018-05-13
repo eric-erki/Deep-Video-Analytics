@@ -59,6 +59,8 @@ class Retrievers(object):
     @classmethod
     def update_index(cls,dr):
         source_filters = dr.source_filters.copy()
+        # Only select entries with completed events, otherwise indexes might not be synced or complete.
+        source_filters['event__completed'] = True
         if dr.indexer_shasum:
             source_filters['indexer_shasum'] = dr.indexer_shasum
         if dr.approximator_shasum:

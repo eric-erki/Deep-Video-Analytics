@@ -49,7 +49,7 @@ def model_apply(model_pk, video_pks, filters, target, segments_batch_size, frame
     p = DVAPQLProcess()
     spec = {
         'process_type': dvaapp.models.DVAPQL.PROCESS,
-        'tasks': []
+        'map': []
     }
     for vpk in video_pks:
         dv = dvaapp.models.Video.objects.get(pk=vpk)
@@ -58,7 +58,7 @@ def model_apply(model_pk, video_pks, filters, target, segments_batch_size, frame
             video_specific_args['frames_batch_size'] = frames_batch_size
         else:
             video_specific_args['segments_batch_size'] = segments_batch_size
-        spec['tasks'].append(
+        spec['map'].append(
             {
                 'operation': operation,
                 'arguments': video_specific_args,
@@ -124,11 +124,11 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                     'url': fpath
                 },
                     'MODEL': 'Video',
-                    'tasks': [
-                        {'arguments': {}, 'video_id': '__pk__', 'operation': 'perform_import', }
-                    ]
                 },
             ],
+            'map': [
+                {'arguments': {}, 'video_id': '__created__0', 'operation': 'perform_import', }
+            ]
         }
         p.create_from_json(j=query, user=user)
         p.launch()
@@ -154,22 +154,22 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                             'url': fpath,
                             'created': '__timezone.now__'},
                         'MODEL': 'Video',
-                        'tasks': [
-                            {'arguments': {
-                                'map': [
-                                    {
-                                        'arguments': {'map': json.load(
-                                            file("../configs/custom_defaults/dataset_processing.json"))},
-                                        'operation': 'perform_dataset_extraction',
-                                    }
-                                ]
-                            },
-                                'video_id': '__pk__',
-                                'operation': 'perform_import'
+                    },
+                ],
+                'map': [
+                    {'arguments': {
+                        'map': [
+                            {
+                                'arguments': {'map': json.load(
+                                    file("../configs/custom_defaults/dataset_processing.json"))},
+                                'operation': 'perform_dataset_extraction',
                             }
                         ]
                     },
-                ],
+                        'video_id': '__created__0',
+                        'operation': 'perform_import'
+                    }
+                ]
             }
         elif extension == 'json' or extension == 'gz':
             query = {
@@ -183,25 +183,25 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                             'uploader_id': user.pk if user else None,
                             'created': '__timezone.now__'},
                         'MODEL': 'Video',
-                        'tasks': [
-                            {'arguments': {
-                                'map': [
-                                    {
-                                        'operation': 'perform_frame_download',
-                                        'arguments': {
-                                            'frames_batch_size': settings.DEFAULT_FRAMES_BATCH_SIZE,
-                                            'map': json.load(
-                                                file("../configs/custom_defaults/framelist_processing.json"))
-                                        },
-                                    }
-                                ]
-                            },
-                                'video_id': '__pk__',
-                                'operation': 'perform_import'
+                    },
+                ],
+                'map': [
+                    {'arguments': {
+                        'map': [
+                            {
+                                'operation': 'perform_frame_download',
+                                'arguments': {
+                                    'frames_batch_size': settings.DEFAULT_FRAMES_BATCH_SIZE,
+                                    'map': json.load(
+                                        file("../configs/custom_defaults/framelist_processing.json"))
+                                },
                             }
                         ]
                     },
-                ],
+                        'video_id': '__created__0',
+                        'operation': 'perform_import'
+                    }
+                ]
             }
         else:
             query = {
@@ -214,30 +214,30 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                         'created': '__timezone.now__'
                     },
                         'MODEL': 'Video',
-                        'tasks': [
-                            {'arguments': {
-                                'map': [
-                                    {
-                                        'arguments': {
-                                            'map': [
-                                                {'operation': 'perform_video_decode',
-                                                 'arguments': {
-                                                     'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
-                                                     'rate': rate,
-                                                     'map': json.load(
-                                                         file("../configs/custom_defaults/video_processing.json"))
-                                                 }
-                                                 }
-                                            ]},
-                                        'operation': 'perform_video_segmentation',
-                                    }
-                                ]
-                            }, 'video_id': '__pk__',
-                                'operation': 'perform_import',
-                            }
-                        ]
                     },
                 ],
+                'map': [
+                    {'arguments': {
+                        'map': [
+                            {
+                                'arguments': {
+                                    'map': [
+                                        {'operation': 'perform_video_decode',
+                                         'arguments': {
+                                             'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
+                                             'rate': rate,
+                                             'map': json.load(
+                                                 file("../configs/custom_defaults/video_processing.json"))
+                                         }
+                                         }
+                                    ]},
+                                'operation': 'perform_video_segmentation',
+                            }
+                        ]
+                    }, 'video_id': '__created__0',
+                        'operation': 'perform_import',
+                    }
+                ]
             }
         p.create_from_json(j=query, user=user)
         p.launch()
@@ -291,10 +291,10 @@ def create_query_from_request(p, request):
     selected_indexers = json.loads(request.POST.get('selected_indexers', "[]"))
     selected_detectors = json.loads(request.POST.get('selected_detectors', "[]"))
     query_json['image_data_b64'] = request.POST.get('image_url')[22:]
-    query_json['tasks'] = []
+    query_json['map'] = []
     indexer_tasks = defaultdict(list)
     if generate_tags and generate_tags != 'false':
-        query_json['tasks'].append({'operation': 'perform_analysis',
+        query_json['map'].append({'operation': 'perform_analysis',
                                     'arguments': {'analyzer': 'tagger', 'target': 'query', }
                                     })
 
@@ -307,7 +307,7 @@ def create_query_from_request(p, request):
         rtasks = []
         for r in indexer_tasks[i]:
             rtasks.append({'operation': 'perform_retrieval', 'arguments': {'count': int(count), 'retriever_pk': r}})
-        query_json['tasks'].append(
+        query_json['map'].append(
             {
                 'operation': 'perform_indexing',
                 'arguments': {
@@ -322,7 +322,7 @@ def create_query_from_request(p, request):
         for d in selected_detectors:
             dd = dvaapp.models.TrainedModel.objects.get(pk=int(d), model_type=dvaapp.models.TrainedModel.DETECTOR)
             if dd.name == 'textbox':
-                query_json['tasks'].append({'operation': 'perform_detection',
+                query_json['map'].append({'operation': 'perform_detection',
                                             'arguments': {'detector_pk': int(d),
                                                           'target': 'query',
                                                           'map': [{
@@ -336,7 +336,7 @@ def create_query_from_request(p, request):
                                             })
             elif dd.name == 'face':
                 dr = dvaapp.models.Retriever.objects.get(name='facenet', algorithm=dvaapp.models.Retriever.EXACT)
-                query_json['tasks'].append({'operation': 'perform_detection',
+                query_json['map'].append({'operation': 'perform_detection',
                                             'arguments': {'detector_pk': int(d),
                                                           'target': 'query',
                                                           'map': [{
@@ -356,7 +356,7 @@ def create_query_from_request(p, request):
                                                           }
                                             })
             else:
-                query_json['tasks'].append({'operation': 'perform_detection',
+                query_json['map'].append({'operation': 'perform_detection',
                                             'arguments': {'detector_pk': int(d), 'target': 'query', }})
     user = request.user if request.user.is_authenticated else None
     p.create_from_json(query_json, user)
@@ -462,14 +462,15 @@ def create_approximator_training_set(name, indexer_shasum, video_pks, user=None)
                         "video_id__in": video_pks,
                     }
                 },
-                "tasks": [
-                    {
-                        "operation": "perform_training_set_creation",
-                        "arguments": {"training_set_pk": '__pk__'}
-                    }
-                ]
+            }
+        ],
+        "map": [
+            {
+                "operation": "perform_training_set_creation",
+                "arguments": {"training_set_pk": '__created__0'}
             }
         ]
+
     }
     p = DVAPQLProcess()
     p.create_from_json(spec, user)
@@ -480,7 +481,7 @@ def perform_training(training_set_pk, args, user=None):
     args['selector'] = {"pk": training_set_pk}
     spec = {
         'process_type': dvaapp.models.DVAPQL.PROCESS,
-        'tasks': [
+        'map': [
 
             {
                 "operation": "perform_training",

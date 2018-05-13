@@ -16,6 +16,7 @@ creds.json
 *.pyc
 custom.env
 kubeconfig.json
+mode.json
 docs/experiments/private
 docs/experiments/coco/coco_annotations
 docs/experiments/yolo/yolo_test.zip
