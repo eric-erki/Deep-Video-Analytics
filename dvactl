@@ -62,12 +62,11 @@ def exec_script(script_path):
         print r.json()
 
 
-
 if __name__ == '__main__':
     help_text = """
     Available options
     ./dvactl configure   
-    ./dvactl create     
+    ./dvactl create      
     ./dvactl start 
     ./dvactl auth  # recreates creds.json  
     ./dvactl exec --script_path script.json  # run process using creds.json and REST API
@@ -76,8 +75,8 @@ if __name__ == '__main__':
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
-                        help="Select action out of { configure | create | start | stop | clean | clean_restart "
-                             "| notebook (view jupyter notebook URL) | wsgi (view WSGI logs) }")
+                        help="Select action out of { configure | create | start | auth | exec | stop | clean "
+                             "| clean_restart ")
     parser.add_argument("--init_process", help="Initial DVAPQL path default: configs/custom_defaults/init_process.json",
                         default="/root/DVA/configs/custom_defaults/init_process.json")
     parser.add_argument("--script_path", help="path to script to exec, e.g. process_livestream.json",

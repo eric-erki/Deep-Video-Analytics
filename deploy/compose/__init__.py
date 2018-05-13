@@ -84,7 +84,6 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models):
         try:
             r = urllib2.urlopen("http://localhost:8000")
             if r.getcode() == 200:
-                view_notebook_url()
                 print "Open browser window and go to http://localhost:8000 to access DVA Web UI"
                 print 'For windows you might need to replace "localhost" with ip address of docker-machine'
                 webbrowser.open("http://localhost:8000")
@@ -116,11 +115,6 @@ def stop_docker_compose(deployment_type, gpu_count, clean=False):
                                                'deploy/compose/{}'.format(deployment_type)))
     except:
         raise SystemError("Could not stop containers")
-
-
-def view_notebook_url():
-    print 'Use following url containing pre-auth token to use jupyter notebook'
-    print subprocess.check_output(["docker", "exec", "-it", "webserver", "jupyter", 'notebook', 'list'])
 
 
 def view_uwsgi_logs():
@@ -159,8 +153,6 @@ def handle_compose_operations(args,mode,gpus):
         if mode == 'test':
             test.clear_media_bucket()
             start_docker_compose(mode, gpus, args.init_process, args.init_models)
-    elif args.action == 'notebook':
-        view_notebook_url()
     elif args.action == 'wsgi':
         view_uwsgi_logs()
     else:
