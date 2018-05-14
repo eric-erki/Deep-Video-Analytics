@@ -44,10 +44,14 @@ def configure_kube():
     config = {}
     print "Creating configuration for kubernetes from kubeconfig.example.json"
     if os.path.isfile('kubeconfig.json'):
-        config_template = json.load(file('kubeconfig.json'))
+        existing_config = json.load(file('kubeconfig.json'))
+    else:
+        existing_config = {}
     for k, v in sorted(config_template.items()):
+        if k in existing_config:
+            v = existing_config[k]
         if "{random_string}" in v:
-            v = v.format(random_string=random.randint(0, 10000000))
+            v = v.format(random_string=random.randint(0, 100000000))
         new_value = raw_input(
             "Enter value for {} (Current value is '{}' press enter to keep current value) >>".format(k, v))
         if new_value.strip():
