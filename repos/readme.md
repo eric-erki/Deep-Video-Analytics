@@ -6,7 +6,7 @@ This directory contains repos for third party projects.
 - CRNN PyTorch implementation
 - Facenet implementation by David Sandberg
 - Insightface
-- CTPN Tensorflow implmentation
+- CTPN Tensorflow implementation
 - Yahoo LOPQ
 - Yahoo CROW
 - Tensorflow models/research/slim
