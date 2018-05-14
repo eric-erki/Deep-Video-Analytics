@@ -98,13 +98,8 @@ def get_kube_config():
     # to set CORS on the bucket Can be * or specific website e.g. http://example.website.com
     :return:
     """
-    if not os.path.isfile('kubeconfig.json'):
-        print "kubeconfig.json not found, edit kubeconfig.example.json and store it as kubeconfig.json"
-        raise EnvironmentError(
-            "kubeconfig.json not found, edit kubeconfig.example.json and store it as kubeconfig.json")
-    else:
-        with open('kubeconfig.json') as fh:
-            configs = json.load(fh)
+    with open('config.json') as fh:
+        configs = json.load(fh)
     if 'GOOGLE_CLOUD_PROJECT' in os.environ:
         configs['project_name'] = os.environ['GOOGLE_CLOUD_PROJECT']
     else:

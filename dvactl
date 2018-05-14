@@ -12,9 +12,9 @@ except ImportError:
 
 
 def get_mode():
-    if not os.path.isfile("mode.json"):
+    if not os.path.isfile("config.json"):
         return configure()
-    return json.load(file("mode.json"))
+    return json.load(file("config.json"))
 
 
 def configure_kube():
@@ -41,16 +41,16 @@ def configure_kube():
         "nodes": 1,
         "branch": "stable"
     }
-    config = {}
+    config = {"mode": "kube"}
     print "Creating configuration for kubernetes from kubeconfig.example.json"
-    if os.path.isfile('kubeconfig.json'):
-        existing_config = json.load(file('kubeconfig.json'))
+    if os.path.isfile('config.json'):
+        existing_config = json.load(file('config.json'))
     else:
         existing_config = {}
     for k, v in sorted(config_template.items()):
         if k in existing_config:
             v = existing_config[k]
-        if "{random_string}" in v:
+        if (type(v) is str or type(v) is unicode) and "{random_string}" in v:
             v = v.format(random_string=random.randint(0, 100000000))
         new_value = raw_input(
             "Enter value for {} (Current value is '{}' press enter to keep current value) >>".format(k, v))
@@ -61,36 +61,39 @@ def configure_kube():
                 config[k] = new_value
         else:
             config[k] = v
-    with open('kubeconfig.json', 'w') as fout:
-        json.dump(config, fout, indent=4)
-    print "Save kubeconfig.json"
+    return config
 
 
-def configure(mode=None):
+def configure_compose(mode):
     gpu_count = 0
     init_process = '/root/DVA/configs/custom_defaults/init_process.json'
     init_models = '/root/DVA/configs/custom_defaults/trained_models.json'
+    process = raw_input("Please specify init process or press enter to keep default"
+                        " ( /root/DVA/configs/custom_defaults/init_process.json ) >>").strip()
+    if process.strip():
+        init_process = process
+    models = raw_input("Please specify default models or press enter to keep default"
+                       " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
+    if process.strip():
+        init_models = models
+    if mode == 'gpu':
+        gpu_count = int(raw_input("Please select number of GPUs >>").strip())
+    return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models}
+
+
+def configure(mode=None):
     if mode is None or not mode:
         mode = raw_input("Please select mode { dev, test, cpu, gpu, kube } >>").strip()
     if mode not in {'dev', 'test', 'cpu', 'gpu', 'kube'}:
         raise ValueError("{} is not a valid mode".format(mode))
     if mode == 'kube':
-        configure_kube()
+        mode_dict = configure_kube()
     else:
-        process = raw_input("Please specify init process or press enter to keep default"
-                            " ( /root/DVA/configs/custom_defaults/init_process.json ) >>").strip()
-        if process.strip():
-            init_process = process
-        models = raw_input("Please specify default models or press enter to keep default"
-                           " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
-        if process.strip():
-            init_models = models
-        if mode == 'gpu':
-            gpu_count = int(raw_input("Please select number of GPUs >>").strip())
-    with open("mode.json", 'w') as f:
-        mode_dict = {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models}
-        json.dump(mode_dict, f)
-    return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models}
+        mode_dict = configure_compose(mode)
+    with open("config.json", 'w') as f:
+        json.dump(mode_dict, f, indent=4)
+    print "Saved config.json"
+    return mode_dict
 
 
 def exec_script(script_path):
