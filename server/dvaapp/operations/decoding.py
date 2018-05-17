@@ -80,21 +80,43 @@ class VideoDecoder(object):
         self.dvideo.width = self.width
         self.dvideo.save()
 
-    def decode_segment(self,ds,denominator,event_id=None):
+    def decode_segment(self,ds,denominator=None,event_id=None,frame_indexes=None):
+        existing_frame_indexes = { f.frame_index
+                                   for f in Frame.objects.filter(video_id=ds.video_id,segment_index=ds.segment_index)}
+        existing_count = len(existing_frame_indexes)
         output_dir = "{}/{}/{}/".format(self.media_dir, self.primary_key, 'frames')
         input_segment = ds.path()
-        ffmpeg_command = 'ffmpeg -fflags +igndts -loglevel panic -i {} -vf'.format(input_segment) # Alternative to igndts is setting vsync vfr
         df_list = []
-        filter_command = '"select=not(mod(n\,{}))+eq(pict_type\,PICT_TYPE_I)" -vsync 0'.format(denominator)
-        output_command = "{}/segment_{}_%d_b.jpg".format(output_dir,ds.segment_index)
-        command = " ".join([ffmpeg_command,filter_command,output_command])
-        logging.info(command)
-        try:
-            _ = sp.check_output(shlex.split(command), stderr=sp.STDOUT)
-        except:
-            raise ValueError,"for {} could not run {}".format(self.dvideo.name,command)
-        segment_frames_dict = ds.framelist
-        ordered_frames = sorted([(int(k),v) for k,v in segment_frames_dict.iteritems() if int(k) % denominator == 0 or v[0] == 'I'])
+        if denominator:
+            # Alternative to igndts is setting vsync vfr
+            ffmpeg_command = 'ffmpeg -fflags +igndts -loglevel panic -i {} -vf'.format(input_segment)
+            filter_command = '"select=not(mod(n\,{}))+eq(pict_type\,PICT_TYPE_I)" -vsync 0'.format(denominator)
+            output_command = "{}/segment_{}_%d_b.jpg".format(output_dir,ds.segment_index)
+            command = " ".join([ffmpeg_command,filter_command,output_command])
+            logging.info(command)
+            try:
+                _ = sp.check_output(shlex.split(command), stderr=sp.STDOUT)
+            except:
+                raise ValueError,"for {} could not run {}".format(self.dvideo.name,command)
+            segment_frames_dict = ds.framelist
+            ordered_frames = sorted([(int(k),v) for k,v in segment_frames_dict.iteritems()
+                                     if int(k) % denominator == 0 or v[0] == 'I'])
+        elif frame_indexes:
+            denominator = 1
+            ffmpeg_command = 'ffmpeg -fflags +igndts -loglevel panic -i {} -vf'.format(input_segment)
+            filter_command = '"select=not(mod(n\,{}))" -vsync 0'.format(denominator)
+            output_command = "{}/segment_{}_%d_b.jpg".format(output_dir,ds.segment_index)
+            command = " ".join([ffmpeg_command,filter_command,output_command])
+            logging.info(command)
+            try:
+                _ = sp.check_output(shlex.split(command), stderr=sp.STDOUT)
+            except:
+                raise ValueError,"for {} could not run {}".format(self.dvideo.name,command)
+            segment_frames_dict = ds.framelist
+            ordered_frames = sorted([(int(k),v) for k,v in segment_frames_dict.iteritems()
+                                     if int(k)+ds.start_index in frame_indexes])
+        else:
+            raise ValueError("Either provide list of frames to decode or denominator to provide rate")
         frame_width, frame_height = 0, 0
         for i,f_id in enumerate(ordered_frames):
             frame_index, frame_data = f_id
@@ -107,16 +129,18 @@ class VideoDecoder(object):
             if i ==0:
                 im = Image.open(dst)
                 frame_width, frame_height = im.size  # this remains constant for all frames
-            df = Frame()
-            df.frame_index = int(frame_index+ds.start_index)
-            df.video_id = self.dvideo.pk
-            df.keyframe = frame_data[0] == 'I'
-            df.t = float(frame_data[1])
-            df.segment_index = ds.segment_index
-            df.h = frame_height
-            df.event_id = event_id
-            df.w = frame_width
-            df_list.append(df)
+            findex = int(frame_index+ds.start_index)
+            if existing_count == 0 or findex not in existing_frame_indexes:
+                df = Frame()
+                df.frame_index = findex
+                df.video_id = self.dvideo.pk
+                df.keyframe = frame_data[0] == 'I'
+                df.t = float(frame_data[1])
+                df.segment_index = ds.segment_index
+                df.h = frame_height
+                df.event_id = event_id
+                df.w = frame_width
+                df_list.append(df)
         _ = Frame.objects.bulk_create(df_list, batch_size=1000)
 
     def segment_video(self,event_id):
