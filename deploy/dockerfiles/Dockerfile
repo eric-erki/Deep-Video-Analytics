@@ -2,7 +2,7 @@ FROM tensorflow/tensorflow:1.6.0
 MAINTAINER Akshay Bhat <akshayubhat@gmail.com>
 RUN apt-get update -q && apt-get install -y wget xz-utils
 WORKDIR "/bin/"
-RUN wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz
+RUN wget https://www.dropbox.com/s/bjyzb8hytdwp2tp/ffmpeg-release-64bit-static.tar.xz
 RUN tar xvfJ ffmpeg-release-64bit-static.tar.xz
 RUN mv ffmpeg*/* .
 WORKDIR "/root/"
