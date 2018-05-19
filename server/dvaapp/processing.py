@@ -43,24 +43,6 @@ DETECTOR_NAME_TO_PK = {}
 CURRENT_QUEUES = set()
 LAST_UPDATED = None
 
-RESTARTABLE_TASKS = {
-    'perform_indexing':{
-        'delete_models':['IndexEntries',],
-    },
-    'perform_detection':{
-        'delete_models':['Region',]
-    },
-    'perform_analysis':{
-        'delete_models':['Region',]
-    },
-    'perform_frame_download':{
-        'delete_models':['Region',]
-    },
-    'perform_video_decode':{
-        'delete_models':['Frame',]
-    },
-}
-
 
 def refresh_queue_names():
     return {w.queue_name for w in Worker.objects.all().filter(alive=True)}

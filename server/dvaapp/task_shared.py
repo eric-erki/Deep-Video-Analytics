@@ -1,6 +1,6 @@
 import os, json, copy, time, subprocess, logging, shutil, zipfile, uuid
 from models import  QueryRegion, QueryRegionIndexVector, DVAPQL, Region, Frame, Segment, IndexEntries, TEvent, \
-    DeletedVideo
+    DeletedVideo, TaskRestart
 
 from django.conf import settings
 from PIL import Image
@@ -8,6 +8,8 @@ from . import serializers
 from dva.in_memory import redis_client
 from .fs import ensure, upload_file_to_remote, upload_video_to_remote, get_path_to_file, \
     download_video_from_remote_to_local, upload_file_to_path
+from dva.celery import app
+from django.apps import apps
 
 
 def pid_exists(pid):
@@ -17,6 +19,45 @@ def pid_exists(pid):
         return False
     else:
         return True
+
+
+def restart_task(dt):
+    if dt.operation in settings.RESTARTABLE_TASKS:
+        try:
+            previous_attempt = TaskRestart.objects.get(launched_event_pk=dt.pk)
+        except:
+            previous_attempt = None
+        if previous_attempt.attempts > settings.MAX_TASK_ATTEMPTS:
+            logging.info("TaskRestart ID : {} Exceeded Max attempts not"
+                         " launching new task.".format(previous_attempt.pk))
+            return None
+        else:
+            for model_name in settings.RESTARTABLE_TASKS[dt.operation]:
+                m = apps.get_model(app_label='dvaapp', model_name=model_name)
+                m.objects.filter(event_id=dt.pk).delete()
+            new_dt = TEvent()
+            new_dt.parent_process = dt.parent_process
+            new_dt.task_group_id = dt.task_group_id
+            new_dt.parent = dt.parent
+            new_dt.video = dt.video
+            new_dt.arguments = dt.arguments
+            new_dt.queue = dt.queue
+            new_dt.operation = new_dt.operation
+            new_dt.save()
+            if previous_attempt:
+                TaskRestart.objects.create(original_event_pk=previous_attempt.original_event_pk,
+                                           launched_event_pk=new_dt.pk,
+                                           attempts=previous_attempt.attempts+1)
+            else:
+                TaskRestart.objects.create(original_event_pk=dt.pk,
+                                           launched_event_pk=new_dt.pk,
+                                           attempts=1)
+            app.send_task(name=new_dt.operation, args=[new_dt.pk, ], queue=new_dt.queue)
+            dt.delete()
+            return new_dt.pk
+    else:
+        logging.info("Task {} operation {} not restartable".format(dt.pk,dt.operation))
+        return None
 
 
 def collect_garbage(deleted_count):

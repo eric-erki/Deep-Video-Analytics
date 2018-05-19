@@ -21,6 +21,7 @@ from celery.signals import task_prerun, celeryd_init
 from . import fs
 from . import task_shared
 from .waiter import Waiter
+from django_celery_results.models import TaskResult
 
 try:
     import numpy as np
@@ -104,6 +105,23 @@ def perform_process_monitoring(task_id):
     if dt is None:
         raise ValueError("task is None")
     timeout_seconds = dt.arguments.get('timeout', settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
+    for oldt in models.TEvent.objects.filter(parent_process=dt.process, started=True, completed=False):
+        # Check if celery task has failed
+        try:
+            tr = TaskResult.objects.get(task_id=oldt.task_id)
+        except TaskResult.DoesNotExist:
+            pass
+        else:
+            if tr.status == 'FAILURE':
+                oldt.errored = True
+                oldt.save()
+        # Check if worker processing the task has failed
+        if oldt.worker.alive == False and oldt.errored == False:
+            oldt.errored = True
+            oldt.save()
+        # If failed attempt to restart it.
+        if oldt.errored:
+            task_shared.restart_task(oldt)
     # Following is "1" instead of "0" since the current task is marked as pending.
     if models.TEvent.objects.filter(parent_process=dt.parent_process, completed=False).count() == 1:
         dt.parent_process.completed = True
@@ -623,12 +641,8 @@ def manage_host(self, op, ping_index=None, worker_name=None):
             if not task_shared.pid_exists(w.pid):
                 w.alive = False
                 w.save()
-                for t in models.TEvent.objects.filter(started=True, completed=False, errored=False, worker=w):
-                    t.errored = True
-                    t.save()
                 if w.queue_name != 'manager':
                     if settings.KUBE_MODE:
-
                         models.ManagementAction.objects.create(op=op, parent_task=self.request.id,
                                                                message="Worker died manager exiting.",
                                                                host=host_name)

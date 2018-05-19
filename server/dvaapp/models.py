@@ -701,3 +701,15 @@ class Export(models.Model):
     event = models.ForeignKey(TEvent)
     url = models.TextField(default="")
     created = models.DateTimeField('date created', auto_now_add=True)
+
+
+class TaskRestart(models.Model):
+    original_event_pk = models.IntegerField(null=False)
+    launched_event_pk = models.IntegerField()
+    attempts = models.IntegerField(default=0)
+    arguments = JSONField(blank=True,null=True)
+    operation = models.CharField(max_length=100, default="")
+    queue = models.CharField(max_length=100, default="")
+    video_uuid = models.UUIDField(default=uuid.uuid4, null=True)
+    process = models.ForeignKey(DVAPQL)
+    created = models.DateTimeField('date created', auto_now_add=True)
