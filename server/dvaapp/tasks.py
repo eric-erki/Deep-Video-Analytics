@@ -620,53 +620,35 @@ def perform_decompression(task_id):
 @app.task(track_started=True, name="manage_host", bind=True)
 def manage_host(self, op, ping_index=None, worker_name=None):
     """
-    Manage host
-    This task is handled by workers consuming from a broadcast management queue.
-    It allows quick inspection of GPU memory utilization launch of additional queues.
-    Since TensorFlow workers need to be in SOLO concurrency mode, having additional set of workers
-    enables easy management without a long timeout.
-    Example use
-    1. Monitor worker (single manager per worker in case of kube mode) / workers launched. Restart or Kill
-    2. Gather GPU memory utilization info
-    3. (TODO) Cleanly shutdown the worker by sending a signal to worker process.
+    - Manage host by deleting folders associated with deleted videos.
+    - Marking dead workers as failed.
+    - For Kubernetes shutting down / exiting and in Compose mode by restarting the dead worker.
     """
     global DELETED_COUNT
     host_name = self.request.hostname
-    if op == "list":
-        DELETED_COUNT = task_shared.collect_garbage(DELETED_COUNT)
-        models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message="", host=host_name,
-                                               ping_index=ping_index)
-        for w in models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True):
-            # launch all queues EXCEPT worker processing manager queue
-            if not task_shared.pid_exists(w.pid):
-                w.alive = False
-                w.save()
-                if w.queue_name != 'manager':
-                    if settings.KUBE_MODE:
-                        models.ManagementAction.objects.create(op=op, parent_task=self.request.id,
-                                                               message="Worker died manager exiting.",
-                                                               host=host_name)
-                        wm = models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True,
-                                                          queue_name="manager")[0]
-                        wm.alive = False
-                        wm.save()
-                        sys.exit()
-                    else:
-                        task_shared.launch_worker(w.queue_name, worker_name)
-                        message = "worker processing {} is dead, restarting".format(w.queue_name)
-                        models.ManagementAction.objects.create(op='worker_restart', parent_task=self.request.id,
-                                                               message=message, host=host_name)
-    elif op == "gpuinfo":
-        try:
-            message = subprocess.check_output(
-                ['nvidia-smi', '--query-gpu=memory.free,memory.total', '--format=csv']).splitlines()[1]
-        except:
-            message = "No GPU available"
-        models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message=message, host=host_name)
-    elif op == "shutdown":
-        raise NotImplementedError(op)
-    else:
-        raise NotImplementedError(op)
+    DELETED_COUNT = task_shared.collect_garbage(DELETED_COUNT)
+    models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message="", host=host_name,
+                                           ping_index=ping_index)
+    for w in models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True):
+        # launch all queues EXCEPT worker processing manager queue
+        if not task_shared.pid_exists(w.pid):
+            w.alive = False
+            w.save()
+            if w.queue_name != 'manager':
+                if settings.KUBE_MODE:
+                    models.ManagementAction.objects.create(op=op, parent_task=self.request.id,
+                                                           message="Worker died manager exiting.",
+                                                           host=host_name)
+                    wm = models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True,
+                                                      queue_name="manager")[0]
+                    wm.alive = False
+                    wm.save()
+                    sys.exit()
+                else:
+                    task_shared.launch_worker(w.queue_name, worker_name)
+                    message = "worker processing {} is dead, restarting".format(w.queue_name)
+                    models.ManagementAction.objects.create(op='worker_restart', parent_task=self.request.id,
+                                                           message=message, host=host_name)
 
 
 @app.task(track_started=True, name="monitor_system")

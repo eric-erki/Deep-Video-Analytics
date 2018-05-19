@@ -713,22 +713,13 @@ def management(request):
         'timeout': timeout,
         'actions': ManagementAction.objects.all(),
         'workers': Worker.objects.all(),
+        'queues' : app.control.inspect(timeout=timeout).active_queues(),
         'state': SystemState.objects.all().order_by('-created')[:100]
     }
     if request.method == 'POST':
         op = request.POST.get("op", "")
-        host_name = request.POST.get("host_name", "").strip()
-        queue_name = request.POST.get("queue_name", "").strip()
-        if op == "list_workers":
-            context["queues"] = app.control.inspect(timeout=timeout).active_queues()
-        elif op == "list":
-            t = app.send_task('manage_host', args=[op, ], exchange='qmanager')
-            t.wait(timeout=timeout)
-        elif op == "gpuinfo":
-            t = app.send_task('manage_host', args=[op, ], exchange='qmanager')
-            t.wait(timeout=timeout)
-        elif op == "launch":
-            t = app.send_task('manage_host', args=[op, host_name, queue_name], exchange='qmanager')
+        if op == "list":
+            t = app.send_task('manage_host', args=[], exchange='qmanager')
             t.wait(timeout=timeout)
     return render(request, 'dvaui/management.html', context)
 
