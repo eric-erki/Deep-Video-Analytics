@@ -57,6 +57,7 @@
                 <tr>
                     <th>Original attempt pk</th>
                     <th>Latest attempt pk</th>
+                    <th>Process</th>
                     <th>Attempts</th>
                     <th>Re-submitted</th>
                     <th>ts</th>
@@ -67,7 +68,8 @@
                     <tr>
                         <td>{{ t.original_event_pk }} </td>
                         <td><a href="/task_detail/{{ t.launched_event_pk }}">current attmpt</a></td>
-                        <td>{{ t.attempts }}</td>
+                        <td><a href="/process/{{ t.process_id }}">{{ t.process_id }}</a></td>
+                        <td class="text-right">{{ t.attempts }}</td>
                         <td>{{ t.created|timesince }} ago</td>
                         <td>{{ t.created }} / </td>
                     </tr>
