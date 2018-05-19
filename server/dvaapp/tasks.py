@@ -105,7 +105,7 @@ def perform_process_monitoring(task_id):
     if dt is None:
         raise ValueError("task is None")
     timeout_seconds = dt.arguments.get('timeout', settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
-    for oldt in models.TEvent.objects.filter(parent_process=dt.process, started=True, completed=False):
+    for oldt in models.TEvent.objects.filter(parent_process=dt.parent_process, started=True, completed=False):
         # Check if celery task has failed
         try:
             tr = TaskResult.objects.get(task_id=oldt.task_id)
@@ -116,7 +116,7 @@ def perform_process_monitoring(task_id):
                 oldt.errored = True
                 oldt.save()
         # Check if worker processing the task has failed
-        if oldt.worker.alive == False and oldt.errored == False:
+        if oldt.worker and oldt.worker.alive == False and oldt.errored == False:
             oldt.errored = True
             oldt.save()
         # If failed attempt to restart it.
