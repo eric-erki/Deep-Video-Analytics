@@ -5,10 +5,10 @@ import glob
 import json
 from django.views.generic import ListView, DetailView
 from .forms import UploadFileForm, YTVideoForm, AnnotationForm
-from dvaapp.models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, \
+from dvaapp.models import Video, Frame, DVAPQL, TaskRestart, TEvent, IndexEntries, Region, \
     Tube, Segment, FrameLabel, SegmentLabel, \
-    VideoLabel, RegionLabel, TubeLabel, Label, ManagementAction, \
-    TrainedModel, Retriever, SystemState, QueryRegion, QueryRegionResults, Worker, TrainingSet, Export
+    VideoLabel, RegionLabel, Label, ManagementAction, \
+    TrainedModel, Retriever, SystemState, Worker, TrainingSet, Export
 from .models import StoredDVAPQL, ExternalServer
 from dva.celery import app
 import math
@@ -713,7 +713,7 @@ def management(request):
         'timeout': timeout,
         'actions': ManagementAction.objects.all(),
         'workers': Worker.objects.all(),
-        'queues' : app.control.inspect(timeout=timeout).active_queues(),
+        'restarts' : TaskRestart.objects.all(),
         'state': SystemState.objects.all().order_by('-created')[:100]
     }
     if request.method == 'POST':

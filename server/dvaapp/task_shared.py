@@ -27,7 +27,7 @@ def restart_task(dt):
             previous_attempt = TaskRestart.objects.get(launched_event_pk=dt.pk)
         except:
             previous_attempt = None
-        if previous_attempt.attempts > settings.MAX_TASK_ATTEMPTS:
+        if previous_attempt and previous_attempt.attempts > settings.MAX_TASK_ATTEMPTS:
             logging.info("TaskRestart ID : {} Exceeded Max attempts not"
                          " launching new task.".format(previous_attempt.pk))
             return None
