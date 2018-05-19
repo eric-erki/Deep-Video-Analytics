@@ -32,7 +32,8 @@ def restart_task(dt):
                          " launching new task.".format(previous_attempt.pk))
             return None
         else:
-            for model_name in settings.RESTARTABLE_TASKS[dt.operation]:
+            logging.info("Restarting {}".format(dt.pk))
+            for model_name in settings.RESTARTABLE_TASKS[dt.operation]['delete_models']:
                 m = apps.get_model(app_label='dvaapp', model_name=model_name)
                 m.objects.filter(event_id=dt.pk).delete()
             new_dt = TEvent()
