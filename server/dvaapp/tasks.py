@@ -117,6 +117,7 @@ def perform_process_monitoring(task_id):
                 oldt.save()
         # Check if worker processing the task has failed
         if oldt.worker and oldt.worker.alive == False and oldt.errored == False:
+            oldt.error_message = "Worker {} processing task is no longer alive.".format(oldt.worker_id)
             oldt.errored = True
             oldt.save()
         # If failed attempt to restart it.
