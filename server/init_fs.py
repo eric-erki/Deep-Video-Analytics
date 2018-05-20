@@ -73,7 +73,7 @@ if __name__ == "__main__":
     if 'LAUNCH_SERVER' in os.environ or 'LAUNCH_SERVER_NGINX' in os.environ:
         if settings.KUBE_MODE:
             # todo(akshay): This code is prone to race condition when starting the cluster.
-            time.sleep(random.randint(15))
+            time.sleep(random.randint(0,15))
             for m in default_models:
                 create_model(m)
         if 'INIT_PROCESS' in os.environ:
