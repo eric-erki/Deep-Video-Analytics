@@ -112,6 +112,7 @@ if __name__ == '__main__':
     Available options
     ./dvactl configure   
     ./dvactl create      
+    ./dvactl create_premptible  # create premptible node pool for Kubernetes      
     ./dvactl start 
     ./dvactl auth  # recreates creds.json  
     ./dvactl exec -f script.json  # run process using creds.json and REST API

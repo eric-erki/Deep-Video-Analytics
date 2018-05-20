@@ -109,9 +109,17 @@ def get_kube_config():
 
 def kube_create_premptible_node_pool():
     config = get_kube_config()
+    machine_type = 'n1-standard-2'
+    count = 5
+    v = raw_input("Please enter machine_type (current {}) or press enter to keep default >>".format(machine_type)).strip()
+    if v:
+        machine_type = v
+    v = raw_input("Please enter machine count (current {}) or press enter to keep default >>".format(count)).strip()
+    if v:
+        count = int(v)
     command = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}"' \
               ' --zone "{zone}" --cluster "{cluster_name}" ' \
-              '--machine-type "n1-standard-2" --image-type "COS" ' \
+              '--machine-type "{machine_type}" --image-type "COS" ' \
               '--disk-size "100" ' \
               '--scopes "https://www.googleapis.com/auth/compute",' \
               '"https://www.googleapis.com/auth/devstorage.read_write",' \
@@ -123,7 +131,8 @@ def kube_create_premptible_node_pool():
     command = command.format(project_name=config['project_name'],
                              pool_name="premptpool",
                              cluster_name=config['cluster_name'],
-                             zone=config['zone'], count=5)
+                             zone=config['zone'], count=count,machine_type=machine_type)
+    print "Creating pre-emptible node pool"
     print command
     subprocess.check_call(shlex.split(command))
 
@@ -251,6 +260,8 @@ def handle_kube_operations(args):
         get_auth()
     elif args.action == 'start':
         launch_kube()
+    elif args.action == 'create_premptible':
+        kube_create_premptible_node_pool()
     elif args.action == 'stop' or args.action == 'clean':
         delete_kube()
         if args.action == 'clean':
