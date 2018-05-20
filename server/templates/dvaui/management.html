@@ -92,8 +92,10 @@
                     <th>host</th>
                     <th>pid</th>
                     <th>Alive</th>
-                    <th>Timestamp</th>
-                    <th>Since</th>
+                    <th>Started</th>
+                    <th>Started since</th>
+                    <th>Last ping</th>
+                    <th>Last ping since</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -105,6 +107,8 @@
                             <td>{{ k.alive }}</td>
                             <td>{{ k.created }}</td>
                             <td>{{ k.created|timesince }}</td>
+                            <td>{{ k.last_ping }}</td>
+                            <td>{{ k.last_ping|timesince }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -126,6 +130,7 @@
                     <th>Redis expired / evicted keys</th>
                     <th>Redis clients</th>
                     <th>Redis memory</th>
+                    <th>Workers alive / transition-to-dead / dead  </th>
                     <th>Timestamp</th>
                     <th>Since</th>
                 </tr>
@@ -140,6 +145,7 @@
                             <td>{{ k.redis_stats.expired_keys }} / {{ k.redis_stats.evicted_keys }}</td>
                             <td>{{ k.redis_stats.connected_clients }}</td>
                             <td>{{ k.redis_stats.used_memory_human }}</td>
+                            <td>{{ k.worker_stats.alive }} / {{ k.worker_stats.transition }} / {{ k.worker_stats.dead }}</td>
                             <td>{{ k.created }}</td>
                             <td>{{ k.created|timesince }}</td>
                         </tr>

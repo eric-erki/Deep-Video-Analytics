@@ -30,6 +30,7 @@ class Worker(models.Model):
     host = models.CharField(max_length=500, default="")
     pid = models.IntegerField()
     alive = models.BooleanField(default=True)
+    last_ping = models.DateTimeField('date last ping', null=True)
     created = models.DateTimeField('date created', auto_now_add=True)
 
 
@@ -678,6 +679,7 @@ class ManagementAction(models.Model):
 class SystemState(models.Model):
     created = models.DateTimeField('date created', auto_now_add=True)
     process_stats = JSONField(blank=True, null=True)
+    worker_stats = JSONField(blank=True, null=True)
     redis_stats = JSONField(blank=True, null=True)
     queues = JSONField(blank=True,null=True)
     hosts = JSONField(blank=True,null=True)

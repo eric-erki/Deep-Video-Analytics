@@ -39,6 +39,7 @@ def configure_workers(sender, conf, **kwargs):
     W = models.Worker()
     W.pid = os.getpid()
     W.host = sender.split('.')[-1]
+    W.last_ping = timezone.now()
     W.queue_name = sender.split('@')[1].split('.')[0]
     W.save()
 
@@ -631,10 +632,10 @@ def manage_host(self, op, ping_index=None, worker_name=None):
     models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message="", host=host_name,
                                            ping_index=ping_index)
     for w in models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True):
-        # launch all queues EXCEPT worker processing manager queue
         if not task_shared.pid_exists(w.pid):
             w.alive = False
             w.save()
+            # launch all queues EXCEPT worker processing manager queue
             if w.queue_name != 'manager':
                 if settings.KUBE_MODE:
                     models.ManagementAction.objects.create(op=op, parent_task=self.request.id,
@@ -650,6 +651,9 @@ def manage_host(self, op, ping_index=None, worker_name=None):
                     message = "worker processing {} is dead, restarting".format(w.queue_name)
                     models.ManagementAction.objects.create(op='worker_restart', parent_task=self.request.id,
                                                            message=message, host=host_name)
+        else:
+            w.last_ping = timezone.now()
+            w.save()
 
 
 @app.task(track_started=True, name="monitor_system")
@@ -665,10 +669,25 @@ def monitor_system():
         ping_index = 0
     # TODO: Handle the case where host manager has not responded to last and itself has died
     _ = app.send_task('manage_host', args=['list', ping_index], exchange='qmanager')
+    worker_stats = {'alive':0,
+                    'transition':0,
+                    'dead': models.Worker.objects.filter(alive=False).count()
+                    }
+    for w in models.Worker.objects.filter(alive=True):
+        # if worker is not heard from via manager for more than 10 minutes
+        # mark it as dead, so that processes_monitor can mark tasks are errored and restart if possible.
+        if (timezone.now() - w.last_ping).total_seconds() > 600:
+            w.alive = False
+            w.save()
+            worker_stats['transition'] += 1
+        else:
+            worker_stats['alive'] += 1
     process_stats = {'processes': models.DVAPQL.objects.count(),
                      'completed_processes': models.DVAPQL.objects.filter(completed=True).count(),
                      'tasks': models.TEvent.objects.count(),
                      'pending_tasks': models.TEvent.objects.filter(started=False).count(),
                      'completed_tasks': models.TEvent.objects.filter(started=True, completed=True).count()}
-    _ = models.SystemState.objects.create(redis_stats=redis_client.info(),process_stats=process_stats)
+    _ = models.SystemState.objects.create(redis_stats=redis_client.info(),
+                                          process_stats=process_stats,
+                                          worker_stats=worker_stats)
 
