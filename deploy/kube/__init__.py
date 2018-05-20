@@ -19,6 +19,18 @@ CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" cl
 --addons HorizontalPodAutoscaling,HttpLoadBalancing,KubernetesDashboard --enable-autorepair
 """
 
+PREMPTIBLE_CREATE_COMMAND = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}"' \
+          ' --zone "{zone}" --cluster "{cluster_name}" ' \
+          '--machine-type "{machine_type}" --image-type "COS" ' \
+          '--disk-size "100" ' \
+          '--scopes "https://www.googleapis.com/auth/compute",' \
+          '"https://www.googleapis.com/auth/devstorage.read_write",' \
+          '"https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring",' \
+          '"https://www.googleapis.com/auth/servicecontrol",' \
+          '"https://www.googleapis.com/auth/service.management.readonly",' \
+          '"https://www.googleapis.com/auth/trace.append" ' \
+          '--preemptible --num-nodes "{count}"  '
+
 AUTH_COMMAND = "gcloud container clusters get-credentials {cluster_name} --zone {zone} --project {project_name}"
 
 POD_COMMAND = "kubectl get -n {namespace} pods"
@@ -117,21 +129,9 @@ def kube_create_premptible_node_pool():
     v = raw_input("Please enter machine count (current {}) or press enter to keep default >>".format(count)).strip()
     if v:
         count = int(v)
-    command = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}"' \
-              ' --zone "{zone}" --cluster "{cluster_name}" ' \
-              '--machine-type "{machine_type}" --image-type "COS" ' \
-              '--disk-size "100" ' \
-              '--scopes "https://www.googleapis.com/auth/compute",' \
-              '"https://www.googleapis.com/auth/devstorage.read_write",' \
-              '"https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring",' \
-              '"https://www.googleapis.com/auth/servicecontrol",' \
-              '"https://www.googleapis.com/auth/service.management.readonly",' \
-              '"https://www.googleapis.com/auth/trace.append" ' \
-              '--preemptible --num-nodes "{count}"  '
-    command = command.format(project_name=config['project_name'],
-                             pool_name="premptpool",
-                             cluster_name=config['cluster_name'],
-                             zone=config['zone'], count=count,machine_type=machine_type)
+    command = PREMPTIBLE_CREATE_COMMAND.format(project_name=config['project_name'], pool_name="premptpool",
+                                               cluster_name=config['cluster_name'], zone=config['zone'], count=count,
+                                               machine_type=machine_type)
     print "Creating pre-emptible node pool"
     print command
     subprocess.check_call(shlex.split(command))
