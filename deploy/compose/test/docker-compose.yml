@@ -7,26 +7,26 @@
      volumes:
       - dvapgdata:/var/lib/postgresql/data
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
    rabbit:
      image: rabbitmq
      container_name: dva-rmq
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      volumes:
        - dvarabbit:/var/lib/rabbitmq
    redis:
      image: bitnami/redis:latest
      container_name: dva-redis
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      volumes:
        - dvaredis:/bitnami
    webserver:
      image: akshayubhat/dva-auto:latest
      container_name: webserver
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_SERVER_NGINX=1
        - ENABLE_DEBUG=1 # Enables django debug mode
@@ -42,7 +42,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: extractor
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_Q_qextract=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
@@ -54,7 +54,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: trainer
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_Q_qtrainer=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
@@ -66,7 +66,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: scheduler
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_SCHEDULER=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
@@ -78,7 +78,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: inception
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_BY_NAME_indexer_inception=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
@@ -90,7 +90,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: facenet
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_BY_NAME_indexer_facenet=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
@@ -102,7 +102,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: coco
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_BY_NAME_detector_coco=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
@@ -114,7 +114,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: crnn
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_BY_NAME_analyzer_crnn=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
@@ -126,7 +126,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: tagger
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_BY_NAME_analyzer_tagger=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
@@ -138,7 +138,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: face
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_BY_NAME_detector_face=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
@@ -150,7 +150,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: textdetector
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_BY_NAME_detector_textbox=1
      command: bash -c "sleep 60 && git reset --hard && git checkout --track origin/master && git pull && ./start_container.py"
@@ -162,7 +162,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: global_model
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_Q_GLOBAL_MODEL=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
@@ -174,7 +174,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: streamer
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_Q_qstreamer=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
@@ -186,7 +186,7 @@
      image: akshayubhat/dva-auto:latest
      container_name: global_retriever
      env_file:
-       - ../../custom.env
+       - ../../../custom.env
      environment:
        - LAUNCH_Q_GLOBAL_RETRIEVER=1
      command: bash -c "git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py"
