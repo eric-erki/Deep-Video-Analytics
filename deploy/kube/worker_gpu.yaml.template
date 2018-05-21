@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: globalmodel
+  name: {worker_name}
   labels:
-    name: globalmodel
+    name: {worker_name}
 spec:
   replicas: 1
   progressDeadlineSeconds: 600
@@ -12,23 +12,24 @@ spec:
   template:
     metadata:
       labels:
-        name: globalmodel
-        role: cpuworker
+        name: {worker_name}
     spec:
       containers:
-      - image: akshayubhat/dva-auto:latest
+      - image: akshayubhat/dva-auto:gpu
         imagePullPolicy: "IfNotPresent"
+        name: {worker_name}
         resources:
-          requests:
-            memory: "2000Mi"
-            cpu: "1"
           limits:
-            memory: "8000Mi"
-            cpu: "4"
-        name: globalmodel
+           nvidia.com/gpu: 1
         env:
-        - name: LAUNCH_Q_GLOBAL_MODEL
+        - name: {worker_env}
           value: "1"
+        - name: GPU_MEMORY
+          value: "0.95"
+        - name: GPU_AVAILABLE
+          value: "1"
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "0"
 {common}
         args:
           - bash
