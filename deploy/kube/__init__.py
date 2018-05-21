@@ -164,7 +164,7 @@ def launch_kube():
     commands = []
     worker_template = file('./deploy/kube/worker.yaml.template').read()
     for k in DEFAULT_WORKERS:
-        yaml_fname = './deploy/kube/{}.yaml'.format(k['worker_name'])
+        yaml_fname = './deploy/kube/{}.yaml'.format(k['name'])
         with open(yaml_fname, 'w') as out:
             k['common'] = config['common_env']
             k['command'] = config['command']

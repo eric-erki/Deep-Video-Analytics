@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {worker_name}
+  name: {name}
   labels:
-    name: {worker_name}
+    name: {name}
 spec:
   replicas: 1
   progressDeadlineSeconds: 600
@@ -12,12 +12,12 @@ spec:
   template:
     metadata:
       labels:
-        name: {worker_name}
+        name: {name}
     spec:
       containers:
       - image: akshayubhat/dva-auto:gpu
         imagePullPolicy: "IfNotPresent"
-        name: {worker_name}
+        name: {name}
         resources:
           limits:
            nvidia.com/gpu: 1

@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {worker_name}
+  name: {name}
   labels:
-    name: {worker_name}
+    name: {name}
 spec:
   replicas: 1
   progressDeadlineSeconds: 600
@@ -12,7 +12,7 @@ spec:
   template:
     metadata:
       labels:
-        name: {worker_name}
+        name: {name}
     spec:
       containers:
       - image: akshayubhat/dva-auto:latest
@@ -24,7 +24,7 @@ spec:
           limits:
             memory: "{max_memory}"
             cpu: "{max_cpu}"
-        name: {worker_name}
+        name: {name}
         env:
         - name: {worker_env}
           value: "1"
