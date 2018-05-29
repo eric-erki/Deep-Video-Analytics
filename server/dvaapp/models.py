@@ -607,9 +607,8 @@ class FrameLabel(models.Model):
 
 class FrameRegionRelation(models.Model):
     """
-    Captures relations between Frames and Regions within a video/dataset.
+    Captures relations between Frames and Regions within and between videos/datasets.
     """
-    video = models.ForeignKey(Video)
     source_frame = models.ForeignKey(Frame,null=True,related_name='source_frame')
     target_frame = models.ForeignKey(Frame,null=True,related_name='source_target')
     source_frame_index = models.IntegerField(default=-1)
