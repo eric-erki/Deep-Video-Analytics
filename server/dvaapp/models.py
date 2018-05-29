@@ -605,6 +605,54 @@ class FrameLabel(models.Model):
         super(FrameLabel, self).save(*args, **kwargs)
 
 
+class FrameRegionRelation(models.Model):
+    """
+    Captures relations between Frames and Regions within a video/dataset.
+    """
+    video = models.ForeignKey(Video)
+    source_frame = models.ForeignKey(Frame,null=True,related_name='source_frame')
+    target_frame = models.ForeignKey(Frame,null=True,related_name='source_target')
+    source_frame_index = models.IntegerField(default=-1)
+    target_frame_index = models.IntegerField(default=-1)
+    source_segment_index = models.IntegerField(null=True)
+    target_segment_index = models.IntegerField(null=True)
+    source_region = models.ForeignKey(Region,null=True,related_name='source_region')
+    target_region = models.ForeignKey(Region,null=True,related_name='target_region')
+    event = models.ForeignKey(TEvent)
+    label = models.ForeignKey(Label)
+    weight = models.FloatField(null=True)
+    metadata = JSONField(blank=True,null=True)
+
+    def set_defaults(self):
+        if self.source_frame:
+            source = self.source_frame
+        elif self.source_region:
+            source = self.source_region
+        else:
+            raise ValueError("Must set either source frame or regions")
+        if self.target_frame:
+            target = self.target_frame
+        elif self.target_region:
+            target = self.target_region
+        else:
+            raise ValueError("Must set either target frame or regions")
+        if self.source_frame_index == -1 or self.source_frame_index is None:
+            self.source_frame_index = source.frame_index
+        if self.source_segment_index == -1 or self.source_segment_index is None:
+            self.source_segment_index = source.segment_index
+        if self.target_frame_index == -1 or self.target_frame_index is None:
+            self.target_frame_index = target.frame_index
+        if self.target_segment_index == -1 or self.target_segment_index is None:
+            self.target_segment_index = target.segment_index
+
+    def clean(self):
+        self.set_defaults()
+
+    def save(self, *args, **kwargs):
+        self.set_defaults()
+        super(FrameRegionRelation, self).save(*args, **kwargs)
+
+
 class RegionLabel(models.Model):
     video = models.ForeignKey(Video,null=True)
     frame = models.ForeignKey(Frame,null=True)
