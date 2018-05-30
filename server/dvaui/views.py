@@ -737,17 +737,6 @@ def validate_process(request):
         raise ValueError("Request must be a POST")
 
 
-@user_passes_test(user_check)
-def delete_object(request):
-    if request.method == 'POST':
-        pk = request.POST.get('pk')
-        if request.POST.get('object_type') == 'annotation':
-            annotation = Region.objects.get(pk=pk)
-            if annotation.region_type == Region.ANNOTATION:
-                annotation.delete()
-    return JsonResponse({'status': True})
-
-
 @user_passes_test(force_user_check)
 def security(request):
     context = {'username': request.user.username}

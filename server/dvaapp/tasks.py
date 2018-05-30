@@ -342,7 +342,6 @@ def perform_export(task_id):
     except:
         dt.errored = True
         dt.error_message = "Could not export"
-        dt.duration = (timezone.now() - dt.start_ts).total_seconds()
         dt.save()
         exc_info = sys.exc_info()
         raise exc_info[0], exc_info[1], exc_info[2]

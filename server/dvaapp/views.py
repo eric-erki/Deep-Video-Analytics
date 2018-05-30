@@ -3,15 +3,12 @@ import json
 from .models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, \
     Tube,  Segment, FrameLabel, SegmentLabel, \
     VideoLabel, RegionLabel, TubeLabel, Label, \
-    Retriever, SystemState, QueryRegion, QueryRegionResults, TrainedModel, Worker, TrainingSet
+    Retriever, SystemState, QueryRegion, QueryRegionResults, TrainedModel, Worker, TrainingSet, RegionRelation
 import serializers
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from .processing import DVAPQLProcess
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
-from dva.in_memory import redis_client
 import logging
 
 try:
@@ -72,37 +69,32 @@ class FrameViewSet(viewsets.ReadOnlyModelViewSet):
     filter_fields = ('frame_index', 'subdir', 'name', 'video')
 
 
-class FrameLabelViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin,
-                        mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class FrameLabelViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = FrameLabel.objects.all()
     serializer_class = serializers.FrameLabelSerializer
     filter_fields = ('frame_index','segment_index', 'video')
 
 
-class RegionLabelViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin,
-                         mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class RegionLabelViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = RegionLabel.objects.all()
     serializer_class = serializers.RegionLabelSerializer
 
 
-class VideoLabelViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin,
-                        mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class VideoLabelViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = VideoLabel.objects.all()
     serializer_class = serializers.VideoLabelSerializer
 
 
-class SegmentLabelViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin,
-                          mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class SegmentLabelViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = SegmentLabel.objects.all()
     serializer_class = serializers.SegmentLabelSerializer
 
 
-class TubeLabelViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin,
-                       mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class TubeLabelViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = TubeLabel.objects.all()
     serializer_class = serializers.TubeLabelSerializer
@@ -121,8 +113,7 @@ class QueryRegionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.QueryRegionSerializer
 
 
-class RegionViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-                    viewsets.GenericViewSet):
+class RegionViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = Region.objects.all()
     serializer_class = serializers.RegionSerializer
@@ -147,14 +138,14 @@ class DVAPQLViewSet(viewsets.ModelViewSet):
         :param serializer:
         :return:
         """
-        raise NotImplementedError
+        raise ValueError("Not allowed to mutate")
 
     def perform_destroy(self, instance):
         """
         :param instance:
         :return:
         """
-        raise ValueError, "Not allowed to delete"
+        raise ValueError("Not allowed to delete")
 
 
 class QueryResultsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -191,13 +182,19 @@ class IndexEntriesViewSet(viewsets.ReadOnlyModelViewSet):
     filter_fields = ('video', 'algorithm', 'detection_name')
 
 
-class LabelViewSet(viewsets.ModelViewSet):
+class LabelViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = Label.objects.all()
     serializer_class = serializers.LabelSerializer
 
 
-class TubeViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class TubeViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = Tube.objects.all()
     serializer_class = serializers.TubeSerializer
+
+
+class RegionRelationViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
+    queryset = RegionRelation.objects.all()
+    serializer_class = serializers.RegionRelationSerializer

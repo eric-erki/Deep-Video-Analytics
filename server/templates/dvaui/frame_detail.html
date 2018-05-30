@@ -43,7 +43,6 @@
                         <th>Annotation</th>
                         <th>User</th>
                         <th>Metadata</th>
-                        <th>Delete</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -53,7 +52,6 @@
                         <td>{{ d.object_name }} </td>
                         <td>{{ d.user }} </td>
                         <td class="text-center"><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#{{ d.pk }}">view metadata</button></td>
-                        <td class="text-center"><button type="button" class="btn btn-danger" onclick="delete_annotation({{ d.pk }})" ><i class="fa fa-trash"></i> delete</button></td>
                     </tr>
                     {% endif %}
                 {% endfor %}
@@ -198,24 +196,6 @@
 {% endblock %}
 {% block page_js%}
 <script>
-    var csrf_token = "{% csrf_token %}";
-    var delete_annotation = function(pk)
-    {
-        if (confirm("delete annotation for entire frame"))
-        {
-            $.ajax({
-                url: '/delete/',
-                data:{
-                  'csrfmiddlewaretoken':$(csrf_token).val(),
-                  'pk':pk,
-                  'object_type':'annotation'},
-                type: 'POST',
-                success: function(result) {
-                      window.location.reload();
-                }
-            });
-        }
-    };
     $(document).ready(function() {
         InitializeTables();
     })

@@ -379,8 +379,8 @@ class VideoExportSerializer(serializers.ModelSerializer):
         model = Video
         fields = ('name', 'length_in_seconds', 'height', 'width', 'metadata', 'frames', 'created', 'description',
                   'uploaded', 'dataset', 'uploader', 'segments', 'url','frame_list', 'segment_list',
-                  'event_list', 'tube_list', 'index_entries_list', 'frame_label_list', 'region_label_list',"stream",
-                  'tube_label_list', 'segment_label_list', 'video_label_list')
+                  'event_list', 'tube_list', 'index_entries_list', 'frame_label_list','region_relation_list',
+                  'region_label_list',"stream",'tube_label_list', 'segment_label_list', 'video_label_list')
 
 
 def serialize_video_labels(v):
