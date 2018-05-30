@@ -264,6 +264,10 @@ def create_annotation(form, object_name, labels, frame, user=None):
         annotation['w'] = form.cleaned_data['w']
     annotation['text'] = form.cleaned_data['text']
     annotation['metadata'] = form.cleaned_data['metadata']
+    if type(annotation['metadata']) is basestring and annotation['metadata'].strip():
+        annotation['metadata'] = json.loads(annotation['metadata'])
+    else:
+        annotation['metadata'] = None
     annotation['frame_id'] = frame.pk
     annotation['video_id'] = frame.video_id
     annotation['region_type'] = dvaapp.models.Region.ANNOTATION
