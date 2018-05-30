@@ -1,14 +1,12 @@
-from rest_framework import serializers, viewsets
+from rest_framework import serializers
 from django.contrib.auth.models import User
 from models import Video, Frame, Region, DVAPQL, QueryResults, TEvent, IndexEntries, \
     Tube, Segment, Label, VideoLabel, FrameLabel, RegionLabel, \
     SegmentLabel, TubeLabel, TrainedModel, Retriever, SystemState, QueryRegion,\
-    QueryRegionResults, Worker, TrainingSet
-import os, json, logging, glob
+    QueryRegionResults, Worker, TrainingSet, RegionRelation
+import os, json, glob
 from collections import defaultdict
 from django.conf import settings
-from StringIO import StringIO
-from rest_framework.parsers import JSONParser
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -195,6 +193,26 @@ class RegionSerializer(serializers.HyperlinkedModelSerializer):
                   'polygon_points','created','object_name','confidence','materialized','png', 'id')
 
 
+class RegionRelationSerializer(serializers.HyperlinkedModelSerializer):
+    media_url = serializers.SerializerMethodField()
+
+    def get_source_frame_media_url(self,obj):
+        if obj.source.frame_id:
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL,obj.video_id,obj.source_frame_index)
+        else:
+            return None
+
+    def get_target_frame_media_url(self,obj):
+        if obj.target.frame_id:
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL,obj.video_id,obj.target_frame_index)
+
+    class Meta:
+        model = RegionRelation
+        fields = ('url','source_frame_media_url','source_frame_media_url','video','source_region','target_region',
+                  'source_frame_index','target_frame_index', 'source_segment_index','target_segment_index',
+                  'name', 'weight','event', 'metadata', 'id')
+
+
 class TubeSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
 
@@ -289,6 +307,12 @@ class RegionExportSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class RegionRelationExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RegionRelation
+        fields = '__all__'
+
+
 class FrameExportSerializer(serializers.ModelSerializer):
     region_list = RegionExportSerializer(source='region_set', read_only=True, many=True)
 
@@ -349,6 +373,7 @@ class VideoExportSerializer(serializers.ModelSerializer):
     tube_label_list = TubeLabelExportSerializer(source='tubelabel_set', read_only=True, many=True)
     segment_label_list = SegmentLabelExportSerializer(source='segmentlabel_set', read_only=True, many=True)
     video_label_list = VideoLabelExportSerializer(source='videolabel_set', read_only=True, many=True)
+    region_relation_list = RegionRelationExportSerializer(source='regionrelation_set', read_only=True, many=True)
 
     class Meta:
         model = Video

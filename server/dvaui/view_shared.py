@@ -246,36 +246,39 @@ def handle_uploaded_file(f, name, user=None, rate=None):
     return p.created_objects[0]
 
 
-def create_annotation(form, object_name, labels, frame):
-    annotation = dvaapp.models.Region()
-    annotation.object_name = object_name
+def create_annotation(form, object_name, labels, frame, user=None):
+    annotation = {}
+    label_specs = []
+    annotation['object_name'] = object_name
     if form.cleaned_data['high_level']:
-        annotation.full_frame = True
-        annotation.x = 0
-        annotation.y = 0
-        annotation.h = 0
-        annotation.w = 0
+        annotation['full_frame'] = True
+        annotation['x'] = 0
+        annotation['y'] = 0
+        annotation['h'] = 0
+        annotation['w'] = 0
     else:
-        annotation.full_frame = False
-        annotation.x = form.cleaned_data['x']
-        annotation.y = form.cleaned_data['y']
-        annotation.h = form.cleaned_data['h']
-        annotation.w = form.cleaned_data['w']
-    annotation.text = form.cleaned_data['text']
-    annotation.metadata = form.cleaned_data['metadata']
-    annotation.frame = frame
-    annotation.video = frame.video
-    annotation.region_type = dvaapp.models.Region.ANNOTATION
-    annotation.save()
+        annotation['full_frame'] = False
+        annotation['x'] = form.cleaned_data['x']
+        annotation['y'] = form.cleaned_data['y']
+        annotation['h'] = form.cleaned_data['h']
+        annotation['w'] = form.cleaned_data['w']
+    annotation['text'] = form.cleaned_data['text']
+    annotation['metadata'] = form.cleaned_data['metadata']
+    annotation['frame_id'] = frame.pk
+    annotation['video_id'] = frame.video_id
+    annotation['region_type'] = dvaapp.models.Region.ANNOTATION
     for lname in labels:
         if lname.strip():
-            dl, _ = dvaapp.models.Label.objects.get_or_create(name=lname, set="UI")
-            rl = dvaapp.models.RegionLabel()
-            rl.video = annotation.video
-            rl.frame = annotation.frame
-            rl.region = annotation
-            rl.label = dl
-            rl.save()
+            label_specs.append({'name':lname,'set':'UI'})
+    spec = {
+        'process_type': dvaapp.models.DVAPQL.PROCESS,
+        'create': [{'MODEL':'Region','spec':annotation,'labels':label_specs}]
+    }
+    p = DVAPQLProcess()
+    p.create_from_json(spec, user)
+    p.launch()
+
+    return
 
 
 def create_query_from_request(p, request):

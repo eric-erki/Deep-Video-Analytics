@@ -557,50 +557,12 @@ def annotate(request, frame_pk):
         form = AnnotationForm(request.POST)
         if form.is_valid():
             applied_tags = form.cleaned_data['tags'].split(',') if form.cleaned_data['tags'] else []
-            view_shared.create_annotation(form, form.cleaned_data['object_name'], applied_tags, frame)
+            view_shared.create_annotation(form, form.cleaned_data['object_name'], applied_tags, frame,
+                                          user=request.user if request.user.is_authenticated else None)
             return JsonResponse({'status': True})
         else:
             raise ValueError(form.errors)
     return render(request, 'dvaui/annotate.html', context)
-
-
-@user_passes_test(user_check)
-def annotate_entire_frame(request, frame_pk):
-    frame = Frame.objects.get(pk=frame_pk)
-    annotation = None
-    if request.method == 'POST':
-        if request.POST.get('text').strip() \
-                or request.POST.get('metadata').strip() \
-                or request.POST.get('object_name', None):
-            annotation = Region()
-            annotation.region_type = Region.ANNOTATION
-            annotation.x = 0
-            annotation.y = 0
-            annotation.h = 0
-            annotation.w = 0
-            annotation.full_frame = True
-            annotation.text = request.POST.get('text')
-            annotation.metadata = request.POST.get('metadata')
-            annotation.object_name = request.POST.get('object_name', 'frame_metadata')
-            annotation.frame = frame
-            annotation.video = frame.video
-            annotation.save()
-        for label_name in request.POST.get('tags').split(','):
-            if label_name.strip():
-                if annotation:
-                    dl = RegionLabel()
-                    dl.video = frame.video
-                    dl.frame = frame
-                    dl.label = Label.objects.get_or_create(name=label_name, set="UI")[0]
-                    dl.region = annotation
-                    dl.save()
-                else:
-                    dl = FrameLabel()
-                    dl.video = frame.video
-                    dl.frame = frame
-                    dl.label = Label.objects.get_or_create(name=label_name, set="UI")[0]
-                    dl.save()
-    return redirect("frame_detail", pk=frame.pk)
 
 
 @user_passes_test(user_check)
