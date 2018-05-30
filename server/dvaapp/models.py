@@ -605,36 +605,29 @@ class FrameLabel(models.Model):
         super(FrameLabel, self).save(*args, **kwargs)
 
 
-class FrameRegionRelation(models.Model):
+class RegionRelation(models.Model):
     """
-    Captures relations between Frames and Regions within and between videos/datasets.
+    Captures relations between Regions within a video/dataset.
     """
-    source_frame = models.ForeignKey(Frame,null=True,related_name='source_frame')
-    target_frame = models.ForeignKey(Frame,null=True,related_name='source_target')
-    source_frame_index = models.IntegerField(default=-1)
-    target_frame_index = models.IntegerField(default=-1)
+    video = models.ForeignKey(Video)
+    source_frame_index = models.IntegerField()
+    target_frame_index = models.IntegerField()
     source_segment_index = models.IntegerField(null=True)
     target_segment_index = models.IntegerField(null=True)
-    source_region = models.ForeignKey(Region,null=True,related_name='source_region')
-    target_region = models.ForeignKey(Region,null=True,related_name='target_region')
+    source_region = models.ForeignKey(Region,related_name='source_region')
+    target_region = models.ForeignKey(Region,related_name='target_region')
     event = models.ForeignKey(TEvent)
-    label = models.ForeignKey(Label)
+    name = models.CharField(max_length=400)
     weight = models.FloatField(null=True)
     metadata = JSONField(blank=True,null=True)
 
     def set_defaults(self):
-        if self.source_frame:
-            source = self.source_frame
-        elif self.source_region:
-            source = self.source_region
+        source = self.source_region
+        target = self.target_region
+        if source.video_id != target.video_id:
+            raise ValueError("source and target")
         else:
-            raise ValueError("Must set either source frame or regions")
-        if self.target_frame:
-            target = self.target_frame
-        elif self.target_region:
-            target = self.target_region
-        else:
-            raise ValueError("Must set either target frame or regions")
+            self.video_id = source.video_id
         if self.source_frame_index == -1 or self.source_frame_index is None:
             self.source_frame_index = source.frame_index
         if self.source_segment_index == -1 or self.source_segment_index is None:
@@ -649,7 +642,7 @@ class FrameRegionRelation(models.Model):
 
     def save(self, *args, **kwargs):
         self.set_defaults()
-        super(FrameRegionRelation, self).save(*args, **kwargs)
+        super(RegionRelation, self).save(*args, **kwargs)
 
 
 class RegionLabel(models.Model):
