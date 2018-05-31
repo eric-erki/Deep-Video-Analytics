@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__),
                              "../../client/"))  # This ensures that the constants are same between client and server
 from django.db import models
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import JSONField
 from django.conf import settings
 from django.utils import timezone
 from dvaclient import constants
@@ -236,7 +236,7 @@ class TrainedModel(models.Model):
     parent = models.ForeignKey('self', null=True)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
-    def create_directory(self, create_subdirs=True):
+    def create_directory(self):
         if not os.path.isdir('{}/models/'.format(settings.MEDIA_ROOT)):
             try:
                 os.mkdir('{}/models/'.format(settings.MEDIA_ROOT))

@@ -1,8 +1,8 @@
 from django.conf import settings
 import json
-from .models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, \
-    Tube, Segment, RegionLabel, TubeLabel, Label, \
-    Retriever, SystemState, QueryRegion, QueryRegionResults, TrainedModel, Worker, TrainingSet, RegionRelation
+from .models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, Tube, Segment, RegionLabel, \
+    TubeLabel, Label, TubeRegionRelation, TubeRelation, Retriever, SystemState, QueryRegion, QueryRegionResults, \
+    TrainedModel, Worker, TrainingSet, RegionRelation
 import serializers
 from rest_framework import viewsets
 from django.contrib.auth.models import User
@@ -178,3 +178,15 @@ class RegionRelationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = RegionRelation.objects.all()
     serializer_class = serializers.RegionRelationSerializer
+
+
+class TubeRelationViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
+    queryset = TubeRelation.objects.all()
+    serializer_class = serializers.TubeRelationSerializer
+
+
+class TubeRegionRelationViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
+    queryset = TubeRegionRelation.objects.all()
+    serializer_class = serializers.TubeRegionRelationSerializer

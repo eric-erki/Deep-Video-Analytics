@@ -1,13 +1,22 @@
 from django.contrib import admin
-from .models import Video, Frame, TEvent, IndexEntries, QueryResults, DVAPQL, \
-    Region, Tube, Segment, DeletedVideo, \
-    RegionLabel, TubeLabel, Label, ManagementAction, \
-    TrainedModel, Retriever, SystemState, Worker, QueryRegion, QueryRegionIndexVector, \
-    QueryRegionResults, TrainingSet, Export, TaskRestart, RegionRelation
+from .models import Video, Frame, TEvent, IndexEntries, QueryResults, DVAPQL, Region, Tube, Segment, DeletedVideo, \
+    RegionLabel, TubeLabel, Label, ManagementAction, TrainedModel, Retriever, SystemState, Worker, QueryRegion, \
+    QueryRegionIndexVector, QueryRegionResults, TrainingSet, Export, TaskRestart, RegionRelation, TubeRelation, \
+    TubeRegionRelation
 
 
 @admin.register(RegionRelation)
 class RegionRelationAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(TubeRelation)
+class TubeRelationAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(TubeRegionRelation)
+class TubeRegionRelationAdmin(admin.ModelAdmin):
     pass
 
 
@@ -74,6 +83,7 @@ class QueryResultsAdmin(admin.ModelAdmin):
 @admin.register(DVAPQL)
 class DVAPQLAdmin(admin.ModelAdmin):
     pass
+
 
 @admin.register(Frame)
 class FrameAdmin(admin.ModelAdmin):

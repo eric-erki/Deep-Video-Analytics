@@ -76,9 +76,34 @@ def configure_compose(mode):
                        " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
     if process.strip():
         init_models = models
+    envs = {}
+    if mode == 'test':
+        envs['ENABLE_CLOUDFS'] = 1
+        try:
+            envs.update(compose.test.load_envs(os.path.expanduser('~/media.env')))
+            print '~/media.env found. writing bucket information to config.json'
+        except:
+            print '~/media.env not found. required for testing rfs mode.'
+        try:
+            envs.update(compose.test.load_envs(os.path.expanduser('~/aws.env')))
+            print '~/aws.env found. writing credentials to config.json'
+        except:
+            print '~/aws.env not found. required for testing rfs mode.'
+    else:
+        if os.path.isfile(os.path.expanduser('~/aws.env')):
+            envs.update(compose.test.load_envs(os.path.expanduser('~/aws.env')))
+            print '~/aws.env found. writing credentials to config.json'
+        else:
+            print '{} not found. not passing AWS creds.'.format(os.path.expanduser('~/aws.env'))
+        if os.path.isfile(os.path.expanduser('~/do.env')):
+            envs.update(compose.test.load_envs(os.path.expanduser('~/do.env')))
+            print '~/do.env found. writing credentials to config.json'
+        else:
+            print '{} not found. not passing Digital Ocean creds.'.format(os.path.expanduser('~/do.env'))
     if mode == 'gpu':
         gpu_count = int(raw_input("Please select number of GPUs >>").strip())
-    return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models}
+    return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models,
+            'credentials': envs}
 
 
 def configure(mode=None):
@@ -140,5 +165,5 @@ if __name__ == '__main__':
         else:
             if args.action == 'create':
                 raise ValueError("create  is not required for compose, its used in kube mdoe to create GKE cluster")
-            compose.handle_compose_operations(args, mode_dict['mode'], mode_dict['gpus'],
-                                              mode_dict['init_process'], mode_dict['init_models'])
+            compose.handle_compose_operations(args, mode_dict['mode'], mode_dict['gpus'], mode_dict['init_process'],
+                                              mode_dict['init_models'], mode_dict['credentials'])

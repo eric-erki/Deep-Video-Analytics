@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from models import Video, Frame, Region, DVAPQL, QueryResults, TEvent, IndexEntries, \
     Tube, Segment, Label, RegionLabel, TubeLabel, TrainedModel, Retriever, SystemState, QueryRegion, \
-    QueryRegionResults, Worker, TrainingSet, RegionRelation
+    QueryRegionResults, Worker, TrainingSet, RegionRelation, TubeRegionRelation, TubeRelation
 import os, json, glob
 from collections import defaultdict
 from django.conf import settings
@@ -144,23 +144,41 @@ class RegionSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class RegionRelationSerializer(serializers.HyperlinkedModelSerializer):
-    media_url = serializers.SerializerMethodField()
+    source_frame_media_url = serializers.SerializerMethodField()
+    target_frame_media_url = serializers.SerializerMethodField()
 
     def get_source_frame_media_url(self, obj):
         if obj.source.frame_id:
-            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.source_frame_index)
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.source.frame_index)
         else:
             return None
 
     def get_target_frame_media_url(self, obj):
         if obj.target.frame_id:
-            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.target_frame_index)
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.target.frame_index)
 
     class Meta:
         model = RegionRelation
         fields = ('url', 'source_frame_media_url', 'source_frame_media_url', 'video', 'source_region', 'target_region',
-                  'source_frame_index', 'target_frame_index', 'source_segment_index', 'target_segment_index',
                   'name', 'weight', 'event', 'metadata', 'id')
+
+
+class TubeRelationSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = TubeRelation
+        fields = ('url', 'source_tube', 'target_tube', 'name', 'weight','video','event', 'metadata', 'id')
+
+
+class TubeRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
+    region_frame_media_url = serializers.SerializerMethodField()
+
+    def get_region_frame_media_url(self, obj):
+        if obj.region.frame_id:
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.region.frame_index)
+
+    class Meta:
+        model = TubeRegionRelation
+        fields = ('url', 'region_frame_media_url', 'region','tube' ,'video','name', 'weight', 'event', 'metadata', 'id')
 
 
 class TubeSerializer(serializers.HyperlinkedModelSerializer):
@@ -262,6 +280,18 @@ class RegionExportSerializer(serializers.ModelSerializer):
 class RegionRelationExportSerializer(serializers.ModelSerializer):
     class Meta:
         model = RegionRelation
+        fields = '__all__'
+
+
+class TubeRelationExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TubeRelation
+        fields = '__all__'
+
+
+class TubeRegionRelationExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TubeRegionRelation
         fields = '__all__'
 
 
