@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from models import Video, Frame, Region, DVAPQL, QueryResults, TEvent, IndexEntries, \
-    Tube, Segment, Label, VideoLabel, FrameLabel, RegionLabel, \
-    SegmentLabel, TubeLabel, TrainedModel, Retriever, SystemState, QueryRegion,\
+    Tube, Segment, Label, RegionLabel, TubeLabel, TrainedModel, Retriever, SystemState, QueryRegion,\
     QueryRegionResults, Worker, TrainingSet, RegionRelation
 import os, json, glob
 from collections import defaultdict
@@ -68,35 +67,11 @@ class LabelSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
 
-class FrameLabelSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = FrameLabel
-        fields = '__all__'
-
-
 class RegionLabelSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
 
     class Meta:
         model = RegionLabel
-        fields = '__all__'
-
-
-class SegmentLabelSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = SegmentLabel
-        fields = '__all__'
-
-
-class VideoLabelSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = VideoLabel
         fields = '__all__'
 
 
@@ -108,35 +83,11 @@ class TubeLabelSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
 
-class FrameLabelExportSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = FrameLabel
-        fields = '__all__'
-
-
 class RegionLabelExportSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
 
     class Meta:
         model = RegionLabel
-        fields = '__all__'
-
-
-class SegmentLabelExportSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = SegmentLabel
-        fields = '__all__'
-
-
-class VideoLabelExportSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = VideoLabel
         fields = '__all__'
 
 
@@ -368,11 +319,8 @@ class VideoExportSerializer(serializers.ModelSerializer):
     index_entries_list = IndexEntryExportSerializer(source='indexentries_set', read_only=True, many=True)
     event_list = TEventExportSerializer(source='tevent_set', read_only=True, many=True)
     tube_list = TubeExportSerializer(source='tube_set', read_only=True, many=True)
-    frame_label_list = FrameLabelExportSerializer(source='framelabel_set', read_only=True, many=True)
     region_label_list = RegionLabelExportSerializer(source='regionlabel_set', read_only=True, many=True)
     tube_label_list = TubeLabelExportSerializer(source='tubelabel_set', read_only=True, many=True)
-    segment_label_list = SegmentLabelExportSerializer(source='segmentlabel_set', read_only=True, many=True)
-    video_label_list = VideoLabelExportSerializer(source='videolabel_set', read_only=True, many=True)
     region_relation_list = RegionRelationExportSerializer(source='regionrelation_set', read_only=True, many=True)
 
     class Meta:
@@ -385,9 +333,7 @@ class VideoExportSerializer(serializers.ModelSerializer):
 
 def serialize_video_labels(v):
     serialized_labels = {}
-    sources = [FrameLabel.objects.filter(video_id=v.pk), VideoLabel.objects.filter(video_id=v.pk),
-               SegmentLabel.objects.filter(video_id=v.pk), RegionLabel.objects.filter(video_id=v.pk),
-               TubeLabel.objects.filter(video_id=v.pk)]
+    sources = [RegionLabel.objects.filter(video_id=v.pk), TubeLabel.objects.filter(video_id=v.pk)]
     for source in sources:
         for k in source:
             if k.label_id not in serialized_labels:
@@ -518,43 +464,6 @@ class VideoImporter(object):
             region_labels.append(drl)
         RegionLabel.objects.bulk_create(region_labels,1000)
 
-    def import_frame_labels(self):
-        frame_labels = []
-        for fl in self.json.get('frame_label_list', []):
-            dfl = FrameLabel()
-            dfl.frame_id = self.frame_to_pk[fl['frame']]
-            dfl.video_id = self.video.pk
-            if 'event' in fl:
-                dfl.event_id = self.event_to_pk[fl['event']]
-            dfl.frame_index = fl['frame_index']
-            dfl.segment_index = fl['segment_index']
-            dfl.label_id = self.label_to_pk[fl['label']]
-            frame_labels.append(dfl)
-        FrameLabel.objects.bulk_create(frame_labels,1000)
-
-    def import_segment_labels(self):
-        segment_labels = []
-        for sl in self.json.get('segment_label_list', []):
-            dsl = SegmentLabel()
-            dsl.video_id = self.video.pk
-            if 'event' in sl:
-                dsl.event_id = self.event_to_pk[sl['event']]
-            dsl.segment_id = self.segment_to_pk[sl['segment']]
-            dsl.segment_index = sl['segment_index']
-            dsl.label_id = self.label_to_pk[sl['label']]
-            segment_labels.append(dsl)
-        SegmentLabel.objects.bulk_create(segment_labels,1000)
-
-    def import_video_labels(self):
-        video_labels = []
-        for vl in self.json.get('video_label_list', []):
-            dvl = VideoLabel()
-            dvl.video_id = self.video.pk
-            if 'event' in vl:
-                dvl.event_id = self.event_to_pk[vl['event']]
-            dvl.label_id = self.label_to_pk[vl['label']]
-            video_labels.append(dvl)
-        VideoLabel.objects.bulk_create(video_labels,1000)
 
     def import_tube_labels(self):
         tube_labels = []

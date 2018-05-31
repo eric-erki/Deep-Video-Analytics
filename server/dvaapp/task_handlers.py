@@ -1,6 +1,8 @@
 from django.conf import settings
 from .operations import indexing, detection, analysis, approximation
-import io, logging, tempfile, json, uuid
+import io
+import logging
+import tempfile
 from . import task_shared
 from . import models
 from dva.in_memory import redis_client
@@ -26,7 +28,7 @@ def handle_perform_indexing(start):
         # TODO: figure out a better way to store numpy arrays.
         s = io.BytesIO()
         np.save(s, vector)
-        redis_client.set(start.pk,s.getvalue())
+        redis_client.set(start.pk, s.getvalue())
         sync = False
     elif target == 'query_regions':
         queryset, target = task_shared.build_queryset(args=start.arguments)
@@ -37,7 +39,7 @@ def handle_perform_indexing(start):
             s = io.BytesIO()
             np.save(s, vector)
             # can be replaced by Redis instead of using DB
-            redis_client.hset(start.pk,dr.pk,s.getvalue())
+            redis_client.hset(start.pk, dr.pk, s.getvalue())
             _ = models.QueryRegionIndexVector.objects.create(vector=s.getvalue(), event=start, query_region=dr)
         sync = False
     elif target == 'regions':
@@ -90,7 +92,6 @@ def handle_perform_detection(start):
     else:
         detector_name = args['detector']
         cd = models.TrainedModel.objects.get(name=detector_name, model_type=models.TrainedModel.DETECTOR)
-        detector_pk = cd.pk
     detection.Detectors.load_detector(cd)
     detector = detection.Detectors._detectors[cd.pk]
     if detector.session is None:
@@ -214,7 +215,8 @@ def handle_perform_analysis(start):
             for l in labels:
                 if (l, analyzer.label_set) not in labels_pk:
                     labels_pk[(l, analyzer.label_set)] = models.Label.objects.get_or_create(name=l,
-                                                                                             set=analyzer.label_set)[0].pk
+                                                                                            set=analyzer.label_set)[
+                        0].pk
                 if target == 'regions':
                     regions_to_labels.append(
                         models.RegionLabel(label_id=labels_pk[(l, analyzer.label_set)], region_id=f.pk,
@@ -222,10 +224,12 @@ def handle_perform_analysis(start):
                                            segment_index=f.segment_index, video_id=f.video_id,
                                            event_id=task_id))
                 elif target == 'frames':
-                    frames_to_labels.append(
-                        models.FrameLabel(label_id=labels_pk[(l, analyzer.label_set)], frame_id=f.pk,
-                                          frame_index=f.frame_index, segment_index=f.segment_index,
-                                          video_id=f.video_id, event_id=task_id))
+                    # todo(akshay): Update this by creating a pseudo region to label.
+                    # frames_to_labels.append(
+                    #     models.RegionLabel(label_id=labels_pk[(l, analyzer.label_set)], frame_id=f.pk,
+                    #                        frame_index=f.frame_index, segment_index=f.segment_index,
+                    #                       video_id=f.video_id, event_id=task_id))
+                    pass
         a.region_type = models.Region.ANNOTATION
         a.object_name = object_name
         a.text = text
@@ -238,5 +242,6 @@ def handle_perform_analysis(start):
         models.Region.objects.bulk_create(regions_batch, 1000)
     if regions_to_labels:
         models.RegionLabel.objects.bulk_create(regions_to_labels, 1000)
-    if frames_to_labels:
-        models.FrameLabel.objects.bulk_create(frames_to_labels, 1000)
+    # todo(akshay): Update this by creating a pseudo region.
+    # if frames_to_labels:
+    #     models.FrameLabel.objects.bulk_create(frames_to_labels, 1000)

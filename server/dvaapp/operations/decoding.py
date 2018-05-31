@@ -1,5 +1,5 @@
 import time
-import shlex,json,os,zipfile,logging
+import shlex,json,os, logging
 import subprocess as sp
 from PIL import Image
 from ..models import Frame, Segment

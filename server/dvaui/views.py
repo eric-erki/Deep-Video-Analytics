@@ -6,8 +6,7 @@ import json
 from django.views.generic import ListView, DetailView
 from .forms import UploadFileForm, YTVideoForm, AnnotationForm
 from dvaapp.models import Video, Frame, DVAPQL, TaskRestart, TEvent, IndexEntries, Region, \
-    Tube, Segment, FrameLabel, SegmentLabel, \
-    VideoLabel, RegionLabel, Label, ManagementAction, \
+    Tube, TubeLabel, Segment, RegionLabel, Label, ManagementAction, \
     TrainedModel, Retriever, SystemState, Worker, TrainingSet, Export
 from .models import StoredDVAPQL, ExternalServer
 from dva.celery import app
@@ -83,10 +82,8 @@ class LabelDetail(UserPassesTestMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(LabelDetail, self).get_context_data(**kwargs)
-        context['frames'] = FrameLabel.objects.filter(label=context['object'])
-        context['videos'] = VideoLabel.objects.filter(label=context['object'])
-        context['segments'] = SegmentLabel.objects.filter(label=context['object'])
         context['regions'] = RegionLabel.objects.filter(label=context['object'])
+        context['tubes'] = TubeLabel.objects.filter(label=context['object'])
         return context
 
     def test_func(self):
@@ -675,7 +672,7 @@ def management(request):
         'timeout': timeout,
         'actions': ManagementAction.objects.all(),
         'workers': Worker.objects.all(),
-        'restarts' : TaskRestart.objects.all(),
+        'restarts': TaskRestart.objects.all(),
         'state': SystemState.objects.all().order_by('-created')[:100]
     }
     if request.method == 'POST':
@@ -758,7 +755,6 @@ def expire_token(request):
 
 @user_passes_test(user_check)
 def import_s3(request):
-
     if request.method == 'POST':
         keys = request.POST.get('key')
         user = request.user if request.user.is_authenticated else None
@@ -793,11 +789,11 @@ def import_s3(request):
                     else:
                         next_tasks = [segment_decode_task, ]
                     map_tasks.append({'video_id': '__created__{}'.format(counter),
-                                  'operation': 'perform_import',
-                                  'arguments': {
-                                      'source': 'REMOTE',
-                                      'map': next_tasks}
-                                  })
+                                      'operation': 'perform_import',
+                                      'arguments': {
+                                          'source': 'REMOTE',
+                                          'map': next_tasks}
+                                      })
                     create.append({'MODEL': 'Video',
                                    'spec': {'uploader_id': user.pk if user else None, 'dataset': dataset_type,
                                             'name': key, 'url': key},
@@ -807,7 +803,7 @@ def import_s3(request):
                 raise NotImplementedError("{} startswith an unknown remote store prefix".format(key))
         process_spec = {'process_type': DVAPQL.PROCESS,
                         'create': create,
-                        'map':map_tasks
+                        'map': map_tasks
                         }
         p = DVAPQLProcess()
         p.create_from_json(process_spec, user)

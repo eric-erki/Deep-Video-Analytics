@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import Video, Frame, TEvent, IndexEntries, QueryResults, DVAPQL, \
     Region, Tube, Segment, DeletedVideo, \
-    VideoLabel, FrameLabel, RegionLabel, TubeLabel, SegmentLabel, Label, ManagementAction, \
+    RegionLabel, TubeLabel, Label, ManagementAction, \
     TrainedModel, Retriever, SystemState, Worker, QueryRegion, QueryRegionIndexVector, \
     QueryRegionResults, TrainingSet, Export, TaskRestart, RegionRelation
 
@@ -33,21 +33,6 @@ class WorkerAdmin(admin.ModelAdmin):
 
 @admin.register(Label)
 class LabelAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(VideoLabel)
-class VideoLabelAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(FrameLabel)
-class FrameLabelAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(SegmentLabel)
-class SegmentLabelAdmin(admin.ModelAdmin):
     pass
 
 

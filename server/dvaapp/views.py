@@ -1,8 +1,7 @@
 from django.conf import settings
 import json
 from .models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, \
-    Tube,  Segment, FrameLabel, SegmentLabel, \
-    VideoLabel, RegionLabel, TubeLabel, Label, \
+    Tube, Segment, RegionLabel, TubeLabel, Label, \
     Retriever, SystemState, QueryRegion, QueryRegionResults, TrainedModel, Worker, TrainingSet, RegionRelation
 import serializers
 from rest_framework import viewsets
@@ -69,29 +68,10 @@ class FrameViewSet(viewsets.ReadOnlyModelViewSet):
     filter_fields = ('frame_index', 'subdir', 'name', 'video')
 
 
-class FrameLabelViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
-    queryset = FrameLabel.objects.all()
-    serializer_class = serializers.FrameLabelSerializer
-    filter_fields = ('frame_index','segment_index', 'video')
-
-
 class RegionLabelViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = RegionLabel.objects.all()
     serializer_class = serializers.RegionLabelSerializer
-
-
-class VideoLabelViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
-    queryset = VideoLabel.objects.all()
-    serializer_class = serializers.VideoLabelSerializer
-
-
-class SegmentLabelViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
-    queryset = SegmentLabel.objects.all()
-    serializer_class = serializers.SegmentLabelSerializer
 
 
 class TubeLabelViewSet(viewsets.ReadOnlyModelViewSet):
@@ -104,7 +84,7 @@ class SegmentViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = Segment.objects.all()
     serializer_class = serializers.SegmentSerializer
-    filter_fields = ('segment_index','video')
+    filter_fields = ('segment_index', 'video')
 
 
 class QueryRegionViewSet(viewsets.ReadOnlyModelViewSet):

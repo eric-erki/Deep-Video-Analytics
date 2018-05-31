@@ -77,22 +77,6 @@ def collect_garbage(deleted_count):
     return new_deleted_count
 
 
-def relaunch_failed_task(old, app):
-    """
-    TODO: Relaunch failed tasks, requires a rethink in how we store number of attempts.
-    Cleanup of objects created by previous task that that failed.
-    :param old:
-    :param app:
-    :return:
-    """
-    if old.errored:
-        next_task = TEvent.objects.create(video=old.video, operation=old.operation, arguments=old.arguments,
-                                          parent=old.parent, parent_process=old.parent_process, queue=old.queue)
-        app.send_task(next_task.operation, args=[next_task.pk, ], queue=old.queue)
-    else:
-        raise ValueError("Task not errored")
-
-
 def launch_worker(queue_name, worker_name):
     p = subprocess.Popen(['./startq.py', '{}'.format(queue_name)], close_fds=True)
     message = "launched {} with pid {} on {}".format(queue_name, p.pid, worker_name)
@@ -128,7 +112,6 @@ def load_dva_export_file(dv):
     zipf.extractall("{}/{}/".format(settings.MEDIA_ROOT, video_id))
     zipf.close()
     video_root_dir = "{}/{}/".format(settings.MEDIA_ROOT, video_id)
-    old_key = None
     for k in os.listdir(video_root_dir):
         unzipped_dir = "{}{}".format(video_root_dir, k)
         if os.path.isdir(unzipped_dir):
@@ -369,7 +352,8 @@ def get_sync_paths(dirname, task_id):
             f.append(k.path(media_root=""))
     elif dirname == 'regions':
         e = TEvent.objects.get(pk=task_id)
-        if e.operation == 'perform_transformation':  # TODO: transformation events merely materialize, fix this
+        # TODO: transformation events merely materialize, fix this
+        if e.operation == 'perform_transformation':
             fargs = copy.deepcopy(e.arguments['filters'])
             fargs['materialized'] = True
             fargs['video_id'] = e.video_id
@@ -377,7 +361,7 @@ def get_sync_paths(dirname, task_id):
         else:
             f = [k.path(media_root="") for k in Region.objects.filter(event_id=task_id) if k.materialized]
     else:
-        raise NotImplementedError, "dirname : {} not configured".format(dirname)
+        raise NotImplementedError("dirname : {} not configured".format(dirname))
     return f
 
 

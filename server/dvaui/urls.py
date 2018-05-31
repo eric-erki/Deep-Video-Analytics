@@ -2,7 +2,6 @@ from django.conf.urls import url, include
 import views
 from django.contrib.auth import views as auth_views
 
-
 urlpatterns = [
     url(r'^$', views.index, name='app_home'),
     url(r'^app$', views.index, name='app'),
@@ -13,7 +12,8 @@ urlpatterns = [
     url(r'^video_tasks/(?P<pk>[0-9a-f-]+)/$', views.TEventList.as_view(), name='video_tasks'),
     url(r'^video_tasks/(?P<pk>[0-9a-f-]+)/(?P<status>\w+)/$', views.TEventList.as_view(), name='video_tasks_status'),
     url(r'^process_tasks/(?P<process_pk>\d+)/$', views.TEventList.as_view(), name='process_tasks'),
-    url(r'^process_tasks/(?P<process_pk>\d+)/(?P<status>\w+)/$', views.TEventList.as_view(), name='process_tasks_status'),
+    url(r'^process_tasks/(?P<process_pk>\d+)/(?P<status>\w+)/$', views.TEventList.as_view(),
+        name='process_tasks_status'),
     url(r'^tasks/(?P<status>\w+)/$', views.TEventList.as_view(), name='tasks_filter'),
     url(r'^management/$', views.management, name='management'),
     url(r'^textsearch', views.textsearch, name='textsearch'),
@@ -46,7 +46,8 @@ urlpatterns = [
     url(r'^segments/(?P<pk>\d+)/$', views.SegmentDetail.as_view(), name='segment_detail'),
     url(r'^queries/(?P<pk>\d+)/$', views.VisualSearchDetail.as_view(), name='query_detail'),
     url(r'^retry/$', views.retry_task, name='restart_task'),
-    url(r'^segments/by_index/(?P<pk>[0-9a-f-]+)/(?P<segment_index>\d+)$', views.segment_by_index, name='segment_by_index'),
+    url(r'^segments/by_index/(?P<pk>[0-9a-f-]+)/(?P<segment_index>\d+)$', views.segment_by_index,
+        name='segment_by_index'),
     url(r'^requery/(?P<query_pk>\d+)/$', views.index, name='requery'),
     url(r'^query_frame/(?P<frame_pk>\d+)/$', views.index, name='query_frame'),
     url(r'^query_detection/(?P<detection_pk>\d+)/$', views.index, name='query_detection'),
