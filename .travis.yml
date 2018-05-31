@@ -78,12 +78,10 @@ script:
   - wget --quiet localhost:8000/api/videos/
   - wget --quiet localhost:8000/api/tubes/
   - wget --quiet localhost:8000/api/frames/
-  - wget --quiet localhost:8000/api/framelabels/
   - wget --quiet localhost:8000/api/regionlabels/
-  - wget --quiet localhost:8000/api/segmentlabels/
   - wget --quiet localhost:8000/api/tubelabels/
-  - wget --quiet localhost:8000/api/videolabels/
   - wget --quiet localhost:8000/api/labels/
+  - wget --quiet localhost:8000/api/regionrelations/
   - wget --quiet localhost:8000/api/segments/
   - wget --quiet localhost:8000/api/regions/
   - wget --quiet localhost:8000/api/queries/
