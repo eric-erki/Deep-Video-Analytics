@@ -594,10 +594,6 @@ class RegionRelation(models.Model):
     Captures relations between Regions within a video/dataset.
     """
     video = models.ForeignKey(Video)
-    source_frame_index = models.IntegerField()
-    target_frame_index = models.IntegerField()
-    source_segment_index = models.IntegerField(null=True)
-    target_segment_index = models.IntegerField(null=True)
     source_region = models.ForeignKey(Region, related_name='source_region')
     target_region = models.ForeignKey(Region, related_name='target_region')
     event = models.ForeignKey(TEvent)
@@ -605,28 +601,31 @@ class RegionRelation(models.Model):
     weight = models.FloatField(null=True)
     metadata = JSONField(blank=True, null=True)
 
-    def set_defaults(self):
-        source = self.source_region
-        target = self.target_region
-        if source.video_id != target.video_id:
-            raise ValueError("source and target")
-        else:
-            self.video_id = source.video_id
-        if self.source_frame_index == -1 or self.source_frame_index is None:
-            self.source_frame_index = source.frame_index
-        if self.source_segment_index == -1 or self.source_segment_index is None:
-            self.source_segment_index = source.segment_index
-        if self.target_frame_index == -1 or self.target_frame_index is None:
-            self.target_frame_index = target.frame_index
-        if self.target_segment_index == -1 or self.target_segment_index is None:
-            self.target_segment_index = target.segment_index
 
-    def clean(self):
-        self.set_defaults()
+class TubeRelation(models.Model):
+    """
+    Captures relations between Tubes within a video/dataset.
+    """
+    video = models.ForeignKey(Video)
+    source_tube = models.ForeignKey(Tube, related_name='source_tube')
+    target_tube = models.ForeignKey(Tube, related_name='target_tube')
+    event = models.ForeignKey(TEvent)
+    name = models.CharField(max_length=400)
+    weight = models.FloatField(null=True)
+    metadata = JSONField(blank=True, null=True)
 
-    def save(self, *args, **kwargs):
-        self.set_defaults()
-        super(RegionRelation, self).save(*args, **kwargs)
+
+class TubeRegionRelation(models.Model):
+    """
+    Captures relations between Tube and Region within a video/dataset.
+    """
+    video = models.ForeignKey(Video)
+    tube = models.ForeignKey(Tube)
+    region = models.ForeignKey(Region)
+    event = models.ForeignKey(TEvent)
+    name = models.CharField(max_length=400)
+    weight = models.FloatField(null=True)
+    metadata = JSONField(blank=True, null=True)
 
 
 class RegionLabel(models.Model):
