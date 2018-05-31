@@ -402,9 +402,9 @@ def create_event(e, v):
 
 
 class VideoImporter(object):
-    def __init__(self, video, j, root_dir):
+    def __init__(self, video, video_json, root_dir):
         self.video = video
-        self.json = j
+        self.json = video_json
         self.root = root_dir
         self.region_to_pk = {}
         self.frame_to_pk = {}
