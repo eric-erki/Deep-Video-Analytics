@@ -88,13 +88,17 @@ def configure_compose(mode):
             envs.update(compose.test.load_envs(os.path.expanduser('~/aws.env')))
             print '~/aws.env found. writing credentials to config.json'
         except:
-            print '~/aws.env not found. required for testing rfs mode.'
+            print '{} not found. not passing AWS creds. Please create ~/aws.env with AWS_ACCESS_KEY_ID ' \
+                  'and AWS_SECRET_ACCESS_KEY or manually ' \
+                  'add them to credentials in config.json'.format(os.path.expanduser('~/aws.env'))
     else:
         if os.path.isfile(os.path.expanduser('~/aws.env')):
             envs.update(compose.test.load_envs(os.path.expanduser('~/aws.env')))
             print '~/aws.env found. writing credentials to config.json'
         else:
-            print '{} not found. not passing AWS creds.'.format(os.path.expanduser('~/aws.env'))
+            print '{} not found. not passing AWS creds. Please create ~/aws.env with AWS_ACCESS_KEY_ID ' \
+                  'and AWS_SECRET_ACCESS_KEY or manually ' \
+                  'add them to credentials in config.json'.format(os.path.expanduser('~/aws.env'))
         if os.path.isfile(os.path.expanduser('~/do.env')):
             envs.update(compose.test.load_envs(os.path.expanduser('~/do.env')))
             print '~/do.env found. writing credentials to config.json'
