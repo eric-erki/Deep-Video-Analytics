@@ -12,9 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.DeleteModel(
-            name='Label',
-        ),
         migrations.RemoveField(
             model_name='regionlabel',
             name='event',
@@ -56,5 +53,8 @@ class Migration(migrations.Migration):
         ),
         migrations.DeleteModel(
             name='TubeLabel',
+        ),
+        migrations.DeleteModel(
+            name='Label',
         ),
     ]
