@@ -532,10 +532,8 @@ class VideoImporter(object):
             if 'region_list' in f:
                 for a in f['region_list']:
                     ra = self.create_region(a)
-                    if ra.region_type == Region.DETECTION:
+                    if 'id' in a:
                         frame_regions[i].append((ra, a['id']))
-                    else:
-                        frame_regions[i].append((ra, None))
             elif 'detection_list' in f or 'annotation_list' in f:
                 raise NotImplementedError, "Older format no longer supported"
         bulk_frames = Frame.objects.bulk_create(frames)
