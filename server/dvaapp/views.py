@@ -1,7 +1,7 @@
 from django.conf import settings
 import json
-from .models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, Tube, Segment, RegionLabel, \
-    TubeLabel, Label, TubeRegionRelation, TubeRelation, Retriever, SystemState, QueryRegion, QueryRegionResults, \
+from .models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, Tube, Segment, \
+    TubeRegionRelation, TubeRelation, Retriever, SystemState, QueryRegion, QueryRegionResults, \
     TrainedModel, Worker, TrainingSet, RegionRelation
 import serializers
 from rest_framework import viewsets
@@ -66,18 +66,6 @@ class FrameViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Frame.objects.all()
     serializer_class = serializers.FrameSerializer
     filter_fields = ('frame_index', 'subdir', 'name', 'video')
-
-
-class RegionLabelViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
-    queryset = RegionLabel.objects.all()
-    serializer_class = serializers.RegionLabelSerializer
-
-
-class TubeLabelViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
-    queryset = TubeLabel.objects.all()
-    serializer_class = serializers.TubeLabelSerializer
 
 
 class SegmentViewSet(viewsets.ReadOnlyModelViewSet):
@@ -160,12 +148,6 @@ class IndexEntriesViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = IndexEntries.objects.all()
     serializer_class = serializers.IndexEntriesSerializer
     filter_fields = ('video', 'algorithm', 'detection_name')
-
-
-class LabelViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
-    queryset = Label.objects.all()
-    serializer_class = serializers.LabelSerializer
 
 
 class TubeViewSet(viewsets.ReadOnlyModelViewSet):

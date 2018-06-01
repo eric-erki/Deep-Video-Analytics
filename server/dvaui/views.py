@@ -6,7 +6,7 @@ import json
 from django.views.generic import ListView, DetailView
 from .forms import UploadFileForm, YTVideoForm, AnnotationForm
 from dvaapp.models import Video, Frame, DVAPQL, TaskRestart, TEvent, IndexEntries, Region, \
-    Tube, TubeLabel, Segment, RegionLabel, Label, ManagementAction, \
+    Tube, Segment, ManagementAction, \
     TrainedModel, Retriever, SystemState, Worker, TrainingSet, Export
 from .models import StoredDVAPQL, ExternalServer
 from dva.celery import app
@@ -70,20 +70,6 @@ class TEventDetail(UserPassesTestMixin, DetailView):
             pass
         else:
             context['celery_task'] = tr
-        return context
-
-    def test_func(self):
-        return user_check(self.request.user)
-
-
-class LabelDetail(UserPassesTestMixin, DetailView):
-    model = Label
-    template_name = "dvaui/label_detail.html"
-
-    def get_context_data(self, **kwargs):
-        context = super(LabelDetail, self).get_context_data(**kwargs)
-        context['regions'] = RegionLabel.objects.filter(label=context['object'])
-        context['tubes'] = TubeLabel.objects.filter(label=context['object'])
         return context
 
     def test_func(self):
@@ -504,28 +490,6 @@ def index(request, query_pk=None, frame_pk=None, detection_pk=None):
 
 
 @user_passes_test(user_check)
-def assign_video_labels(request):
-    if request.method == 'POST':
-        video = Video.objects.get(pk=request.POST.get('video_pk'))
-        spec = []
-        for k in request.POST.get('labels').split(','):
-            if k.strip():
-                spec.append({
-                    'MODEL': 'VideoLabel',
-                    'spec': {'video_id': video.pk, 'label_id': Label.objects.get_or_create(name=k, set="UI")[0].id}
-                })
-        p = DVAPQLProcess()
-        p.create_from_json({
-            'process_type': DVAPQL.PROCESS,
-            'create': spec,
-        }, user=request.user if request.user.is_authenticated else None)
-        p.launch()
-        return redirect('video_detail', pk=video.pk)
-    else:
-        raise NotImplementedError
-
-
-@user_passes_test(user_check)
 def annotate(request, frame_pk):
     context = {'frame': None, 'detection': None, 'existing': []}
     frame = Frame.objects.get(pk=frame_pk)
@@ -702,8 +666,6 @@ def textsearch(request):
         if request.GET.get('frames'):
             context['results']['frames_name'] = Frame.objects.filter(name__search=q)[offset:limit]
             context['results']['frames_subdir'] = Frame.objects.filter(subdir__search=q)[offset:limit]
-        if request.GET.get('labels'):
-            context['results']['labels'] = Label.objects.filter(name__search=q)[offset:limit]
     return render(request, 'dvaui/textsearch.html', context)
 
 

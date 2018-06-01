@@ -575,20 +575,6 @@ class Tube(models.Model):
     source = models.ForeignKey(TEvent, null=True)
 
 
-class Label(models.Model):
-    name = models.CharField(max_length=200)
-    set = models.CharField(max_length=200, default="")
-    metadata = JSONField(blank=True, null=True)
-    text = models.TextField(null=True, blank=True)
-    created = models.DateTimeField('date created', auto_now_add=True)
-
-    class Meta:
-        unique_together = (("name", "set"),)
-
-    def __unicode__(self):
-        return u'{}:{}'.format(self.name, self.set)
-
-
 class RegionRelation(models.Model):
     """
     Captures relations between Regions within a video/dataset.
@@ -626,36 +612,6 @@ class TubeRegionRelation(models.Model):
     name = models.CharField(max_length=400)
     weight = models.FloatField(null=True)
     metadata = JSONField(blank=True, null=True)
-
-
-class RegionLabel(models.Model):
-    video = models.ForeignKey(Video, null=True)
-    frame = models.ForeignKey(Frame, null=True)
-    frame_index = models.IntegerField(default=-1)
-    segment_index = models.IntegerField(null=True)
-    region = models.ForeignKey(Region)
-    label = models.ForeignKey(Label)
-    event = models.ForeignKey(TEvent, null=True)
-
-    def clean(self):
-        if self.frame_index == -1 or self.frame_index is None:
-            self.frame_index = self.frame.frame_index
-        if self.segment_index == -1 or self.segment_index is None:
-            self.segment_index = self.frame.segment_index
-
-    def save(self, *args, **kwargs):
-        if self.frame_index == -1 or self.frame_index is None:
-            self.frame_index = self.frame.frame_index
-        if self.segment_index == -1 or self.segment_index is None:
-            self.segment_index = self.frame.segment_index
-        super(RegionLabel, self).save(*args, **kwargs)
-
-
-class TubeLabel(models.Model):
-    video = models.ForeignKey(Video, null=True)
-    tube = models.ForeignKey(Tube)
-    label = models.ForeignKey(Label)
-    event = models.ForeignKey(TEvent, null=True)
 
 
 class DeletedVideo(models.Model):
