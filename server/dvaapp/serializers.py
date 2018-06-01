@@ -100,19 +100,19 @@ class RegionRelationSerializer(serializers.HyperlinkedModelSerializer):
     target_frame_media_url = serializers.SerializerMethodField()
 
     def get_source_frame_media_url(self, obj):
-        if obj.source.frame_id:
-            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.source.frame_index)
+        if obj.source_region.frame_id:
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.source_region.frame_index)
         else:
             return None
 
     def get_target_frame_media_url(self, obj):
-        if obj.target.frame_id:
-            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.target.frame_index)
+        if obj.target_region.frame_id:
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.target_region.frame_index)
 
     class Meta:
         model = RegionRelation
-        fields = ('url', 'source_frame_media_url', 'source_frame_media_url', 'video', 'source_region', 'target_region',
-                  'name', 'weight', 'event', 'metadata', 'id')
+        fields = ('url', 'source_frame_media_url', 'source_frame_media_url', 'target_frame_media_url', 'video',
+                  'source_region', 'target_region', 'name', 'weight', 'event', 'metadata', 'id')
 
 
 class TubeRelationSerializer(serializers.HyperlinkedModelSerializer):
