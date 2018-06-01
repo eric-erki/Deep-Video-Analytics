@@ -6,6 +6,8 @@ jinja2
 djangorestframework
 markdown
 django-filter
+kombu==4.1.0
+amqp==2.2.2
 celery==4.0.2
 django-celery-results
 dj-database-url==0.4.0

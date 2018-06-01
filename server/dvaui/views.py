@@ -5,10 +5,9 @@ import glob
 import json
 from django.views.generic import ListView, DetailView
 from .forms import UploadFileForm, YTVideoForm, AnnotationForm
-from dvaapp.models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, \
-    Tube, Segment, FrameLabel, SegmentLabel, \
-    VideoLabel, RegionLabel, TubeLabel, Label, ManagementAction, \
-    TrainedModel, Retriever, SystemState, QueryRegion, QueryRegionResults, Worker, TrainingSet, Export
+from dvaapp.models import Video, Frame, DVAPQL, TaskRestart, TEvent, IndexEntries, Region, \
+    Tube, Segment, ManagementAction, \
+    TrainedModel, Retriever, SystemState, Worker, TrainingSet, Export
 from .models import StoredDVAPQL, ExternalServer
 from dva.celery import app
 import math
@@ -71,22 +70,6 @@ class TEventDetail(UserPassesTestMixin, DetailView):
             pass
         else:
             context['celery_task'] = tr
-        return context
-
-    def test_func(self):
-        return user_check(self.request.user)
-
-
-class LabelDetail(UserPassesTestMixin, DetailView):
-    model = Label
-    template_name = "dvaui/label_detail.html"
-
-    def get_context_data(self, **kwargs):
-        context = super(LabelDetail, self).get_context_data(**kwargs)
-        context['frames'] = FrameLabel.objects.filter(label=context['object'])
-        context['videos'] = VideoLabel.objects.filter(label=context['object'])
-        context['segments'] = SegmentLabel.objects.filter(label=context['object'])
-        context['regions'] = RegionLabel.objects.filter(label=context['object'])
         return context
 
     def test_func(self):
@@ -507,28 +490,6 @@ def index(request, query_pk=None, frame_pk=None, detection_pk=None):
 
 
 @user_passes_test(user_check)
-def assign_video_labels(request):
-    if request.method == 'POST':
-        video = Video.objects.get(pk=request.POST.get('video_pk'))
-        spec = []
-        for k in request.POST.get('labels').split(','):
-            if k.strip():
-                spec.append({
-                    'MODEL': 'VideoLabel',
-                    'spec': {'video_id': video.pk, 'label_id': Label.objects.get_or_create(name=k, set="UI")[0].id}
-                })
-        p = DVAPQLProcess()
-        p.create_from_json({
-            'process_type': DVAPQL.PROCESS,
-            'create': spec,
-        }, user=request.user if request.user.is_authenticated else None)
-        p.launch()
-        return redirect('video_detail', pk=video.pk)
-    else:
-        raise NotImplementedError
-
-
-@user_passes_test(user_check)
 def annotate(request, frame_pk):
     context = {'frame': None, 'detection': None, 'existing': []}
     frame = Frame.objects.get(pk=frame_pk)
@@ -557,50 +518,12 @@ def annotate(request, frame_pk):
         form = AnnotationForm(request.POST)
         if form.is_valid():
             applied_tags = form.cleaned_data['tags'].split(',') if form.cleaned_data['tags'] else []
-            view_shared.create_annotation(form, form.cleaned_data['object_name'], applied_tags, frame)
+            view_shared.create_annotation(form, form.cleaned_data['object_name'], applied_tags, frame,
+                                          user=request.user if request.user.is_authenticated else None)
             return JsonResponse({'status': True})
         else:
             raise ValueError(form.errors)
     return render(request, 'dvaui/annotate.html', context)
-
-
-@user_passes_test(user_check)
-def annotate_entire_frame(request, frame_pk):
-    frame = Frame.objects.get(pk=frame_pk)
-    annotation = None
-    if request.method == 'POST':
-        if request.POST.get('text').strip() \
-                or request.POST.get('metadata').strip() \
-                or request.POST.get('object_name', None):
-            annotation = Region()
-            annotation.region_type = Region.ANNOTATION
-            annotation.x = 0
-            annotation.y = 0
-            annotation.h = 0
-            annotation.w = 0
-            annotation.full_frame = True
-            annotation.text = request.POST.get('text')
-            annotation.metadata = request.POST.get('metadata')
-            annotation.object_name = request.POST.get('object_name', 'frame_metadata')
-            annotation.frame = frame
-            annotation.video = frame.video
-            annotation.save()
-        for label_name in request.POST.get('tags').split(','):
-            if label_name.strip():
-                if annotation:
-                    dl = RegionLabel()
-                    dl.video = frame.video
-                    dl.frame = frame
-                    dl.label = Label.objects.get_or_create(name=label_name, set="UI")[0]
-                    dl.region = annotation
-                    dl.save()
-                else:
-                    dl = FrameLabel()
-                    dl.video = frame.video
-                    dl.frame = frame
-                    dl.label = Label.objects.get_or_create(name=label_name, set="UI")[0]
-                    dl.save()
-    return redirect("frame_detail", pk=frame.pk)
 
 
 @user_passes_test(user_check)
@@ -713,22 +636,13 @@ def management(request):
         'timeout': timeout,
         'actions': ManagementAction.objects.all(),
         'workers': Worker.objects.all(),
+        'restarts': TaskRestart.objects.all(),
         'state': SystemState.objects.all().order_by('-created')[:100]
     }
     if request.method == 'POST':
         op = request.POST.get("op", "")
-        host_name = request.POST.get("host_name", "").strip()
-        queue_name = request.POST.get("queue_name", "").strip()
-        if op == "list_workers":
-            context["queues"] = app.control.inspect(timeout=timeout).active_queues()
-        elif op == "list":
-            t = app.send_task('manage_host', args=[op, ], exchange='qmanager')
-            t.wait(timeout=timeout)
-        elif op == "gpuinfo":
-            t = app.send_task('manage_host', args=[op, ], exchange='qmanager')
-            t.wait(timeout=timeout)
-        elif op == "launch":
-            t = app.send_task('manage_host', args=[op, host_name, queue_name], exchange='qmanager')
+        if op == "list":
+            t = app.send_task('manage_host', args=[], exchange='qmanager')
             t.wait(timeout=timeout)
     return render(request, 'dvaui/management.html', context)
 
@@ -752,8 +666,6 @@ def textsearch(request):
         if request.GET.get('frames'):
             context['results']['frames_name'] = Frame.objects.filter(name__search=q)[offset:limit]
             context['results']['frames_subdir'] = Frame.objects.filter(subdir__search=q)[offset:limit]
-        if request.GET.get('labels'):
-            context['results']['labels'] = Label.objects.filter(name__search=q)[offset:limit]
     return render(request, 'dvaui/textsearch.html', context)
 
 
@@ -784,17 +696,6 @@ def validate_process(request):
         raise ValueError("Request must be a POST")
 
 
-@user_passes_test(user_check)
-def delete_object(request):
-    if request.method == 'POST':
-        pk = request.POST.get('pk')
-        if request.POST.get('object_type') == 'annotation':
-            annotation = Region.objects.get(pk=pk)
-            if annotation.region_type == Region.ANNOTATION:
-                annotation.delete()
-    return JsonResponse({'status': True})
-
-
 @user_passes_test(force_user_check)
 def security(request):
     context = {'username': request.user.username}
@@ -816,7 +717,6 @@ def expire_token(request):
 
 @user_passes_test(user_check)
 def import_s3(request):
-
     if request.method == 'POST':
         keys = request.POST.get('key')
         user = request.user if request.user.is_authenticated else None
@@ -851,11 +751,11 @@ def import_s3(request):
                     else:
                         next_tasks = [segment_decode_task, ]
                     map_tasks.append({'video_id': '__created__{}'.format(counter),
-                                  'operation': 'perform_import',
-                                  'arguments': {
-                                      'source': 'REMOTE',
-                                      'map': next_tasks}
-                                  })
+                                      'operation': 'perform_import',
+                                      'arguments': {
+                                          'source': 'REMOTE',
+                                          'map': next_tasks}
+                                      })
                     create.append({'MODEL': 'Video',
                                    'spec': {'uploader_id': user.pk if user else None, 'dataset': dataset_type,
                                             'name': key, 'url': key},
@@ -865,7 +765,7 @@ def import_s3(request):
                 raise NotImplementedError("{} startswith an unknown remote store prefix".format(key))
         process_spec = {'process_type': DVAPQL.PROCESS,
                         'create': create,
-                        'map':map_tasks
+                        'map': map_tasks
                         }
         p = DVAPQLProcess()
         p.create_from_json(process_spec, user)

@@ -265,6 +265,26 @@ TASK_NAMES_TO_QUEUE = {
     "perform_video_decode_lambda": Q_LAMBDA
 }
 
+
+RESTARTABLE_TASKS = {
+    'perform_indexing':{
+        'delete_models':['IndexEntries',],
+    },
+    'perform_detection':{
+        'delete_models':['Region',]
+    },
+    'perform_analysis':{
+        'delete_models':['Region',]
+    },
+    'perform_frame_download':{
+        'delete_models':['Region','Frame']
+    },
+    'perform_video_decode':{
+        'delete_models':['Frame',]
+    },
+}
+
+
 NON_PROCESSING_TASKS = {'perform_training','perform_training_set_creation','perform_deletion', 'perform_export'}
 
 # Is the code running on kubernetes?
@@ -275,3 +295,5 @@ DEFAULT_SEGMENTS_BATCH_SIZE = int(os.environ.get('DEFAULT_SEGMENTS_BATCH_SIZE',1
 DEFAULT_FRAMES_BATCH_SIZE = int(os.environ.get('DEFAULT_FRAMES_BATCH_SIZE',500))
 # Default video decoding 1 frame per 30 frames AND all i-frames
 DEFAULT_RATE = int(os.environ.get('DEFAULT_RATE',30))
+# Max task attempts
+MAX_TASK_ATTEMPTS = 5

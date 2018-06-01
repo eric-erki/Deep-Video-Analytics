@@ -246,36 +246,43 @@ def handle_uploaded_file(f, name, user=None, rate=None):
     return p.created_objects[0]
 
 
-def create_annotation(form, object_name, labels, frame):
-    annotation = dvaapp.models.Region()
-    annotation.object_name = object_name
+def create_annotation(form, object_name, labels, frame, user=None):
+    annotation = {}
+    label_specs = []
+    annotation['object_name'] = object_name
     if form.cleaned_data['high_level']:
-        annotation.full_frame = True
-        annotation.x = 0
-        annotation.y = 0
-        annotation.h = 0
-        annotation.w = 0
+        annotation['full_frame'] = True
+        annotation['x'] = 0
+        annotation['y'] = 0
+        annotation['h'] = 0
+        annotation['w'] = 0
     else:
-        annotation.full_frame = False
-        annotation.x = form.cleaned_data['x']
-        annotation.y = form.cleaned_data['y']
-        annotation.h = form.cleaned_data['h']
-        annotation.w = form.cleaned_data['w']
-    annotation.text = form.cleaned_data['text']
-    annotation.metadata = form.cleaned_data['metadata']
-    annotation.frame = frame
-    annotation.video = frame.video
-    annotation.region_type = dvaapp.models.Region.ANNOTATION
-    annotation.save()
+        annotation['full_frame'] = False
+        annotation['x'] = form.cleaned_data['x']
+        annotation['y'] = form.cleaned_data['y']
+        annotation['h'] = form.cleaned_data['h']
+        annotation['w'] = form.cleaned_data['w']
+    annotation['text'] = form.cleaned_data['text']
+    annotation['metadata'] = form.cleaned_data['metadata']
+    if type(annotation['metadata']) is basestring and annotation['metadata'].strip():
+        annotation['metadata'] = json.loads(annotation['metadata'])
+    else:
+        annotation['metadata'] = None
+    annotation['frame_id'] = frame.pk
+    annotation['video_id'] = frame.video_id
+    annotation['region_type'] = dvaapp.models.Region.ANNOTATION
     for lname in labels:
         if lname.strip():
-            dl, _ = dvaapp.models.Label.objects.get_or_create(name=lname, set="UI")
-            rl = dvaapp.models.RegionLabel()
-            rl.video = annotation.video
-            rl.frame = annotation.frame
-            rl.region = annotation
-            rl.label = dl
-            rl.save()
+            label_specs.append({'name': lname, 'set': 'UI'})
+    spec = {
+        'process_type': dvaapp.models.DVAPQL.PROCESS,
+        'create': [{'MODEL': 'Region', 'spec': annotation, 'labels': label_specs}]
+    }
+    p = DVAPQLProcess()
+    p.create_from_json(spec, user)
+    p.launch()
+
+    return
 
 
 def create_query_from_request(p, request):
@@ -295,8 +302,8 @@ def create_query_from_request(p, request):
     indexer_tasks = defaultdict(list)
     if generate_tags and generate_tags != 'false':
         query_json['map'].append({'operation': 'perform_analysis',
-                                    'arguments': {'analyzer': 'tagger', 'target': 'query', }
-                                    })
+                                  'arguments': {'analyzer': 'tagger', 'target': 'query', }
+                                  })
 
     if selected_indexers:
         for k in selected_indexers:
@@ -323,41 +330,41 @@ def create_query_from_request(p, request):
             dd = dvaapp.models.TrainedModel.objects.get(pk=int(d), model_type=dvaapp.models.TrainedModel.DETECTOR)
             if dd.name == 'textbox':
                 query_json['map'].append({'operation': 'perform_detection',
-                                            'arguments': {'detector_pk': int(d),
-                                                          'target': 'query',
-                                                          'map': [{
-                                                              'operation': 'perform_analysis',
-                                                              'arguments': {'target': 'query_regions',
-                                                                            'analyzer': 'crnn',
-                                                                            'filters': {'event_id': '__parent_event__'}
-                                                                            }
-                                                          }]
-                                                          }
-                                            })
+                                          'arguments': {'detector_pk': int(d),
+                                                        'target': 'query',
+                                                        'map': [{
+                                                            'operation': 'perform_analysis',
+                                                            'arguments': {'target': 'query_regions',
+                                                                          'analyzer': 'crnn',
+                                                                          'filters': {'event_id': '__parent_event__'}
+                                                                          }
+                                                        }]
+                                                        }
+                                          })
             elif dd.name == 'face':
                 dr = dvaapp.models.Retriever.objects.get(name='facenet', algorithm=dvaapp.models.Retriever.EXACT)
                 query_json['map'].append({'operation': 'perform_detection',
-                                            'arguments': {'detector_pk': int(d),
-                                                          'target': 'query',
-                                                          'map': [{
-                                                              'operation': 'perform_indexing',
-                                                              'arguments': {'target': 'query_regions',
-                                                                            'index': 'facenet',
-                                                                            'filters': {'event_id': '__parent_event__'},
-                                                                            'map': [{
-                                                                                'operation': 'perform_retrieval',
-                                                                                'arguments': {'retriever_pk': dr.pk,
-                                                                                              'filters': {
-                                                                                                  'event_id': '__parent_event__'},
-                                                                                              'target': 'query_region_index_vectors',
-                                                                                              'count': 10}
-                                                                            }]}
-                                                          }]
-                                                          }
-                                            })
+                                          'arguments': {'detector_pk': int(d),
+                                                        'target': 'query',
+                                                        'map': [{
+                                                            'operation': 'perform_indexing',
+                                                            'arguments': {'target': 'query_regions',
+                                                                          'index': 'facenet',
+                                                                          'filters': {'event_id': '__parent_event__'},
+                                                                          'map': [{
+                                                                              'operation': 'perform_retrieval',
+                                                                              'arguments': {'retriever_pk': dr.pk,
+                                                                                            'filters': {
+                                                                                                'event_id': '__parent_event__'},
+                                                                                            'target': 'query_region_index_vectors',
+                                                                                            'count': 10}
+                                                                          }]}
+                                                        }]
+                                                        }
+                                          })
             else:
                 query_json['map'].append({'operation': 'perform_detection',
-                                            'arguments': {'detector_pk': int(d), 'target': 'query', }})
+                                          'arguments': {'detector_pk': int(d), 'target': 'query', }})
     user = request.user if request.user.is_authenticated else None
     p.create_from_json(query_json, user)
     return p.process
@@ -398,7 +405,7 @@ def get_url(r):
             return '{}{}/regions/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.detection_id)
         else:
             if settings.ENABLE_CLOUDFS:
-                cached_frame = fs.get_from_cache('/{}/frames/{}.jpg'.format(r.video_id,frame_index))
+                cached_frame = fs.get_from_cache('/{}/frames/{}.jpg'.format(r.video_id, frame_index))
                 if cached_frame:
                     if settings.DEBUG:
                         logging.info("Cache used!")

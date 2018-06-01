@@ -21,6 +21,7 @@ from celery.signals import task_prerun, celeryd_init
 from . import fs
 from . import task_shared
 from .waiter import Waiter
+from django_celery_results.models import TaskResult
 
 try:
     import numpy as np
@@ -38,6 +39,7 @@ def configure_workers(sender, conf, **kwargs):
     W = models.Worker()
     W.pid = os.getpid()
     W.host = sender.split('.')[-1]
+    W.last_ping = timezone.now()
     W.queue_name = sender.split('@')[1].split('.')[0]
     W.save()
 
@@ -104,6 +106,24 @@ def perform_process_monitoring(task_id):
     if dt is None:
         raise ValueError("task is None")
     timeout_seconds = dt.arguments.get('timeout', settings.DEFAULT_REDUCER_TIMEOUT_SECONDS)
+    for oldt in models.TEvent.objects.filter(parent_process=dt.parent_process, started=True, completed=False):
+        # Check if celery task has failed
+        try:
+            tr = TaskResult.objects.get(task_id=oldt.task_id)
+        except TaskResult.DoesNotExist:
+            pass
+        else:
+            if tr.status == 'FAILURE':
+                oldt.errored = True
+                oldt.save()
+        # Check if worker processing the task has failed
+        if oldt.worker and oldt.worker.alive == False and oldt.errored == False:
+            oldt.error_message = "Worker {} processing task is no longer alive.".format(oldt.worker_id)
+            oldt.errored = True
+            oldt.save()
+        # If failed attempt to restart it.
+        if oldt.errored:
+            task_shared.restart_task(oldt)
     # Following is "1" instead of "0" since the current task is marked as pending.
     if models.TEvent.objects.filter(parent_process=dt.parent_process, completed=False).count() == 1:
         dt.parent_process.completed = True
@@ -322,7 +342,6 @@ def perform_export(task_id):
     except:
         dt.errored = True
         dt.error_message = "Could not export"
-        dt.duration = (timezone.now() - dt.start_ts).total_seconds()
         dt.save()
         exc_info = sys.exc_info()
         raise exc_info[0], exc_info[1], exc_info[2]
@@ -602,57 +621,38 @@ def perform_decompression(task_id):
 @app.task(track_started=True, name="manage_host", bind=True)
 def manage_host(self, op, ping_index=None, worker_name=None):
     """
-    Manage host
-    This task is handled by workers consuming from a broadcast management queue.
-    It allows quick inspection of GPU memory utilization launch of additional queues.
-    Since TensorFlow workers need to be in SOLO concurrency mode, having additional set of workers
-    enables easy management without a long timeout.
-    Example use
-    1. Monitor worker (single manager per worker in case of kube mode) / workers launched. Restart or Kill
-    2. Gather GPU memory utilization info
-    3. (TODO) Cleanly shutdown the worker by sending a signal to worker process.
+    - Manage host by deleting folders associated with deleted videos.
+    - Marking dead workers as failed.
+    - For Kubernetes shutting down / exiting and in Compose mode by restarting the dead worker.
     """
     global DELETED_COUNT
     host_name = self.request.hostname
-    if op == "list":
-        DELETED_COUNT = task_shared.collect_garbage(DELETED_COUNT)
-        models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message="", host=host_name,
-                                               ping_index=ping_index)
-        for w in models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True):
+    DELETED_COUNT = task_shared.collect_garbage(DELETED_COUNT)
+    models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message="", host=host_name,
+                                           ping_index=ping_index)
+    for w in models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True):
+        if not task_shared.pid_exists(w.pid):
+            w.alive = False
+            w.save()
             # launch all queues EXCEPT worker processing manager queue
-            if not task_shared.pid_exists(w.pid):
-                w.alive = False
-                w.save()
-                for t in models.TEvent.objects.filter(started=True, completed=False, errored=False, worker=w):
-                    t.errored = True
-                    t.save()
-                if w.queue_name != 'manager':
-                    if settings.KUBE_MODE:
-
-                        models.ManagementAction.objects.create(op=op, parent_task=self.request.id,
-                                                               message="Worker died manager exiting.",
-                                                               host=host_name)
-                        wm = models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True,
-                                                          queue_name="manager")[0]
-                        wm.alive = False
-                        wm.save()
-                        sys.exit()
-                    else:
-                        task_shared.launch_worker(w.queue_name, worker_name)
-                        message = "worker processing {} is dead, restarting".format(w.queue_name)
-                        models.ManagementAction.objects.create(op='worker_restart', parent_task=self.request.id,
-                                                               message=message, host=host_name)
-    elif op == "gpuinfo":
-        try:
-            message = subprocess.check_output(
-                ['nvidia-smi', '--query-gpu=memory.free,memory.total', '--format=csv']).splitlines()[1]
-        except:
-            message = "No GPU available"
-        models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message=message, host=host_name)
-    elif op == "shutdown":
-        raise NotImplementedError(op)
-    else:
-        raise NotImplementedError(op)
+            if w.queue_name != 'manager':
+                if settings.KUBE_MODE:
+                    models.ManagementAction.objects.create(op=op, parent_task=self.request.id,
+                                                           message="Worker died manager exiting.",
+                                                           host=host_name)
+                    wm = models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True,
+                                                      queue_name="manager")[0]
+                    wm.alive = False
+                    wm.save()
+                    sys.exit()
+                else:
+                    task_shared.launch_worker(w.queue_name, worker_name)
+                    message = "worker processing {} is dead, restarting".format(w.queue_name)
+                    models.ManagementAction.objects.create(op='worker_restart', parent_task=self.request.id,
+                                                           message=message, host=host_name)
+        else:
+            w.last_ping = timezone.now()
+            w.save()
 
 
 @app.task(track_started=True, name="monitor_system")
@@ -668,10 +668,25 @@ def monitor_system():
         ping_index = 0
     # TODO: Handle the case where host manager has not responded to last and itself has died
     _ = app.send_task('manage_host', args=['list', ping_index], exchange='qmanager')
+    worker_stats = {'alive':0,
+                    'transition':0,
+                    'dead': models.Worker.objects.filter(alive=False).count()
+                    }
+    for w in models.Worker.objects.filter(alive=True):
+        # if worker is not heard from via manager for more than 10 minutes
+        # mark it as dead, so that processes_monitor can mark tasks are errored and restart if possible.
+        if (timezone.now() - w.last_ping).total_seconds() > 600:
+            w.alive = False
+            w.save()
+            worker_stats['transition'] += 1
+        else:
+            worker_stats['alive'] += 1
     process_stats = {'processes': models.DVAPQL.objects.count(),
                      'completed_processes': models.DVAPQL.objects.filter(completed=True).count(),
                      'tasks': models.TEvent.objects.count(),
                      'pending_tasks': models.TEvent.objects.filter(started=False).count(),
                      'completed_tasks': models.TEvent.objects.filter(started=True, completed=True).count()}
-    _ = models.SystemState.objects.create(redis_stats=redis_client.info(),process_stats=process_stats)
+    _ = models.SystemState.objects.create(redis_stats=redis_client.info(),
+                                          process_stats=process_stats,
+                                          worker_stats=worker_stats)
 

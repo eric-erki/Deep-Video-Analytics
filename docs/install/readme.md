@@ -14,6 +14,8 @@
 
 - fix_docker_compose.py : make nvidia-docker default runtime.
 
+- gcp_tunnel.sh :  SSH and tunnel ports to a GCP instance
+
 - install_docker.sh :  install compatible docker version, make sure you log out and log in.
 
 - install_nvidia_docker.sh install nvidia docker and make it default runtime.

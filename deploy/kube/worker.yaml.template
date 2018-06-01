@@ -1,26 +1,32 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: extractor
+  name: {name}
   labels:
-    name: extractor
+    name: {name}
 spec:
-  replicas: 3
+  replicas: 1
   progressDeadlineSeconds: 600
   minReadySeconds: 15
   revisionHistoryLimit: 5
   template:
     metadata:
       labels:
-        name: extractor
-        role: cpuworker
+        name: {name}
     spec:
       containers:
       - image: akshayubhat/dva-auto:latest
         imagePullPolicy: "IfNotPresent"
-        name: dvaextractor
+        resources:
+          requests:
+            memory: "{request_memory}"
+            cpu: "{request_cpu}"
+          limits:
+            memory: "{max_memory}"
+            cpu: "{max_cpu}"
+        name: {name}
         env:
-        - name: LAUNCH_Q_qextract
+        - name: {worker_env}
           value: "1"
 {common}
         args:

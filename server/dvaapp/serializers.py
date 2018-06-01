@@ -1,14 +1,11 @@
-from rest_framework import serializers, viewsets
+from rest_framework import serializers
 from django.contrib.auth.models import User
 from models import Video, Frame, Region, DVAPQL, QueryResults, TEvent, IndexEntries, \
-    Tube, Segment, Label, VideoLabel, FrameLabel, RegionLabel, \
-    SegmentLabel, TubeLabel, TrainedModel, Retriever, SystemState, QueryRegion,\
-    QueryRegionResults, Worker, TrainingSet
-import os, json, logging, glob
+    Tube, Segment, TrainedModel, Retriever, SystemState, QueryRegion, \
+    QueryRegionResults, Worker, TrainingSet, RegionRelation, TubeRegionRelation, TubeRelation
+import os, json, glob
 from collections import defaultdict
 from django.conf import settings
-from StringIO import StringIO
-from rest_framework.parsers import JSONParser
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -18,16 +15,6 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True},
         }
-
-        # def create(self, validated_data):
-        #     user = User.objects.create_user(**validated_data)
-        #     return user
-        #
-        # def update(self, instance, validated_data):
-        #     if 'password' in validated_data:
-        #         password = validated_data.pop('password')
-        #         instance.set_password(password)
-        #     return super(UserSerializer, self).update(instance, validated_data)
 
 
 class VideoSerializer(serializers.HyperlinkedModelSerializer):
@@ -62,137 +49,89 @@ class TrainingSetSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
 
-class LabelSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = Label
-        fields = '__all__'
-
-
-class FrameLabelSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = FrameLabel
-        fields = '__all__'
-
-
-class RegionLabelSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = RegionLabel
-        fields = '__all__'
-
-
-class SegmentLabelSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = SegmentLabel
-        fields = '__all__'
-
-
-class VideoLabelSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = VideoLabel
-        fields = '__all__'
-
-
-class TubeLabelSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = TubeLabel
-        fields = '__all__'
-
-
-class FrameLabelExportSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = FrameLabel
-        fields = '__all__'
-
-
-class RegionLabelExportSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = RegionLabel
-        fields = '__all__'
-
-
-class SegmentLabelExportSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = SegmentLabel
-        fields = '__all__'
-
-
-class VideoLabelExportSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = VideoLabel
-        fields = '__all__'
-
-
 class WorkerSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Worker
         fields = ('queue_name', 'id')
 
 
-class TubeLabelExportSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TubeLabel
-        fields = '__all__'
-
-
 class FrameSerializer(serializers.HyperlinkedModelSerializer):
     media_url = serializers.SerializerMethodField()
 
-    def get_media_url(self,obj):
-        return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL,obj.video_id,obj.frame_index)
+    def get_media_url(self, obj):
+        return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.frame_index)
 
     class Meta:
         model = Frame
-        fields = ('url','media_url', 'video', 'frame_index', 'keyframe', 'w', 'h', 't',
+        fields = ('url', 'media_url', 'video', 'frame_index', 'keyframe', 'w', 'h', 't',
                   'name', 'subdir', 'id', 'segment_index')
 
 
 class SegmentSerializer(serializers.HyperlinkedModelSerializer):
     media_url = serializers.SerializerMethodField()
 
-    def get_media_url(self,obj):
-        return "{}{}/segments/{}.mp4".format(settings.MEDIA_URL,obj.video_id,obj.segment_index)
+    def get_media_url(self, obj):
+        return "{}{}/segments/{}.mp4".format(settings.MEDIA_URL, obj.video_id, obj.segment_index)
 
     class Meta:
         model = Segment
-        fields = ('video','segment_index','start_time','end_time','metadata',
-                  'frame_count','start_index','start_frame','end_frame','url','media_url', 'id')
+        fields = ('video', 'segment_index', 'start_time', 'end_time', 'metadata',
+                  'frame_count', 'start_index', 'start_frame', 'end_frame', 'url', 'media_url', 'id')
 
 
 class RegionSerializer(serializers.HyperlinkedModelSerializer):
     media_url = serializers.SerializerMethodField()
 
-    def get_media_url(self,obj):
+    def get_media_url(self, obj):
         if obj.materialized:
-            return "{}{}/regions/{}.jpg".format(settings.MEDIA_URL,obj.video_id,obj.pk)
+            return "{}{}/regions/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.pk)
         else:
             return None
 
-
     class Meta:
         model = Region
-        fields = ('url','media_url','region_type','video','user','frame','event','frame_index',
-                  'segment_index','text','metadata','full_frame','x','y','h','w',
-                  'polygon_points','created','object_name','confidence','materialized','png', 'id')
+        fields = ('url', 'media_url', 'region_type', 'video', 'user', 'frame', 'event', 'frame_index',
+                  'segment_index', 'text', 'metadata', 'full_frame', 'x', 'y', 'h', 'w',
+                  'polygon_points', 'created', 'object_name', 'confidence', 'materialized', 'png', 'id')
+
+
+class RegionRelationSerializer(serializers.HyperlinkedModelSerializer):
+    source_frame_media_url = serializers.SerializerMethodField()
+    target_frame_media_url = serializers.SerializerMethodField()
+
+    def get_source_frame_media_url(self, obj):
+        if obj.source.frame_id:
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.source.frame_index)
+        else:
+            return None
+
+    def get_target_frame_media_url(self, obj):
+        if obj.target.frame_id:
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.target.frame_index)
+
+    class Meta:
+        model = RegionRelation
+        fields = ('url', 'source_frame_media_url', 'source_frame_media_url', 'video', 'source_region', 'target_region',
+                  'name', 'weight', 'event', 'metadata', 'id')
+
+
+class TubeRelationSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = TubeRelation
+        fields = ('url', 'source_tube', 'target_tube', 'name', 'weight', 'video', 'event', 'metadata', 'id')
+
+
+class TubeRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
+    region_frame_media_url = serializers.SerializerMethodField()
+
+    def get_region_frame_media_url(self, obj):
+        if obj.region.frame_id:
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.region.frame_index)
+
+    class Meta:
+        model = TubeRegionRelation
+        fields = (
+        'url', 'region_frame_media_url', 'region', 'tube', 'video', 'name', 'weight', 'event', 'metadata', 'id')
 
 
 class TubeSerializer(serializers.HyperlinkedModelSerializer):
@@ -248,12 +187,15 @@ class QueryRegionResultsExportSerializer(serializers.ModelSerializer):
 
 
 class QueryRegionExportSerializer(serializers.ModelSerializer):
-    query_region_results = QueryRegionResultsExportSerializer(source='queryregionresults_set', read_only=True, many=True)
+    query_region_results = QueryRegionResultsExportSerializer(source='queryregionresults_set', read_only=True,
+                                                              many=True)
 
     class Meta:
         model = QueryRegion
-        fields = ('id','region_type','query','event','text','metadata','full_frame','x','y','h','w','polygon_points',
-                  'created','object_name','confidence','png','query_region_results')
+        fields = (
+            'id', 'region_type', 'query', 'event', 'text', 'metadata', 'full_frame', 'x', 'y', 'h', 'w',
+            'polygon_points',
+            'created', 'object_name', 'confidence', 'png', 'query_region_results')
 
 
 class TaskExportSerializer(serializers.ModelSerializer):
@@ -262,9 +204,9 @@ class TaskExportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TEvent
-        fields = ('started','completed','errored','worker','error_message','video','operation','queue',
-                  'created','start_ts','duration','arguments','task_id','parent','parent_process',
-                  'imported','query_results', 'query_regions', 'id')
+        fields = ('started', 'completed', 'errored', 'worker', 'error_message', 'video', 'operation', 'queue',
+                  'created', 'start_ts', 'duration', 'arguments', 'task_id', 'parent', 'parent_process',
+                  'imported', 'query_results', 'query_regions', 'id')
 
 
 class TEventSerializer(serializers.HyperlinkedModelSerializer):
@@ -286,6 +228,24 @@ class IndexEntriesSerializer(serializers.HyperlinkedModelSerializer):
 class RegionExportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
+        fields = '__all__'
+
+
+class RegionRelationExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RegionRelation
+        fields = '__all__'
+
+
+class TubeRelationExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TubeRelation
+        fields = '__all__'
+
+
+class TubeRegionRelationExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TubeRegionRelation
         fields = '__all__'
 
 
@@ -326,16 +286,16 @@ class DVAPQLSerializer(serializers.HyperlinkedModelSerializer):
     tasks = TaskExportSerializer(source='tevent_set', read_only=True, many=True)
     query_image_url = serializers.SerializerMethodField()
 
-    def get_query_image_url(self,obj):
+    def get_query_image_url(self, obj):
         if obj.process_type == DVAPQL.QUERY:
-            return "{}queries/{}.png".format(settings.MEDIA_URL,obj.uuid)
+            return "{}queries/{}.png".format(settings.MEDIA_URL, obj.uuid)
         else:
             return None
 
     class Meta:
         model = DVAPQL
-        fields =('process_type','query_image_url','created', 'user', 'uuid', 'script', 'tasks',
-                 'results_metadata', 'results_available', 'completed','id')
+        fields = ('process_type', 'query_image_url', 'created', 'user', 'uuid', 'script', 'tasks',
+                  'results_metadata', 'results_available', 'completed', 'id')
 
 
 class VideoExportSerializer(serializers.ModelSerializer):
@@ -344,33 +304,16 @@ class VideoExportSerializer(serializers.ModelSerializer):
     index_entries_list = IndexEntryExportSerializer(source='indexentries_set', read_only=True, many=True)
     event_list = TEventExportSerializer(source='tevent_set', read_only=True, many=True)
     tube_list = TubeExportSerializer(source='tube_set', read_only=True, many=True)
-    frame_label_list = FrameLabelExportSerializer(source='framelabel_set', read_only=True, many=True)
-    region_label_list = RegionLabelExportSerializer(source='regionlabel_set', read_only=True, many=True)
-    tube_label_list = TubeLabelExportSerializer(source='tubelabel_set', read_only=True, many=True)
-    segment_label_list = SegmentLabelExportSerializer(source='segmentlabel_set', read_only=True, many=True)
-    video_label_list = VideoLabelExportSerializer(source='videolabel_set', read_only=True, many=True)
+    region_relation_list = RegionRelationExportSerializer(source='regionrelation_set', read_only=True, many=True)
 
     class Meta:
         model = Video
         fields = ('name', 'length_in_seconds', 'height', 'width', 'metadata', 'frames', 'created', 'description',
-                  'uploaded', 'dataset', 'uploader', 'segments', 'url','frame_list', 'segment_list',
-                  'event_list', 'tube_list', 'index_entries_list', 'frame_label_list', 'region_label_list',"stream",
-                  'tube_label_list', 'segment_label_list', 'video_label_list')
+                  'uploaded', 'dataset', 'uploader', 'segments', 'url', 'frame_list', 'segment_list',
+                  'event_list', 'tube_list', 'index_entries_list', 'region_relation_list', "stream")
 
 
-def serialize_video_labels(v):
-    serialized_labels = {}
-    sources = [FrameLabel.objects.filter(video_id=v.pk), VideoLabel.objects.filter(video_id=v.pk),
-               SegmentLabel.objects.filter(video_id=v.pk), RegionLabel.objects.filter(video_id=v.pk),
-               TubeLabel.objects.filter(video_id=v.pk)]
-    for source in sources:
-        for k in source:
-            if k.label_id not in serialized_labels:
-                serialized_labels[k.label_id] = {'id':k.label.id,'name':k.label.name,'set':k.label.set}
-    return serialized_labels.values()
-
-
-def import_frame_json(f,frame_index,event_id,video_id,w,h):
+def import_frame_json(f, frame_index, event_id, video_id, w, h):
     regions = []
     df = Frame()
     df.video_id = video_id
@@ -379,12 +322,12 @@ def import_frame_json(f,frame_index,event_id,video_id,w,h):
     df.h = h
     df.frame_index = frame_index
     df.name = f['path']
-    for r in f.get('regions',[]):
-        regions.append(import_region_json(r,frame_index,video_id,event_id))
-    return df,regions
+    for r in f.get('regions', []):
+        regions.append(import_region_json(r, frame_index, video_id, event_id))
+    return df, regions
 
 
-def import_region_json(r,frame_index,video_id,event_id,segment_index=None,frame_id=None):
+def import_region_json(r, frame_index, video_id, event_id, segment_index=None, frame_id=None):
     dr = Region()
     dr.frame_index = frame_index
     dr.video_id = video_id
@@ -430,9 +373,9 @@ def create_event(e, v):
 
 
 class VideoImporter(object):
-    def __init__(self, video, json, root_dir):
+    def __init__(self, video, video_json, root_dir):
         self.video = video
-        self.json = json
+        self.json = video_json
         self.root = root_dir
         self.region_to_pk = {}
         self.frame_to_pk = {}
@@ -440,9 +383,9 @@ class VideoImporter(object):
         self.segment_to_pk = {}
         self.label_to_pk = {}
         self.tube_to_pk = {}
-        self.name_to_shasum = {'inception':'48b026cf77dfbd5d9841cca3ee550ef0ee5a0751',
-                               'facenet':'9f99caccbc75dcee8cb0a55a0551d7c5cb8a6836',
-                               'vgg':'52723231e796dd06fafd190957c8a3b5a69e009c'}
+        self.name_to_shasum = {'inception': '48b026cf77dfbd5d9841cca3ee550ef0ee5a0751',
+                               'facenet': '9f99caccbc75dcee8cb0a55a0551d7c5cb8a6836',
+                               'vgg': '52723231e796dd06fafd190957c8a3b5a69e009c'}
 
     def import_video(self):
         if self.video.name is None or not self.video.name:
@@ -451,7 +394,7 @@ class VideoImporter(object):
         self.video.height = self.json['height']
         self.video.width = self.json['width']
         self.video.segments = self.json.get('segments', 0)
-        self.video.stream = self.json.get('stream',False)
+        self.video.stream = self.json.get('stream', False)
         self.video.dataset = self.json['dataset']
         self.video.description = self.json['description']
         self.video.metadata = self.json['metadata']
@@ -466,83 +409,6 @@ class VideoImporter(object):
         self.bulk_import_frames()
         self.convert_regions_files()
         self.import_index_entries()
-        self.import_labels()
-        self.import_region_labels()
-        self.import_frame_labels()
-        self.import_segment_labels()
-        self.import_tube_labels()
-        self.import_video_labels()
-
-    def import_labels(self):
-        for l in self.json.get('labels', []):
-            dl, _ = Label.objects.get_or_create(name=l['name'],set=l.get('set',''))
-            self.label_to_pk[l['id']] = dl.pk
-
-    def import_region_labels(self):
-        region_labels = []
-        for rl in self.json.get('region_label_list', []):
-            drl = RegionLabel()
-            drl.frame_id = self.frame_to_pk[rl['frame']]
-            drl.region_id = self.region_to_pk[rl['region']]
-            drl.video_id = self.video.pk
-            if 'event' in rl:
-                drl.event_id = self.event_to_pk[rl['event']]
-            drl.frame_index = rl['frame_index']
-            drl.segment_index = rl['segment_index']
-            drl.label_id = self.label_to_pk[rl['label']]
-            region_labels.append(drl)
-        RegionLabel.objects.bulk_create(region_labels,1000)
-
-    def import_frame_labels(self):
-        frame_labels = []
-        for fl in self.json.get('frame_label_list', []):
-            dfl = FrameLabel()
-            dfl.frame_id = self.frame_to_pk[fl['frame']]
-            dfl.video_id = self.video.pk
-            if 'event' in fl:
-                dfl.event_id = self.event_to_pk[fl['event']]
-            dfl.frame_index = fl['frame_index']
-            dfl.segment_index = fl['segment_index']
-            dfl.label_id = self.label_to_pk[fl['label']]
-            frame_labels.append(dfl)
-        FrameLabel.objects.bulk_create(frame_labels,1000)
-
-    def import_segment_labels(self):
-        segment_labels = []
-        for sl in self.json.get('segment_label_list', []):
-            dsl = SegmentLabel()
-            dsl.video_id = self.video.pk
-            if 'event' in sl:
-                dsl.event_id = self.event_to_pk[sl['event']]
-            dsl.segment_id = self.segment_to_pk[sl['segment']]
-            dsl.segment_index = sl['segment_index']
-            dsl.label_id = self.label_to_pk[sl['label']]
-            segment_labels.append(dsl)
-        SegmentLabel.objects.bulk_create(segment_labels,1000)
-
-    def import_video_labels(self):
-        video_labels = []
-        for vl in self.json.get('video_label_list', []):
-            dvl = VideoLabel()
-            dvl.video_id = self.video.pk
-            if 'event' in vl:
-                dvl.event_id = self.event_to_pk[vl['event']]
-            dvl.label_id = self.label_to_pk[vl['label']]
-            video_labels.append(dvl)
-        VideoLabel.objects.bulk_create(video_labels,1000)
-
-    def import_tube_labels(self):
-        tube_labels = []
-        for tl in self.json.get('tube_label_list', []):
-            dtl = TubeLabel()
-            dtl.video_id = self.video.pk
-            if 'event' in tl:
-                dtl.event_id = self.event_to_pk[tl['event']]
-            dtl.label_id = self.label_to_pk[tl['label']]
-            dtl.tube_id = self.tube_to_pk[tl['tube']]
-            tube_labels.append(dtl)
-        TubeLabel.objects.bulk_create(tube_labels,1000)
-
 
     def import_segments(self):
         old_ids = []
@@ -554,7 +420,7 @@ class VideoImporter(object):
         for i, k in enumerate(segment_ids):
             self.segment_to_pk[old_ids[i]] = k.id
 
-    def create_segment(self,s):
+    def create_segment(self, s):
         ds = Segment()
         ds.video_id = self.video.pk
         ds.segment_index = s.get('segment_index', '-1')
@@ -604,7 +470,7 @@ class VideoImporter(object):
                     os.rename(original, temp_file)
                     convert_list.append((temp_file, converted))
                 except:
-                    raise ValueError, "could not copy {} to {}".format(original, temp_file)
+                    raise ValueError("could not copy {} to {}".format(original, temp_file))
         for temp_file, converted in convert_list:
             os.rename(temp_file, converted)
 
@@ -634,7 +500,7 @@ class VideoImporter(object):
             else:
                 entries = i['entries']
             di.detection_name = i['detection_name']
-            di.metadata = i.get('metadata',{})
+            di.metadata = i.get('metadata', {})
             transformed = []
             for entry in entries:
                 entry['video_primary_key'] = self.video.pk
@@ -643,7 +509,7 @@ class VideoImporter(object):
                 if 'frame_primary_key' in entry:
                     entry['frame_primary_key'] = self.frame_to_pk[entry['frame_primary_key']]
                 transformed.append(entry)
-            di.entries =transformed
+            di.entries = transformed
             di.save()
 
     def bulk_import_frames(self):
@@ -732,11 +598,6 @@ class VideoImporter(object):
         df.keyframe = f.get('keyframe', False)
         return df
 
-    def import_tubes(tubes, video_obj):
-        """
-        :param segments:
-        :param video_obj:
-        :return:
-        """
+    def import_tubes(self, tubes, video_obj):
         # TODO: Implement this
         raise NotImplementedError

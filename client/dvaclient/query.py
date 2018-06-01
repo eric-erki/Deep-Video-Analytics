@@ -49,7 +49,7 @@ class DVAQuery(object):
             self.results = self.context.get_results(self.query_id)
         if not self.results['completed']:
             self.results = self.context.get_results(self.query_id)  # refresh results
-            if all([t['completed'] for t in self.results['map']]):
+            if all([t['completed'] for t in self.results['tasks']]):
                 # dont wait for scheduler just check if all launched tasks have completed.
                 self.results['completed'] = True
         return self.results['completed']
@@ -58,7 +58,7 @@ class DVAQuery(object):
         if self.query_json['process_type'] != constants.QUERY:
             raise ValueError("Process is not of type query")
         else:
-            for t in self.results['map']:
+            for t in self.results['tasks']:
                 if t['query_results']:
                     self.search_results.append(visual_search_results.VisualSearchResults(self, task=t))
 

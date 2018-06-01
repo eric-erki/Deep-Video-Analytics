@@ -56,7 +56,7 @@ if __name__ == '__main__':
                 queue_name = k.split('_')[-1]
                 _ = subprocess.Popen(shlex.split(('./startq.py {}'.format(queue_name))))
     if os.environ.get("LAUNCH_NOTEBOOK", False):
-        _ = subprocess.Popen(['./run_jupyter.sh','--allow-root','--notebook-dir=/root/DVA/docs/'],cwd="/")
+        _ = subprocess.Popen(['./run_jupyter.sh','--allow-root','--notebook-dir=/root/DVA/'],cwd="/")
     if os.environ.get("LAUNCH_SCHEDULER", False):
         # Launch reducer tasks on same machine
         _ = subprocess.Popen(shlex.split('./startq.py {}'.format(settings.Q_REDUCER)))

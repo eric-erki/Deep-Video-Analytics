@@ -14,9 +14,9 @@ creds.json
 *.pid
 *.mov
 *.pyc
+.ipynb_checkpoints/
 custom.env
-kubeconfig.json
-mode.json
+config.json
 docs/experiments/private
 docs/experiments/coco/coco_annotations
 docs/experiments/yolo/yolo_test.zip

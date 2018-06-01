@@ -28,7 +28,8 @@ env:
 
 before_install:
   - sudo apt-get -qq update
-  - wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz && tar xvfJ ffmpeg-release-64bit-static.tar.xz
+  - wget https://www.dropbox.com/s/bjyzb8hytdwp2tp/ffmpeg-release-64bit-static.tar.xz && tar xvfJ ffmpeg-release-64bit-static.tar.xz
+  - shasum ffmpeg-release-64bit-static.tar.xz | awk '$1!="a93bce9e510afef02f7e2592f6b5d117dcd08854"{exit 1}'
   - sudo mv ffmpeg*/* /bin/
   - sudo apt-get -qq install -y pkg-config python-dev unzip swig3.0 libopencv-dev libhdf5-dev python-pip libav-tools libjpeg-dev  libpng-dev  libtiff-dev  libjasper-dev  python-numpy python-scipy  python-pycurl  python-opencv
   - sudo dpkg -L python-opencv
@@ -77,12 +78,9 @@ script:
   - wget --quiet localhost:8000/api/videos/
   - wget --quiet localhost:8000/api/tubes/
   - wget --quiet localhost:8000/api/frames/
-  - wget --quiet localhost:8000/api/framelabels/
-  - wget --quiet localhost:8000/api/regionlabels/
-  - wget --quiet localhost:8000/api/segmentlabels/
-  - wget --quiet localhost:8000/api/tubelabels/
-  - wget --quiet localhost:8000/api/videolabels/
-  - wget --quiet localhost:8000/api/labels/
+  - wget --quiet localhost:8000/api/regionrelations/
+  - wget --quiet localhost:8000/api/tuberelations/
+  - wget --quiet localhost:8000/api/tuberegionrelations/
   - wget --quiet localhost:8000/api/segments/
   - wget --quiet localhost:8000/api/regions/
   - wget --quiet localhost:8000/api/queries/

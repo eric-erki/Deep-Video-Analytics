@@ -10,27 +10,9 @@ import webbrowser
 from . import test, gpu
 
 
-def create_custom_env(init_process, init_models, deployment_type):
+def create_custom_env(init_process, init_models, cred_envs):
     envs = {'INIT_PROCESS': init_process, 'INIT_MODELS': init_models}
-    if deployment_type == 'test':
-        envs['ENABLE_CLOUDFS'] = 1
-        try:
-            envs.update(test.load_envs(os.path.expanduser('~/media.env')))
-        except:
-            print '~/media.env not found. required for testing rfs mode.'
-        try:
-            envs.update(test.load_envs(os.path.expanduser('~/aws.env')))
-        except:
-            print '~/aws.env not found. required for testing rfs mode.'
-    else:
-        if os.path.isfile(os.path.expanduser('~/aws.env')):
-            envs.update(test.load_envs(os.path.expanduser('~/aws.env')))
-        else:
-            print '{} not found. not passing AWS creds.'.format(os.path.expanduser('~/aws.env'))
-        if os.path.isfile(os.path.expanduser('~/do.env')):
-            envs.update(test.load_envs(os.path.expanduser('~/do.env')))
-        else:
-            print '{} not found. not passing Digital Ocean creds.'.format(os.path.expanduser('~/do.env'))
+    envs.update(cred_envs)
     with open('custom.env', 'w') as out:
         out.write(file('default.env').read())
         out.write('\n')
@@ -38,7 +20,7 @@ def create_custom_env(init_process, init_models, deployment_type):
             out.write("{}={}\n".format(k, v))
 
 
-def start_docker_compose(deployment_type, gpu_count, init_process, init_models):
+def start_docker_compose(deployment_type, gpu_count, init_process, init_models, cred_envs):
     print "Checking if docker-compose is available"
     max_minutes = 20
     if deployment_type == 'gpu':
@@ -48,7 +30,7 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models):
             fname = 'docker-compose-{}-gpus.yml'.format(gpu_count)
     else:
         fname = 'docker-compose.yml'
-    create_custom_env(init_process, init_models, deployment_type)
+    create_custom_env(init_process, init_models, cred_envs)
     print "Starting deploy/compose/{}/{}".format(deployment_type, fname)
     try:
         # Fixed to dev since deployment directory does not matters for checking if docker-compose exists.
@@ -126,18 +108,18 @@ def view_uwsgi_logs():
 def get_auth():
     token = subprocess.check_output(["docker", "exec", "-it", "webserver", "scripts/generate_testing_token.py"]).strip()
     server = 'http://localhost:8000/api/'
-    with open('creds.json','w') as fh:
-        json.dump({'server':server,'token':token},fh)
+    with open('creds.json', 'w') as fh:
+        json.dump({'server': server, 'token': token}, fh)
     print "token and server information are stored in creds.json"
 
 
-def handle_compose_operations(args,mode,gpus):
+def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_envs):
     if mode == 'gpu':
         gpu.generate_multi_gpu_compose()
     if args.action == 'stop':
         stop_docker_compose(mode, gpus)
     elif args.action == 'start':
-        start_docker_compose(mode, gpus, args.init_process, args.init_models)
+        start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
         get_auth()
     elif args.action == 'auth':
         get_auth()
@@ -147,12 +129,12 @@ def handle_compose_operations(args,mode,gpus):
             test.clear_media_bucket()
     elif args.action == 'restart':
         stop_docker_compose(mode, gpus)
-        start_docker_compose(mode, gpus, args.init_process, args.init_models)
+        start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
     elif args.action == 'clean_restart':
         stop_docker_compose(mode, gpus, clean=True)
         if mode == 'test':
             test.clear_media_bucket()
-            start_docker_compose(mode, gpus, args.init_process, args.init_models)
+            start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
     elif args.action == 'wsgi':
         view_uwsgi_logs()
     else:

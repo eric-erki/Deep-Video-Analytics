@@ -10,14 +10,113 @@ import os
 import base64
 import glob
 
+DEFAULT_WORKERS = [
+    {'name':'coco',
+     'worker_env':'LAUNCH_BY_NAME_detector_coco',
+     'max_cpu':4,
+     'request_cpu':1,
+     'request_memory':"2000Mi",
+     'max_memory':"4000Mi"
+     },
+    {'name':'crnn',
+     'worker_env':'LAUNCH_BY_NAME_analyzer_crnn',
+     'max_cpu':4,
+     'request_cpu':1,
+     'request_memory':"2000Mi",
+     'max_memory':"4000Mi"
+     },
+    {'name':'extractor',
+     'worker_env':'LAUNCH_Q_qextract',
+     'max_cpu':1,
+     'request_cpu':1,
+     'request_memory':"1000Mi",
+     'max_memory':"1000Mi"
+     },
+    {'name':'face',
+     'worker_env':'LAUNCH_BY_NAME_detector_face',
+     'max_cpu':4,
+     'request_cpu':1,
+     'request_memory':"2000Mi",
+     'max_memory':"4000Mi"
+     },
+    {'name':'facenet',
+     'worker_env':'LAUNCH_BY_NAME_indexer_facenet',
+     'max_cpu':4,
+     'request_cpu':1,
+     'request_memory':"2000Mi",
+     'max_memory':"4000Mi"
+     },
+    {'name':'globalmodel',
+     'worker_env':'LAUNCH_Q_GLOBAL_MODEL',
+     'max_cpu':4,
+     'request_cpu':1,
+     'request_memory':"2000Mi",
+     'max_memory':"8000Mi"
+     },
+    {'name':'globalretriever',
+     'worker_env':'LAUNCH_Q_GLOBAL_RETRIEVER',
+     'max_cpu':4,
+     'request_cpu':1,
+     'request_memory':"2000Mi",
+     'max_memory':"80000Mi"
+     },
+    {'name':'inception',
+     'worker_env':'LAUNCH_BY_NAME_indexer_inception',
+     'max_cpu':4,
+     'request_cpu':1,
+     'request_memory':"2000Mi",
+     'max_memory':"4000Mi"
+     },
+    {'name':'retinception',
+     'worker_env':'LAUNCH_BY_NAME_retriever_inception',
+     'max_cpu':4,
+     'request_cpu':1,
+     'request_memory':"2000Mi",
+     'max_memory':"80000Mi"
+     },
+    {'name':'streamer',
+     'worker_env':'LAUNCH_Q_qstreamer',
+     'max_cpu':4,
+     'request_cpu':1,
+     'request_memory':"500Mi",
+     'max_memory':"4000Mi"
+     },
+    {'name':'tagger',
+     'worker_env':'LAUNCH_BY_NAME_analyzer_tagger',
+     'max_cpu':4,
+     'request_cpu':1,
+     'request_memory':"2000Mi",
+     'max_memory':"4000Mi"
+     },
+    {'name':'textbox',
+     'worker_env':'LAUNCH_BY_NAME_detector_textbox',
+     'max_cpu':8,
+     'request_cpu':1,
+     'request_memory':"3000Mi",
+     'max_memory':"8000Mi"
+     },
+]
+
 
 CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" clusters create 
-"{cluster_name}" --zone "{zone}" --username "admin" --cluster-version "1.8.8-gke.0" --machine-type "custom-22-84480"  
---image-type "COS" --disk-size "100" --num-nodes "1" 
+"{cluster_name}" --zone "{zone}" --username "admin" --cluster-version "1.8.8-gke.0" --machine-type "{machine_type}"  
+--image-type "COS" --disk-size "100" --num-nodes "{nodes}" 
 --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_write","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" \
 --network "default" --enable-cloud-logging --enable-cloud-monitoring --subnetwork "default" 
 --addons HorizontalPodAutoscaling,HttpLoadBalancing,KubernetesDashboard --enable-autorepair
 """
+
+PREMPTIBLE_CREATE_COMMAND = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}"' \
+          ' --zone "{zone}" --cluster "{cluster_name}" ' \
+          '--machine-type "{machine_type}" --image-type "COS" ' \
+          '--disk-size "100" ' \
+          '--scopes "https://www.googleapis.com/auth/compute",' \
+          '"https://www.googleapis.com/auth/devstorage.read_write",' \
+          '"https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring",' \
+          '"https://www.googleapis.com/auth/servicecontrol",' \
+          '"https://www.googleapis.com/auth/service.management.readonly",' \
+          '"https://www.googleapis.com/auth/trace.append" ' \
+          '--preemptible --num-nodes "{count}"  '
 
 AUTH_COMMAND = "gcloud container clusters get-credentials {cluster_name} --zone {zone} --project {project_name}"
 
@@ -38,8 +137,9 @@ def get_namespace():
     return json.load(file('deploy/kube/namespace.json'))['metadata']['name']
 
 
-def launch_kube(gpu=False):
+def launch_kube():
     setup_kube()
+    config = get_kube_config()
     namespace = get_namespace()
     try:
         print "Attempting to create namespace {}".format(namespace)
@@ -55,22 +155,24 @@ def launch_kube(gpu=False):
     time.sleep(120)
     webserver_commands = ['kubectl create -n {} -f deploy/kube/webserver.yaml'.format(namespace), ]
     run_commands(webserver_commands)
-    print "sleeping for 60 seconds"
+    print "webserver launched, sleeping for 60 seconds"
     time.sleep(60)
-    if gpu:
-        deployments = ['coco_gpu.yaml','extractor.yaml','streamer.yaml','face.yaml','facenet.yaml',
-                       'facenet_retriever.yaml',
-                       'inception.yaml','inception_retriever.yaml','global_retriever.yaml','global_model.yaml',
-                       'textbox.yaml','scheduler.yaml','crnn.yaml','tagger.yaml']
-    else:
-        deployments = ['coco.yaml','extractor.yaml','streamer.yaml','face.yaml','facenet.yaml','facenet_retriever.yaml',
-                       'inception.yaml','inception_retriever.yaml','global_retriever.yaml','global_model.yaml',
-                       'textbox.yaml','scheduler.yaml','crnn.yaml','tagger.yaml']
+    scheduler_commands = ['kubectl create -n {} -f deploy/kube/scheduler.yaml'.format(namespace), ]
+    run_commands(scheduler_commands)
+    print "scheduler launched, sleeping for 10 seconds"
+    time.sleep(10)
     commands = []
-    for k in deployments:
-        commands.append("kubectl create -n {} -f deploy/kube/{}".format(namespace,k))
+    worker_template = file('./deploy/kube/worker.yaml.template').read()
+    for k in DEFAULT_WORKERS:
+        yaml_fname = './deploy/kube/{}.yaml'.format(k['name'])
+        with open(yaml_fname, 'w') as out:
+            k['common'] = config['common_env']
+            k['command'] = config['command']
+            out.write(worker_template.format(**k))
+        commands.append("kubectl create -n {} -f {}".format(namespace,yaml_fname))
     run_commands(commands)
-    print "Waiting another 120 minutes to get auth token and ingress IP address"
+    print "Waiting another 200 seconds to get auth token and ingress IP address"
+    time.sleep(200)
     get_auth()
 
 
@@ -97,52 +199,45 @@ def get_kube_config():
     # to set CORS on the bucket Can be * or specific website e.g. http://example.website.com
     :return:
     """
-    if not os.path.isfile('kubeconfig.json'):
-        print "kubeconfig.json not found, edit kubeconfig.example.json and store it as kubeconfig.json"
-        raise EnvironmentError(
-            "kubeconfig.json not found, edit kubeconfig.example.json and store it as kubeconfig.json")
-    else:
-        with open('kubeconfig.json') as fh:
-            configs = json.load(fh)
+    with open('config.json') as fh:
+        configs = json.load(fh)
     if 'GOOGLE_CLOUD_PROJECT' in os.environ:
         configs['project_name'] = os.environ['GOOGLE_CLOUD_PROJECT']
     else:
         EnvironmentError("Could not find GOOGLE_CLOUD_PROJECT in environment")
+    with open('deploy/kube/common.yaml') as f:
+        configs['common_env'] = f.read()
+    if configs['branch'] == 'stable':
+        configs['command'] = 'git reset --hard && git pull && sleep 15  && ./start_container.py'
+    else:
+        configs['command'] = 'git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py'
     return configs
 
 
 def kube_create_premptible_node_pool():
     config = get_kube_config()
-    command = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}"' \
-              ' --zone "{zone}" --cluster "{cluster_name}" ' \
-              '--machine-type "n1-standard-2" --image-type "COS" ' \
-              '--disk-size "100" ' \
-              '--scopes "https://www.googleapis.com/auth/compute",' \
-              '"https://www.googleapis.com/auth/devstorage.read_write",' \
-              '"https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring",' \
-              '"https://www.googleapis.com/auth/servicecontrol",' \
-              '"https://www.googleapis.com/auth/service.management.readonly",' \
-              '"https://www.googleapis.com/auth/trace.append" ' \
-              '--preemptible --num-nodes "{count}"  '
-    command = command.format(project_name=config['project_name'],
-                             pool_name="premptpool",
-                             cluster_name=config['cluster_name'],
-                             zone=config['zone'], count=5)
+    machine_type = 'n1-standard-2'
+    count = 5
+    v = raw_input("Please enter machine_type (current {}) or press enter to keep default >>".format(machine_type)).strip()
+    if v:
+        machine_type = v
+    v = raw_input("Please enter machine count (current {}) or press enter to keep default >>".format(count)).strip()
+    if v:
+        count = int(v)
+    command = PREMPTIBLE_CREATE_COMMAND.format(project_name=config['project_name'], pool_name="premptpool",
+                                               cluster_name=config['cluster_name'], zone=config['zone'], count=count,
+                                               machine_type=machine_type)
+    print "Creating pre-emptible node pool"
     print command
     subprocess.check_call(shlex.split(command))
 
 
 def generate_deployments():
-    configs = get_kube_config()
-    with open('deploy/kube/common.yaml') as f:
-        common_env = f.read()
-    if configs['branch'] == 'stable':
-        command = 'git reset --hard && git pull && sleep 15  && ./start_container.py'
-    else:
-        command = 'git reset --hard && git checkout --track origin/master && git pull && sleep 60 && ./start_container.py'
+    config = get_kube_config()
     for fname in glob.glob('./deploy/kube/*.template'):
-        with open(fname.replace('.template',''),'w') as out:
-            out.write(file(fname).read().format(common=common_env,command=command))
+        if 'worker.yaml' not in fname and 'worker_gpu.yaml' not in fname:
+            with open(fname.replace('.template',''),'w') as out:
+                out.write(file(fname).read().format(common=config['common_env'],command=config['command']))
 
 
 def setup_kube():
@@ -206,6 +301,8 @@ def create_cluster():
     config = get_kube_config()
     command = CLUSTER_CREATE_COMMAND.replace('\n','').format(cluster_name=config['cluster_name'],
                                                              project_name=config['project_name'],
+                                                             machine_type=config['machine_type'],
+                                                             nodes=config['nodes'],
                                                              zone=config['zone'])
     print "Creating cluster by running {}".format(command)
     subprocess.check_call(shlex.split(command))
@@ -234,6 +331,7 @@ def get_service_ip():
 
 
 def get_auth():
+    config = get_kube_config()
     pod_name = get_webserver_pod()
     namespace = get_namespace()
     token = subprocess.check_output(shlex.split(TOKEN_COMMAND.format(namespace=namespace,pod_name=pod_name))).strip()
@@ -242,6 +340,7 @@ def get_auth():
     with open('creds.json','w') as fh:
         json.dump({'server':server,'token':token},fh)
     print "Token and server stored in creds.json"
+    print "Visit web UI on http://{} \nusername: {}\npassword {}".format(ip, config['superuser'], config['superpass'])
 
 
 def handle_kube_operations(args):
@@ -251,6 +350,8 @@ def handle_kube_operations(args):
         get_auth()
     elif args.action == 'start':
         launch_kube()
+    elif args.action == 'create_premptible':
+        kube_create_premptible_node_pool()
     elif args.action == 'stop' or args.action == 'clean':
         delete_kube()
         if args.action == 'clean':

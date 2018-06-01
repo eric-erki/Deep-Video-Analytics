@@ -1,6 +1,6 @@
 import views
 from rest_framework import routers
-from django.conf.urls import url,include
+from django.conf.urls import url, include
 
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
@@ -10,14 +10,11 @@ router.register(r'trainingset', views.TrainingSetViewSet)
 router.register(r'retrievers', views.RetrieverViewSet)
 router.register(r'tubes', views.TubeViewSet)
 router.register(r'frames', views.FrameViewSet)
-router.register(r'framelabels', views.FrameLabelViewSet)
-router.register(r'regionlabels', views.RegionLabelViewSet)
-router.register(r'segmentlabels', views.SegmentLabelViewSet)
-router.register(r'tubelabels', views.TubeLabelViewSet)
-router.register(r'videolabels', views.VideoLabelViewSet)
-router.register(r'labels', views.LabelViewSet)
 router.register(r'segments', views.SegmentViewSet)
 router.register(r'regions', views.RegionViewSet)
+router.register(r'regionrelations', views.RegionRelationViewSet)
+router.register(r'tuberelations', views.TubeRelationViewSet)
+router.register(r'tuberegionrelations', views.TubeRegionRelationViewSet)
 router.register(r'queries', views.DVAPQLViewSet)
 router.register(r'queryresults', views.QueryResultsViewSet)
 router.register(r'queryregionresults', views.QueryRegionResultsViewSet)
@@ -27,4 +24,4 @@ router.register(r'events', views.TEventViewSet)
 router.register(r'workers', views.WorkerViewSet)
 router.register(r'system_state', views.SystemStateViewSet)
 
-urlpatterns = [url(r'', include(router.urls)),]
+urlpatterns = [url(r'', include(router.urls)), ]

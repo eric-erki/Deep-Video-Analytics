@@ -60,7 +60,7 @@
                                 <textarea name="text" id="{[ box.id ]}_text" class="form-control" rows="1" required="" placeholder="text" ></textarea>
                             </div>
                             <div class="form-group">
-                                <label for="top">JSON metadata</label>
+                                <label for="top">metadata (Must be valid JSON or empty)</label>
                                 <textarea name="metadata" id="{[ box.id ]}_metadata" class="form-control" rows="1" required="" placeholder="metadata" ></textarea>
                             </div>
                         </div>
@@ -135,7 +135,6 @@
             <th>width</th>
             <th>full frame</th>
             <th>visible</th>
-            <th>delete</th>
         </tr></thead>
         <tbody>
         <tr ng-repeat="box in existing_boxes" >
@@ -147,7 +146,6 @@
             <td class="text-right">{[ box.width*box.scaleX ]}</td>
             <td class="text-center">{[ box.full_frame ]}</td>
             <td class="text-center"><input type="checkbox" ng-model="box.visible" ng-click="toggle_visibility(box.id)"></td>
-            <td class="text-center"><a ng-show="{[ box.annotation ]}" class="btn btn-warning" ng-click="delete_object(box.id,box.pk,box.box_type)"><i class="fa fa-trash"></i> Delete</a></td>
         </tr>
         </tbody>
         </table>

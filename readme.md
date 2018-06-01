@@ -9,11 +9,9 @@ locally (even without a GPU) using a single command.
 
 #### For installation instructions & demo please visit [https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com)
 
-### Documentation & tutorial
+### Documentation
 
 - For a quick overview we **strongly recommend** going through the [presentation in readme.pdf](/docs/readme.pdf)
-
-- Documentation along with a tutorial is being written in [/docs/tutorial](/docs/tutorial) directory.
 
 ### Experiments
 
@@ -100,11 +98,11 @@ We provide instructions for developing, testing and deploying DVA.
 
 # License & Copyright
 
-**Copyright 2016-2017, Akshay Bhat, Cornell University, All rights reserved.**
+**Copyright 2016-2018, Akshay Bhat, All rights reserved.**
 
 # Contact
 
-Deep Video Analytics is currently in active development.
+Deep Video Analytics is nearing stable 1.0, we expect to release in Summer 2018.
 The license will be relaxed once a stable release version is reached.
-Please contact me for more information. For more information see [answer on this issue](https://github.com/AKSHAYUBHAT/DeepVideoAnalytics/issues/29)
+Please contact me for more information.
  
