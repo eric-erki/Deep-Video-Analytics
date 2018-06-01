@@ -598,18 +598,16 @@ def export_video(request):
                 process_spec = {'process_type': DVAPQL.PROCESS,
                                 'map': [
                                     {
-                                        'video_id': video.pk,
                                         'operation': 'perform_export',
-                                        'arguments': {'path': path}
+                                        'arguments': {'path': path, 'video_selector': {'pk': video.pk}, }
                                     },
                                 ]}
             else:
                 process_spec = {'process_type': DVAPQL.PROCESS,
                                 'map': [
                                     {
-                                        'video_id': video.pk,
                                         'operation': 'perform_export',
-                                        'arguments': {'destination': 'FILE'}
+                                        'arguments': {'video_selector': {'pk': video.pk}, }
                                     },
                                 ]
                                 }

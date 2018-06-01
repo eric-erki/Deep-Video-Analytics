@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from models import Video, Frame, Region, DVAPQL, QueryResults, TEvent, IndexEntries, \
-    Tube, Segment, TrainedModel, Retriever, SystemState, QueryRegion, \
-    QueryRegionResults, Worker, TrainingSet, RegionRelation, TubeRegionRelation, TubeRelation
+from models import Video, Frame, Region, DVAPQL, QueryResults, TEvent, IndexEntries, Tube, Segment, TrainedModel, \
+    Retriever, SystemState, QueryRegion, QueryRegionResults, Worker, TrainingSet, RegionRelation, TubeRegionRelation, \
+    TubeRelation, Export
 import os, json, glob
 from collections import defaultdict
 from django.conf import settings
@@ -22,6 +22,14 @@ class VideoSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Video
+        fields = '__all__'
+
+
+class ExportSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Export
         fields = '__all__'
 
 
@@ -378,6 +386,7 @@ class VideoImporter(object):
         self.json = video_json
         self.root = root_dir
         self.region_to_pk = {}
+        self.region_relation_to_pk = {}
         self.frame_to_pk = {}
         self.event_to_pk = {}
         self.segment_to_pk = {}
@@ -409,6 +418,7 @@ class VideoImporter(object):
         self.bulk_import_frames()
         self.convert_regions_files()
         self.import_index_entries()
+        self.bulk_import_region_relations()
 
     def import_segments(self):
         old_ids = []
@@ -544,10 +554,20 @@ class VideoImporter(object):
                     bulk_regions.extend(Region.objects.bulk_create(regions))
                     regions = []
         bulk_regions.extend(Region.objects.bulk_create(regions))
-        regions = []
         for i, k in enumerate(bulk_regions):
             if regions_index_to_rid[i]:
                 self.region_to_pk[regions_index_to_rid[i]] = k.id
+
+    def bulk_import_region_relations(self):
+        region_relations = []
+        region_relations_index_to_fid = {}
+        if 'region_relation_list' in self.json:
+            for i, f in enumerate(self.json['region_relation_list']):
+                region_relations.append(self.create_region_relation(f))
+                region_relations_index_to_fid[i] = f['id']
+            bulk_rr = RegionRelation.objects.bulk_create(region_relations)
+            for i, k in enumerate(bulk_rr):
+                self.region_relation_to_pk[region_relations_index_to_fid[i]] = k.id
 
     def create_region(self, a):
         da = Region()
@@ -581,6 +601,21 @@ class VideoImporter(object):
             da.segment_index = a.get('parent_segment_index', -1)
         else:
             da.segment_index = a.get('segment_index', -1)
+        return da
+
+    def create_region_relation(self, a):
+        da = RegionRelation()
+        da.video_id = self.video.pk
+        if 'metadata' in a:
+            da.metadata = a['metadata']
+        if 'weight' in a:
+            da.weight = a['weight']
+        if 'name' in a:
+            da.name = a['name']
+        if a.get('event', None):
+            da.event_id = self.event_to_pk[a['event']]
+        da.source_region_id = self.region_to_pk[a['source_region']]
+        da.target_region_id = self.region_to_pk[a['target_region']]
         return da
 
     def create_frame(self, f):
