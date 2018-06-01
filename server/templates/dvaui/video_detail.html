@@ -54,13 +54,20 @@
             {%  if object.url %}<a href="{{ object.url }}" target="_blank">{{ object.url }}</a>{% endif %}
         </div>
         <div class="box-body" style="text-align:center">
-            {% if video.stream %}
+            {% if not video.stream %}
+                <video controls="" preload="metadata" name="media" style="width:90%;margin-left:auto;margin-right:auto">
+                    <source src="{{url}}" type="video/mp4">
+                </video>
+            {% else %}
                 <h4>The video is a livestream. Please select segment below</h4>
+            {% endif %}
                 <table class="table dataTables">
                 <thead>
                 <tr>
                     <th class="text-center">Segment index</th>
                     <th class="text-center">start frame index</th>
+                    <th class="text-center">start_time</th>
+                    <th class="text-center">end_time</th>
                     <th class="text-center">frames</th>
                     <th class="text-center">view</th>
                 </tr>
@@ -70,17 +77,14 @@
                     <tr>
                         <td class="text-right">{{ f.segment_index }} </td>
                         <td class="text-right">{{ f.start_index }} </td>
+                        <td class="text-right">{{ f.start_time }} </td>
+                        <td class="text-right">{{ f.end_time }} </td>
                         <td class="text-right">{{ f.frame_count }} </td>
                         <td class="text-center"><a href="/segments/{{ f.pk }}">view</a></td>
                     </tr>
                 {% endfor %}
                 </tbody>
                 </table>
-            {% else %}
-            <video controls="" preload="metadata" name="media" style="width:90%;margin-left:auto;margin-right:auto">
-                <source src="{{url}}" type="video/mp4">
-            </video>
-            {% endif %}
         </div>
         </div>
         {% endif %}
@@ -211,8 +215,16 @@
                 </tbody>
             </table>
             {% endif %}
+
             </div>
+
         </div>
+            <div class="box">
+            <div class="box-body">
+                <h3>Metadata</h3>
+                <textarea style="width:100%;height:150px;">{{ object.metadata }}</textarea>
+            </div>
+            </div>
 </div>
 </div>
 <div class="row">
@@ -294,36 +306,6 @@
                 </table>
                 </div>
             </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-lg-6">
-        <div class="box box-primary">
-        <div class="box-body with-border">
-            <h4>Assign label to entire video</h4>
-            <form role="form"  method="post" action="/assign_video_labels" >
-                    <div class="form-group">
-                        <input id="labels" style="margin:10px auto" name="labels" class="form-control" type="text-area" rows="3" width="80%" required="" placeholder="provide a single label name, or a comma separated list">
-                    </div>
-                        <input name="video_pk" class="form-control" type="hidden" value="{{ object.pk }}">
-                    <div class="form-group">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-primary pull-right">submit</button>
-                    </div>
-            </form>
-        </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-            <div class="box">
-            <div class="box-body">
-                <h3>Metadata</h3>
-                <textarea style="width:100%;height:300px;">
-                    {{ object.metadata }}
-                </textarea>
-            </div>
-        </div>
     </div>
 </div>
 </section>
