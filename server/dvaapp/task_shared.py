@@ -141,7 +141,6 @@ def export_video_to_file(video_obj, export, task_obj):
                     "{}/exports/{}".format(settings.MEDIA_ROOT, export_uuid))
     a = serializers.VideoExportSerializer(instance=video_obj)
     data = copy.deepcopy(a.data)
-    data['labels'] = serializers.serialize_video_labels(video_obj)
     with file("{}/exports/{}/table_data.json".format(settings.MEDIA_ROOT, export_uuid), 'w') as output:
         json.dump(data, output)
     zipper = subprocess.Popen(['zip', file_name, '-r', '{}'.format(export_uuid)],

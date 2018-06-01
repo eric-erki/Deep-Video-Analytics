@@ -210,26 +210,7 @@ def handle_perform_analysis(start):
                 path = f.path()
             else:
                 raise NotImplementedError
-        object_name, text, metadata, labels = analyzer.apply(path)
-        if labels:
-            for l in labels:
-                if (l, analyzer.label_set) not in labels_pk:
-                    labels_pk[(l, analyzer.label_set)] = models.Label.objects.get_or_create(name=l,
-                                                                                            set=analyzer.label_set)[
-                        0].pk
-                if target == 'regions':
-                    regions_to_labels.append(
-                        models.RegionLabel(label_id=labels_pk[(l, analyzer.label_set)], region_id=f.pk,
-                                           frame_id=f.frame.pk, frame_index=f.frame_index,
-                                           segment_index=f.segment_index, video_id=f.video_id,
-                                           event_id=task_id))
-                elif target == 'frames':
-                    # todo(akshay): Update this by creating a pseudo region to label.
-                    # frames_to_labels.append(
-                    #     models.RegionLabel(label_id=labels_pk[(l, analyzer.label_set)], frame_id=f.pk,
-                    #                        frame_index=f.frame_index, segment_index=f.segment_index,
-                    #                       video_id=f.video_id, event_id=task_id))
-                    pass
+        object_name, text, metadata, _ = analyzer.apply(path)
         a.region_type = models.Region.ANNOTATION
         a.object_name = object_name
         a.text = text
@@ -240,8 +221,4 @@ def handle_perform_analysis(start):
         models.QueryRegion.objects.bulk_create(regions_batch, 1000)
     else:
         models.Region.objects.bulk_create(regions_batch, 1000)
-    if regions_to_labels:
-        models.RegionLabel.objects.bulk_create(regions_to_labels, 1000)
     # todo(akshay): Update this by creating a pseudo region.
-    # if frames_to_labels:
-    #     models.FrameLabel.objects.bulk_create(frames_to_labels, 1000)

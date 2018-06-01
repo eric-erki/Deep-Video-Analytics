@@ -1,7 +1,6 @@
-import json,os,zipfile,logging
+import os,zipfile,logging
 from PIL import Image
-from ..models import Frame, Region, Label, RegionLabel
-from collections import defaultdict
+from ..models import Frame, Region
 
 
 class DatasetCreator(object):
@@ -67,21 +66,16 @@ class DatasetCreator(object):
         self.dvideo.frames = len(df_list)
         self.dvideo.save()
         df_ids = Frame.objects.bulk_create(df_list,batch_size=1000)
-        labels_to_frame = defaultdict(set)
+        regions = []
         for i,f in enumerate(df_list):
             if f.name:
-                for l in f.subdir.split('/')[1:]:
-                    if l.strip():
-                        labels_to_frame[l].add((df_ids[i].id,f.frame_index))
-        label_list = []
-        # for l in labels_to_frame:
-        #     dl, _ = Label.objects.get_or_create(name=l,set="Directory")
-        #     for fpk,frame_index in labels_to_frame[l]:
-        #         a = FrameLabel()
-        #         a.video_id = self.dvideo.pk
-        #         a.frame_id = fpk
-        #         a.frame_index = frame_index
-        #         a.label_id = dl.pk
-        #         a.event_id = event.pk
-        #         label_list.append(a)
-        # FrameLabel.objects.bulk_create(label_list, batch_size=1000)
+                a = Region()
+                a.video_id = self.dvideo.pk
+                a.frame_id = df_ids[i].id
+                a.frame_index = f.frame_index
+                a.metadata = {'labels':list({ l.strip() for l in f.subdir.split('/')[1:] if l.strip() })}
+                a.region_type = a.ANNOTATION
+                a.object_name = 'directory_labels'
+                a.event_id = event.pk
+                regions.append(a)
+        Region.objects.bulk_create(regions, batch_size=1000)
