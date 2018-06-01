@@ -224,5 +224,5 @@ def handle_perform_analysis(start):
         if target == 'regions':
             for i,k in enumerate(region_list):
                 relations.append(models.RegionRelation(source_region_id=source_regions[i].id,target_region_id=k.id,
-                                                       name='analysis', event_id=start.pk))
+                                                       name='analysis', event_id=start.pk, video_id=start.video_id))
             models.RegionRelation.objects.bulk_create(relations, 1000)
