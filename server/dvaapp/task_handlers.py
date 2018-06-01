@@ -167,9 +167,7 @@ def handle_perform_analysis(start):
     else:
         task_shared.ensure_files(queryset, target)
     image_data = {}
-    frames_to_labels = []
-    regions_to_labels = []
-    labels_pk = {}
+    source_regions = []
     temp_root = tempfile.mkdtemp()
     for i, f in enumerate(queryset):
         if query_regions_paths:
@@ -201,6 +199,7 @@ def handle_perform_analysis(start):
                 a.frame_id = f.frame.id
                 a.frame_index = f.frame_index
                 a.segment_index = f.segment_index
+                source_regions.append(f)
                 path = task_shared.crop_and_get_region_path(f, image_data, temp_root)
             elif target == 'frames':
                 a.full_frame = True
@@ -220,5 +219,10 @@ def handle_perform_analysis(start):
     if query_regions_paths or query_path:
         models.QueryRegion.objects.bulk_create(regions_batch, 1000)
     else:
-        models.Region.objects.bulk_create(regions_batch, 1000)
-    # todo(akshay): Update this by creating a pseudo region.
+        region_list = models.Region.objects.bulk_create(regions_batch, 1000)
+        relations = []
+        if target == 'regions':
+            for i,k in enumerate(region_list):
+                relations.append(models.RegionRelation(source_region_id=source_regions[i].id,target_region_id=k.id,
+                                                       name='analysis_{}'.format(analyzer.name), event_id=start.pk))
+            models.RegionRelation.objects.bulk_create(relations, 1000)
