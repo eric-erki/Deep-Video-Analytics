@@ -60,7 +60,7 @@ def train_faiss(start,args):
             logging.info("Ignoring {}".format(di.pk))
     data = np.concatenate(vecs).squeeze()
     logging.info("Final shape {}".format(data.shape))
-    output_file = "{}/models/faiss.index".format(settings.MEDIA_ROOT,m.uuid)
+    output_file = "{}/models/{}/faiss.index".format(settings.MEDIA_ROOT,m.uuid)
     index_factory = args['index_factory']
     shasum = faiss_trainer.train_index(data,index_factory,output_file)
     m.name = args['name']

@@ -99,11 +99,14 @@ class FAISSApproximator(BaseApproximator):
     def __init__(self, name, dirname, index_filename="faiss.index"):
         super(FAISSApproximator, self).__init__()
         self.name = name
-        self.index_path = '{}/{}'.format(dirname, index_filename)
+        self.index_path = str('{}/{}'.format(dirname, index_filename).replace('//','/'))
         self.faiss_index = None
 
     def load(self):
-        self.faiss_index = faiss.read_index(self.index_path)
+        try:
+            self.faiss_index = faiss.read_index(self.index_path)
+        except:
+            raise ValueError("Could not read index file {}".format(self.index_path))
 
     def approximate(self, vector):
         raise NotImplementedError
@@ -113,4 +116,4 @@ class FAISSApproximator(BaseApproximator):
             self.load()
         cloned_index = faiss.clone_index(self.faiss_index)
         cloned_index.add(vectors)
-        faiss.write_index(vectors, output_path)
+        faiss.write_index(vectors, str(output_path))
