@@ -533,7 +533,7 @@ def perform_training_set_creation(task_id):
         raise ValueError("Could not find training set {}".format(args))
     if train_set.event:
         raise ValueError("Training set has been already built or failed to build, please clone instead of rebuilding.")
-    if train_set.training_task_type == models.TrainingSet.LOPQINDEX:
+    if train_set.training_task_type == models.TrainingSet.TRAINAPPROX:
         file_list = []
         filters = copy.deepcopy(train_set.source_filters)
         filters['approximate'] = False
