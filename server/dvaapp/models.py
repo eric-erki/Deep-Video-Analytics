@@ -153,7 +153,7 @@ class TEvent(models.Model):
 class TrainingSet(models.Model):
     DETECTION = constants.DETECTION
     INDEXING = constants.INDEXING
-    LOPQINDEX = constants.LOPQINDEX
+    TRAINAPPROX = constants.TRAINAPPROX
     CLASSIFICATION = constants.CLASSIFICATION
     IMAGES = constants.IMAGES
     VIDEOS = constants.VIDEOS
@@ -166,7 +166,7 @@ class TrainingSet(models.Model):
     TRAIN_TASK_TYPES = (
         (DETECTION, 'Detection'),
         (INDEXING, 'Indexing'),
-        (LOPQINDEX, 'LOPQ Approximation'),
+        (TRAINAPPROX, 'Approximation'),
         (CLASSIFICATION, 'Classification')
     )
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
