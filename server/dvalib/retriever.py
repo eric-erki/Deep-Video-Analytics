@@ -120,10 +120,10 @@ class FaissApproximateRetriever(BaseRetriever):
         return results
 
 
-class FaissFlatRetriever(object):
+class FaissFlatRetriever(BaseRetriever):
 
     def __init__(self,name, components, metric='Flat'):
-        self.files, self.findex = {}, 0
+        super(FaissFlatRetriever, self).__init__(name=name, algorithm="FAISS_{}".format(metric))
         self.name=name
         self.algorithm="FAISS_{}".format(metric)
         self.faiss_index = faiss.index_factory(components, metric)
