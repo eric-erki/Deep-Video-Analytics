@@ -44,9 +44,11 @@
                         <th>Indexed object</th>
                         <th>Approximate</th>
                         <th>Features filename</th>
-                        <th>Entries filename</th>
+                        <th>Indexer shasum</th>
+                        <th>Approximator shasum</th>
                         <th>count</th>
                         <th>created</th>
+                        <th>event</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -57,9 +59,11 @@
                             <td>{{ k.detection_name }} </td>
                             <td>{{ k.approximate }} </td>
                             <td>{{ k.features_file_name }} </td>
-                            <td>{{ k.entries_file_name }} </td>
+                            <td>{{ k.indexer_shasum }} </td>
+                            <td>{{ k.approximator_shasum }} </td>
                             <td class="text-right">{{ k.count }}</td>
                             <td class="text-center">{{ k.created }}</td>
+                            <td class="text-center"><a href="/task_detail/{{ k.event_id }}">event</a></td>
                         </tr>
                     {% endfor %}
                     </tbody>

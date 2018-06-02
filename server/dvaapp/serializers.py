@@ -504,6 +504,7 @@ class VideoImporter(object):
             di.contains_frames = i['contains_frames']
             di.approximate = i['approximate']
             di.created = i['created']
+            di.event_id = self.event_to_pk[i['event']]
             di.features_file_name = i['features_file_name']
             if 'entries_file_name' in i:
                 entries = json.load(file('{}/indexes/{}'.format(self.root, i['entries_file_name'])))
