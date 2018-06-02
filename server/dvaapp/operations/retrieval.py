@@ -82,14 +82,22 @@ class Retrievers(object):
         visual_index = cls._visual_retriever[dr.pk]
         for index_entry in index_entries:
             if index_entry.pk not in visual_index.loaded_entries and index_entry.count > 0:
-                vectors, entries = index_entry.load_index()
                 if visual_index.algorithm == "LOPQ":
+                    vectors, entries = index_entry.load_index()
                     logging.info("loading approximate index {}".format(index_entry.pk))
                     start_index = len(visual_index.entries)
                     visual_index.load_index(entries=entries)
                     visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
                                                                                      end=len(visual_index.entries)-1)
+                elif visual_index.algorithm == 'FAISS':
+                    index_file_path, entries = index_entry.load_index()
+                    logging.info("loading FAISS index {}".format(index_entry.pk))
+                    start_index = len(visual_index.entries)
+                    visual_index.load_index(index_file_path,entries)
+                    visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
+                                                                                     end=len(visual_index.entries)-1)
                 else:
+                    vectors, entries = index_entry.load_index()
                     logging.info("Starting {} in {} with shape {}".format(index_entry.video_id, visual_index.name,
                                                                           vectors.shape))
                     try:

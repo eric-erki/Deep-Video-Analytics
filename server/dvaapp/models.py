@@ -554,7 +554,10 @@ class IndexEntries(models.Model):
         dirnames = {}
         if self.features_file_name.strip():
             fs.ensure(self.npy_path(media_root=''), dirnames, media_root)
-            vectors = np.load(self.npy_path(media_root))
+            if self.features_file_name.endswith('.npy'):
+                vectors = np.load(self.npy_path(media_root))
+            else:
+                vectors = self.npy_path(media_root)
         else:
             vectors = None
         return vectors, self.entries

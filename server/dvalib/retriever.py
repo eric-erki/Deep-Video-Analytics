@@ -104,15 +104,24 @@ class FaissApproximateRetriever(BaseRetriever):
 
     def __init__(self,name, approximator):
         super(FaissApproximateRetriever, self).__init__(name=name, approximator=approximator, algorithm="FAISS")
-        self.faiss_index = faiss.index_factory(approximator.components, approximator.factory_key)
-        faiss.read_index(self.faiss_index, approximator.index_path)
+        self.faiss_index = faiss.read_index(str(approximator.index_path))
 
     def load_index(self,computed_index_path,entries):
-        pass
+        if len(entries):
+            logging.info("Adding {}".format(computed_index_path))
+            for i, e in enumerate(entries):
+                self.files[self.findex] = e
+                self.findex += 1
+            computed_index = faiss.read_index(str(computed_index_path))
+            self.faiss_index.merge_from(computed_index)
+            logging.info("Index size {}".format(self.faiss_index.ntotal))
 
     def nearest(self, vector=None, n=12):
+        vector = np.atleast_2d(vector)
+        if vector.shape[-1] != self.faiss_index.d:
+            vector = vector.T
         results = []
-        dist, ids = self.faiss_index.search(np.atleast_2d(vector), n)
+        dist, ids = self.faiss_index.search(vector, n)
         for i, k in enumerate(ids[0]):
             temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
             temp.update(self.files[k])
