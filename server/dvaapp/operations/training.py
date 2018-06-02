@@ -68,7 +68,7 @@ def train_faiss(start,args):
     m.model_type = m.APPROXIMATOR
     m.arguments = {'index_factory':args['index_factory']}
     m.shasum = shasum
-    m.files = "faiss.index"
+    m.files = [{"filename":"faiss.index","url":output_file}]
     m.event = start
     m.training_set = dt
     m.save()
