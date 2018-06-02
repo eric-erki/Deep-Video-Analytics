@@ -95,7 +95,7 @@ class FAISSApproximator(BaseApproximator):
         self.dirname = dirname
         self.factory_key = factory_key
         self.components = components
-        self.trainable =trainable
+        self.trainable = trainable
         self.index_path = '{}/{}'.format(dirname,index_filename)
 
     def load(self):

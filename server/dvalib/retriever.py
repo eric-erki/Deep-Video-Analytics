@@ -116,7 +116,7 @@ class FaissRetriever(BaseRetriever):
                 self.files[self.findex] = e
                 self.findex += 1
             self.fass_index.add(numpy_matrix)
-            logging.info(self.index.shape)
+            logging.info("Index size {}".format(self.fass_index.ntotal))
 
     def nearest(self, vector=None, n=12):
         pass
