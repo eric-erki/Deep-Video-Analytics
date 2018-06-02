@@ -119,4 +119,10 @@ class FaissRetriever(BaseRetriever):
             logging.info("Index size {}".format(self.fass_index.ntotal))
 
     def nearest(self, vector=None, n=12):
-        pass
+        results = []
+        dist, ids = self.fass_index.search(np.atleast_2d(vector), n)
+        for i, k in enumerate(ids):
+            temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
+            temp.update(self.files[k])
+            results.append(temp)
+        return results
