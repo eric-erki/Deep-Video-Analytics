@@ -101,14 +101,7 @@ class Retrievers(object):
                         logging.info("ERROR Failed to load {} vectors shape {} entries {}".format(
                             index_entry.video_id,vectors.shape,len(entries)))
                     else:
-                        logging.info("finished {} in {}, current shape {}, range".format(index_entry.video_id,
-                                                                             visual_index.name,
-                                                                             visual_index.index.shape,
-                                                                             visual_index.loaded_entries[
-                                                                                 index_entry.pk].start,
-                                                                             visual_index.loaded_entries[
-                                                                                 index_entry.pk].end,
-                                                                             ))
+                        logging.info("finished {} in {}".format(index_entry.pk,visual_index.name))
 
     @classmethod
     def retrieve(cls,event,retriever_pk,vector,count,region=None):
