@@ -85,3 +85,21 @@ class PCAApproximator(BaseApproximator):
         feats = feats.reshape((1, self.source_components)).dot(self.pca_eigenvecs).reshape((self.components,))
         feats /= np.sqrt(self.pca_eigenvals + 1e-4)
         return feats
+
+
+class FAISSApproximator(BaseApproximator):
+
+    def __init__(self,name,dirname,factory_key,components,index_filename='faiss.index',trainable=True):
+        super(FAISSApproximator, self).__init__()
+        self.name = name
+        self.dirname = dirname
+        self.factory_key = factory_key
+        self.components = components
+        self.trainable =trainable
+        self.index_path = '{}/{}'.format(dirname,index_filename)
+
+    def load(self):
+        pass
+
+    def approximate(self, vector):
+        pass

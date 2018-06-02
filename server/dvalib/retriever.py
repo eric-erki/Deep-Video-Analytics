@@ -104,9 +104,19 @@ class FaissRetriever(BaseRetriever):
 
     def __init__(self,name, approximator):
         super(FaissRetriever, self).__init__(name=name, approximator=approximator, algorithm="FAISS")
+        self.fass_index = faiss.index_factory(approximator.components, approximator.factory_key)
+        if approximator.trainable:
+            faiss.read_index(self.fass_index, approximator.index_path)
 
     def load_index(self,numpy_matrix,entries):
-        pass
+        if len(entries):
+            logging.info("Adding {}".format(numpy_matrix.shape))
+            numpy_matrix = np.atleast_2d(numpy_matrix.squeeze())
+            for i, e in enumerate(entries):
+                self.files[self.findex] = e
+                self.findex += 1
+            self.fass_index.add(numpy_matrix)
+            logging.info(self.index.shape)
 
     def nearest(self, vector=None, n=12):
         pass
