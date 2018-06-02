@@ -64,7 +64,7 @@ def train_faiss(start,args):
     index_factory = args['index_factory']
     shasum = faiss_trainer.train_index(data,index_factory,output_file)
     m.name = args['name']
-    m.algorithm = "FAISS_{}".format(args['index_factory'])
+    m.algorithm = "FAISS"
     m.model_type = m.APPROXIMATOR
     m.arguments = {'index_factory':args['index_factory']}
     m.shasum = shasum
