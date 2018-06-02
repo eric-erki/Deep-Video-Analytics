@@ -116,4 +116,4 @@ class FAISSApproximator(BaseApproximator):
             self.load()
         cloned_index = faiss.clone_index(self.faiss_index)
         cloned_index.add(vectors)
-        faiss.write_index(vectors, str(output_path))
+        faiss.write_index(cloned_index, str(output_path))
