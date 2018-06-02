@@ -100,13 +100,33 @@ class LOPQRetriever(BaseRetriever):
         return results
 
 
-class FaissRetriever(BaseRetriever):
+class FaissApproximateRetriever(BaseRetriever):
 
     def __init__(self,name, approximator):
-        super(FaissRetriever, self).__init__(name=name, approximator=approximator, algorithm="FAISS")
+        super(FaissApproximateRetriever, self).__init__(name=name, approximator=approximator, algorithm="FAISS")
         self.faiss_index = faiss.index_factory(approximator.components, approximator.factory_key)
-        if approximator.trainable:
-            faiss.read_index(self.faiss_index, approximator.index_path)
+        faiss.read_index(self.faiss_index, approximator.index_path)
+
+    def load_index(self,computed_index_path,entries):
+        pass
+
+    def nearest(self, vector=None, n=12):
+        results = []
+        dist, ids = self.faiss_index.search(np.atleast_2d(vector), n)
+        for i, k in enumerate(ids[0]):
+            temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
+            temp.update(self.files[k])
+            results.append(temp)
+        return results
+
+
+class FaissFlatRetriever(object):
+
+    def __init__(self,name, components, metric='Flat'):
+        self.files, self.findex = {}, 0
+        self.name=name
+        self.algorithm="FAISS_{}".format(metric)
+        self.faiss_index = faiss.index_factory(components, metric)
 
     def load_index(self,numpy_matrix,entries):
         if len(entries):

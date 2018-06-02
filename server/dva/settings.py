@@ -28,10 +28,7 @@ AUTH_DISABLED = os.environ.get('AUTH_DISABLED', False)
 INTERNAL_IPS = ['localhost','127.0.0.1']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-if 'ENABLE_DEBUG' in os.environ:
-    DEBUG = True
-else:
-    DEBUG = False
+DEBUG = 'ENABLE_DEBUG' in os.environ
 
 if 'ALLOWED_HOSTS' in os.environ:
     ALLOWED_HOSTS = [k.strip() for k in os.environ['ALLOWED_HOSTS'].split(',') if k.strip()]
@@ -297,3 +294,6 @@ DEFAULT_FRAMES_BATCH_SIZE = int(os.environ.get('DEFAULT_FRAMES_BATCH_SIZE',500))
 DEFAULT_RATE = int(os.environ.get('DEFAULT_RATE',30))
 # Max task attempts
 MAX_TASK_ATTEMPTS = 5
+# FAISS
+ENABLE_FAISS = 'ENABLE_FAISS' in os.environ
+

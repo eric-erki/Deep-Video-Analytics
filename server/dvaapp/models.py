@@ -288,9 +288,14 @@ class TrainedModel(models.Model):
             os.remove(source_zip)
             self.save()
         elif self.model_type == self.INDEXER:
-            dr, dcreated = Retriever.objects.get_or_create(name=self.name, source_filters={},
-                                                           algorithm=Retriever.EXACT,
-                                                           indexer_shasum=self.shasum)
+            if settings.ENABLE_FAISS:
+                dr, dcreated = Retriever.objects.get_or_create(name=self.name, source_filters={},
+                                                               algorithm=Retriever.FAISS,
+                                                               indexer_shasum=self.shasum)
+            else:
+                dr, dcreated = Retriever.objects.get_or_create(name=self.name, source_filters={},
+                                                               algorithm=Retriever.EXACT,
+                                                               indexer_shasum=self.shasum)
             if dcreated:
                 dr.last_built = timezone.now()
                 dr.save()

@@ -1,5 +1,6 @@
 import logging
 from .approximation import Approximators
+from .indexing import Indexers
 try:
     from dvalib import indexer, retriever
     import numpy as np
@@ -28,6 +29,16 @@ class Retrievers(object):
                 cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name,approximator=approximator)
             elif dr.algorithm == Retriever.EXACT:
                 cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name)
+            elif dr.algorithm == Retriever.FAISS and dr.approximator_shasum is None:
+                di = Indexers.get_indexer_by_shasum(dr.indexer_shasum)
+                cls._visual_retriever[retriever_pk] = retriever.FaissFlatRetriever(name=dr.name,
+                                                                                   components=di.arguments['dimension'])
+            elif dr.algorithm == Retriever.FAISS:
+                approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
+                da.ensure()
+                approximator.load()
+                cls._visual_retriever[retriever_pk] = retriever.FaissApproximateRetriever(name=dr.name,
+                                                                                          approximator=approximator)
             elif dr.algorithm == Retriever.LOPQ:
                 approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
                 da.ensure()

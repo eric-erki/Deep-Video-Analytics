@@ -41,6 +41,7 @@
        - LAUNCH_BY_NAME_detector_textbox=1
        - LAUNCH_Q_qextract=1
        - LAUNCH_Q_qtrainer=1
+       - ENABLE_FAISS=1
        - LAUNCH_Q_qstreamer=1
        - LAUNCH_SCHEDULER=1
        - LAUNCH_SERVER=1 # This supersedes NGINX and launches django development server with auto-reload
