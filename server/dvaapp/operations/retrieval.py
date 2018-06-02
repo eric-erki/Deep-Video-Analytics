@@ -32,7 +32,7 @@ class Retrievers(object):
             elif dr.algorithm == Retriever.FAISS and dr.approximator_shasum is None:
                 di = Indexers.get_indexer_by_shasum(dr.indexer_shasum)
                 cls._visual_retriever[retriever_pk] = retriever.FaissFlatRetriever(name=dr.name,
-                                                                                   components=di.arguments['dimension'])
+                                                                                   components=di.arguments['components'])
             elif dr.algorithm == Retriever.FAISS:
                 approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
                 da.ensure()
