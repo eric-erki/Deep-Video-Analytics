@@ -125,6 +125,7 @@ class FaissFlatRetriever(BaseRetriever):
     def __init__(self,name, components, metric='Flat'):
         super(FaissFlatRetriever, self).__init__(name=name, algorithm="FAISS_{}".format(metric))
         self.name=name
+        self.components = components
         self.algorithm="FAISS_{}".format(metric)
         self.faiss_index = faiss.index_factory(components, metric)
 
@@ -139,8 +140,11 @@ class FaissFlatRetriever(BaseRetriever):
             logging.info("Index size {}".format(self.faiss_index.ntotal))
 
     def nearest(self, vector=None, n=12):
+        vector = np.atleast_2d(vector)
+        if vector.shape[-1] != self.components:
+            vector = vector.T
         results = []
-        dist, ids = self.faiss_index.search(np.atleast_2d(vector), n)
+        dist, ids = self.faiss_index.search(vector, n)
         for i, k in enumerate(ids[0]):
             temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
             temp.update(self.files[k])

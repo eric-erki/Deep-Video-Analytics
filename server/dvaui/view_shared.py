@@ -342,7 +342,10 @@ def create_query_from_request(p, request):
                                                         }
                                           })
             elif dd.name == 'face':
-                dr = dvaapp.models.Retriever.objects.get(name='facenet', algorithm=dvaapp.models.Retriever.EXACT)
+                if settings.ENABLE_FAISS:
+                    dr = dvaapp.models.Retriever.objects.get(name='facenet', algorithm=dvaapp.models.Retriever.FAISS)
+                else:
+                    dr = dvaapp.models.Retriever.objects.get(name='facenet', algorithm=dvaapp.models.Retriever.EXACT)
                 query_json['map'].append({'operation': 'perform_detection',
                                           'arguments': {'detector_pk': int(d),
                                                         'target': 'query',

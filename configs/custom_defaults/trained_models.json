@@ -140,7 +140,7 @@
       }
     ],
     "arguments": {
-      "components": 1024
+      "components": 2048
     },
     "shasum": "48b026cf77dfbd5d9841cca3ee550ef0ee5a0751",
     "mode": "T"
