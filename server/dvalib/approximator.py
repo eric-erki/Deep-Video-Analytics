@@ -1,6 +1,9 @@
 from base_approximator import BaseApproximator
 import numpy as np
-import pickle, logging, os
+import pickle
+import logging
+import os
+import sys
 
 try:
     from sklearn.decomposition import PCA
@@ -13,6 +16,7 @@ except:
     pass
 
 try:
+    sys.path.append('/root/thirdparty/faiss/python')
     import faiss
 except ImportError:
     logging.warning("Could not import faiss in approximator.py")

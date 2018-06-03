@@ -50,7 +50,7 @@ RUN make -j $(nproc) && make py
 # Waiting for CUDA 9 compatibility for FAISS to compile GPU version
 ENV PYTHONPATH /root/DVA/repos/:$PYTHONPATH
 ENV PYTHONPATH /root/DVA/repos/tf_ctpn_cpu/:$PYTHONPATH
-ENV PYTHONPATH /root/thirdparty/faiss:$PYTHONPATH
+ENV PYTHONPATH /root/thirdparty/faiss/python:$PYTHONPATH
 WORKDIR "/root/DVA/server/"
 VOLUME ["/root/media","/root/DVA/configs/custom_defaults"]
 EXPOSE 80

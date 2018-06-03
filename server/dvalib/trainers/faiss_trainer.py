@@ -1,7 +1,9 @@
 import hashlib
 import logging
+import sys
 
 try:
+    sys.path.append('/root/thirdparty/faiss/python')
     import faiss
 except ImportError:
     logging.warning("Could not import faiss")

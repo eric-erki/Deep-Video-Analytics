@@ -2,6 +2,7 @@ import numpy as np
 from scipy import spatial
 from collections import namedtuple
 import uuid
+import sys
 
 import logging
 try:
@@ -15,6 +16,7 @@ except ImportError:
 
 
 try:
+    sys.path.append('/root/thirdparty/faiss/python')
     import faiss
 except ImportError:
     logging.warning("could not import FAISS")
