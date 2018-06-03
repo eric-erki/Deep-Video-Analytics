@@ -1,10 +1,8 @@
 import numpy as np
-import logging
 from scipy import spatial
 from collections import namedtuple
-import pickle
-import json
-import random
+import uuid
+
 import logging
 try:
     from sklearn.decomposition import PCA
@@ -105,6 +103,9 @@ class FaissApproximateRetriever(BaseRetriever):
     def __init__(self,name, approximator):
         super(FaissApproximateRetriever, self).__init__(name=name, approximator=approximator, algorithm="FAISS")
         self.faiss_index = faiss.read_index(str(approximator.index_path))
+        self.ivfs = []
+        self.ivf_vector = faiss.InvertedListsPtrVector()
+        self.uuid = str(uuid.uuid4()).replace('-','_')
 
     def load_index(self,computed_index_path,entries):
         if len(entries):
@@ -116,8 +117,23 @@ class FaissApproximateRetriever(BaseRetriever):
             computed_index.copy_subset_to(self.faiss_index,0,0,computed_index_path.ntotal)
             computed_index.reset()
             logging.info("Index size {}".format(self.faiss_index.ntotal))
+            index = faiss.read_index(computed_index_path,faiss.IO_FLAG_MMAP)
+            self.ivfs.append(index.invlists)
+            index.own_invlists = False
+            index = faiss.read_index("{}_output.index".format(self.uuid))
+            invlists = faiss.OnDiskInvertedLists(index.nlist, index.code_size,
+                                                 "{}_merged_index.ivfdata".format(self.uuid))
+            # merge all the inverted lists
+            self.ivf_vector.push_back(index.invlists)
+            ntotal = invlists.merge_from(self.ivf_vector.data(), self.ivf_vector.size())
+            # now replace the inverted lists in the output index
+            index.ntotal = ntotal
+            index.replace_invlists(invlists)
+            faiss.write_index(index, "{}_populated.index".format(self.uuid))
+            self.faiss_index = faiss.read_index("{}_populated.index".format(self.uuid))
 
-    def nearest(self, vector=None, n=12):
+    def nearest(self, vector=None, n=12, nprobe=16):
+        self.faiss_index.nprobe = nprobe
         vector = np.atleast_2d(vector)
         if vector.shape[-1] != self.faiss_index.d:
             vector = vector.T
