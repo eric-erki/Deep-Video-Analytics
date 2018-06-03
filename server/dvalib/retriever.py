@@ -108,17 +108,20 @@ class FaissApproximateRetriever(BaseRetriever):
         self.ivfs = []
         self.ivf_vector = faiss.InvertedListsPtrVector()
         self.uuid = str(uuid.uuid4()).replace('-','_')
-        self.faiss_index = faiss.read_index(self.index_path)
+        self.faiss_index = None
 
     def load_index(self,computed_index_path,entries):
         if len(entries):
-            computed_index_path = str(computed_index_path).replace('//','/')
+            computed_index_path = str(computed_index_path).replace('//', '/')
             logging.info("Adding {}".format(computed_index_path))
             for i, e in enumerate(entries):
                 self.files[self.findex] = e
                 self.findex += 1
-            index = faiss.read_index(computed_index_path,faiss.IO_FLAG_MMAP)
-            self.faiss_index.merge_from(index,self.faiss_index.ntotal)
+            if self.faiss_index is None:
+                self.faiss_index = faiss.read_index(computed_index_path)
+            else:
+                index = faiss.read_index(computed_index_path)
+                self.faiss_index.merge_from(index,self.faiss_index.ntotal)
             logging.info("Index size {}".format(self.faiss_index.ntotal))
 
     def nearest(self, vector=None, n=12, nprobe=16):
