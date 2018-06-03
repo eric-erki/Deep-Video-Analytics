@@ -102,7 +102,7 @@ class FaissApproximateRetriever(BaseRetriever):
 
     def __init__(self,name, approximator):
         super(FaissApproximateRetriever, self).__init__(name=name, approximator=approximator, algorithm="FAISS")
-        self.faiss_index = faiss.read_index(str(approximator.index_path))
+        self.index_path = approximator.index_path
         self.ivfs = []
         self.ivf_vector = faiss.InvertedListsPtrVector()
         self.uuid = str(uuid.uuid4()).replace('-','_')
@@ -116,19 +116,21 @@ class FaissApproximateRetriever(BaseRetriever):
                 self.findex += 1
             index = faiss.read_index(computed_index_path,faiss.IO_FLAG_MMAP)
             self.ivfs.append(index.invlists)
-            index.own_invlists = False
-            index = faiss.read_index("{}_output.index".format(self.uuid))
-            invlists = faiss.OnDiskInvertedLists(index.nlist, index.code_size,
-                                                 "{}_merged_index.ivfdata".format(self.uuid))
-            # merge all the inverted lists
             self.ivf_vector.push_back(index.invlists)
-            ntotal = invlists.merge_from(self.ivf_vector.data(), self.ivf_vector.size())
-            # now replace the inverted lists in the output index
-            index.ntotal = ntotal
-            index.replace_invlists(invlists)
-            faiss.write_index(index, "{}_populated.index".format(self.uuid))
-            self.faiss_index = faiss.read_index("{}_populated.index".format(self.uuid))
-            logging.info("Index size {}".format(self.faiss_index.ntotal))
+            index.own_invlists = False
+            self.combine_indexes()
+
+    def combine_indexes(self):
+        output_index = faiss.read_index(str(self.index_path))
+        invlists = faiss.OnDiskInvertedLists(output_index.nlist, output_index.code_size,
+                                             "{}_merged_index.ivfdata".format(self.uuid))
+        ntotal = invlists.merge_from(self.ivf_vector.data(), self.ivf_vector.size())
+        # now replace the inverted lists in the output index
+        output_index.ntotal = ntotal
+        output_index.replace_invlists(invlists)
+        faiss.write_index(output_index, "{}_populated.index".format(self.uuid))
+        self.faiss_index = faiss.read_index("{}_populated.index".format(self.uuid))
+        logging.info("Index size {}".format(self.faiss_index.ntotal))
 
     def nearest(self, vector=None, n=12, nprobe=16):
         self.faiss_index.nprobe = nprobe
