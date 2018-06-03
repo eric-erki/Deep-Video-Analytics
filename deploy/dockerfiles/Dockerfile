@@ -46,7 +46,7 @@ WORKDIR "/root/thirdparty/faiss"
 RUN apt-get install -y libopenblas-dev swig
 ENV BLASLDFLAGS /usr/lib/libopenblas.so.0
 RUN mv example_makefiles/makefile.inc.Linux ./makefile.inc
-RUN make tests/test_blas -j $(nproc) && make -j $(nproc) && make py
+RUN make -j $(nproc) && make py
 #RUN cd tests && ./run_tests.sh && cd ..
 ENV PYTHONPATH /root/DVA/repos/:$PYTHONPATH
 ENV PYTHONPATH /root/DVA/repos/tf_ctpn_cpu/:$PYTHONPATH
