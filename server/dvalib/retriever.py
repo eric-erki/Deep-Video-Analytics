@@ -113,10 +113,6 @@ class FaissApproximateRetriever(BaseRetriever):
             for i, e in enumerate(entries):
                 self.files[self.findex] = e
                 self.findex += 1
-            computed_index = faiss.read_index(str(computed_index_path))
-            computed_index.copy_subset_to(self.faiss_index,0,0,computed_index_path.ntotal)
-            computed_index.reset()
-            logging.info("Index size {}".format(self.faiss_index.ntotal))
             index = faiss.read_index(computed_index_path,faiss.IO_FLAG_MMAP)
             self.ivfs.append(index.invlists)
             index.own_invlists = False
@@ -131,6 +127,7 @@ class FaissApproximateRetriever(BaseRetriever):
             index.replace_invlists(invlists)
             faiss.write_index(index, "{}_populated.index".format(self.uuid))
             self.faiss_index = faiss.read_index("{}_populated.index".format(self.uuid))
+            logging.info("Index size {}".format(self.faiss_index.ntotal))
 
     def nearest(self, vector=None, n=12, nprobe=16):
         self.faiss_index.nprobe = nprobe
