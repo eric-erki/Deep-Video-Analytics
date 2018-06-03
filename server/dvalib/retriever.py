@@ -113,7 +113,8 @@ class FaissApproximateRetriever(BaseRetriever):
                 self.files[self.findex] = e
                 self.findex += 1
             computed_index = faiss.read_index(str(computed_index_path))
-            self.faiss_index.merge_from(computed_index)
+            computed_index.copy_subset_to(self.faiss_index,0,0,computed_index_path.ntotal)
+            computed_index.reset()
             logging.info("Index size {}".format(self.faiss_index.ntotal))
 
     def nearest(self, vector=None, n=12):
