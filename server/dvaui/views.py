@@ -396,7 +396,8 @@ class StoredProcessList(UserPassesTestMixin, ListView):
         context['models'] = TrainedModel.objects.filter(model_type__in=[TrainedModel.INDEXER, TrainedModel.DETECTOR,
                                                                         TrainedModel.ANALYZER])
         context["videos"] = Video.objects.all()
-        context["lopq_training_sets"] = TrainingSet.objects.filter(training_task_type=TrainingSet.LOPQINDEX, built=True)
+        context["approx_training_sets"] = TrainingSet.objects.filter(training_task_type=TrainingSet.TRAINAPPROX,
+                                                                   built=True)
         return context
 
     def test_func(self):
