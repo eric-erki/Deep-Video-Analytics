@@ -113,7 +113,7 @@ class FaissApproximateRetriever(BaseRetriever):
             for i, e in enumerate(entries):
                 self.files[self.findex] = e
                 self.findex += 1
-            index = faiss.read_index(computed_index_path,faiss.IO_FLAG_MMAP)
+            index = faiss.read_index(computed_index_path)
             self.ivfs.append(index.invlists)
             index.own_invlists = False
             index = faiss.read_index("{}_output.index".format(self.uuid))
