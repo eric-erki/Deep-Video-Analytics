@@ -41,6 +41,7 @@ RUN git clone --recursive https://github.com/DeepVideoAnalytics/pqkmeans.git
 RUN cd pqkmeans && python setup.py install
 WORKDIR "/root/thirdparty/"
 RUN git clone --recursive https://github.com/DeepVideoAnalytics/faiss
+# install faiss
 WORKDIR "/root/thirdparty/faiss"
 RUN apt-get install -y libopenblas-dev swig
 ENV BLASLDFLAGS /usr/lib/libopenblas.so.0
