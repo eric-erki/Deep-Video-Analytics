@@ -95,6 +95,13 @@ DEFAULT_WORKERS = [
      'request_memory':"3000Mi",
      'max_memory':"8000Mi"
      },
+    {'name':'trainer',
+     'worker_env':'LAUNCH_Q_qtrainer',
+     'max_cpu':8,
+     'request_cpu':1,
+     'request_memory':"3000Mi",
+     'max_memory':"8000Mi"
+     },
 ]
 
 
