@@ -250,7 +250,7 @@
                             </div>
                             <label for="selected">Select Training Set (only built training sets are show)</label>
                             <select class="js-example-basic" id="lopq_training_set_pk" name="lopq_training_set_pk"  style="width:100%">
-                            {% for i in lopq_training_sets %}
+                            {% for i in approx_training_sets %}
                                 <option value="{{ i.pk }}">{{ i.name }} ( id {{ i.pk }})</option>
                             {% endfor %}
                             </select>

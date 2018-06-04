@@ -51,6 +51,8 @@ class Approximators(object):
                 Approximators._index_approximator[di.pk] = approximator.LOPQApproximator(di.name, model_dirname)
             elif di.algorithm == 'PCA':
                 Approximators._index_approximator[di.pk] = approximator.PCAApproximator(di.name, model_dirname)
+            elif di.algorithm == 'FAISS':
+                Approximators._index_approximator[di.pk] = approximator.FAISSApproximator(di.name, model_dirname)
             else:
                 raise ValueError,"unknown approximator type {}".format(di.pk)
         return Approximators._index_approximator[di.pk]
@@ -74,6 +76,11 @@ class Approximators(object):
                 with open(feat_fname, 'w') as featfile:
                     np.save(featfile, approx_vectors)
                 approx_ind.features_file_name = "{}.npy".format(uid)
+                approx_ind.entries = entries
+            elif da.algorithm == "FAISS":
+                feat_fname = "{}/{}/indexes/{}.index".format(settings.MEDIA_ROOT, index_entry.video_id, uid)
+                approx.approximate_batch(np.atleast_2d(vectors.squeeze()),feat_fname)
+                approx_ind.features_file_name = "{}.index".format(uid)
                 approx_ind.entries = entries
             else:
                 raise NotImplementedError("unknown approximation algorithm {}".format(da.algorithm))

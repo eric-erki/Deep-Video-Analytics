@@ -2,7 +2,7 @@ from django.conf import settings
 import json
 from .models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, Tube, Segment, \
     TubeRegionRelation, TubeRelation, Retriever, SystemState, QueryRegion, QueryRegionResults, \
-    TrainedModel, Worker, TrainingSet, RegionRelation
+    TrainedModel, Worker, TrainingSet, RegionRelation, Export
 import serializers
 from rest_framework import viewsets
 from django.contrib.auth.models import User
@@ -41,6 +41,12 @@ class VideoViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = Video.objects.all()
     serializer_class = serializers.VideoSerializer
+
+
+class ExportViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
+    queryset = Export.objects.all()
+    serializer_class = serializers.ExportSerializer
 
 
 class RetrieverViewSet(viewsets.ReadOnlyModelViewSet):

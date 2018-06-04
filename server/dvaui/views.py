@@ -396,7 +396,8 @@ class StoredProcessList(UserPassesTestMixin, ListView):
         context['models'] = TrainedModel.objects.filter(model_type__in=[TrainedModel.INDEXER, TrainedModel.DETECTOR,
                                                                         TrainedModel.ANALYZER])
         context["videos"] = Video.objects.all()
-        context["lopq_training_sets"] = TrainingSet.objects.filter(training_task_type=TrainingSet.LOPQINDEX, built=True)
+        context["approx_training_sets"] = TrainingSet.objects.filter(training_task_type=TrainingSet.TRAINAPPROX,
+                                                                   built=True)
         return context
 
     def test_func(self):
@@ -598,18 +599,16 @@ def export_video(request):
                 process_spec = {'process_type': DVAPQL.PROCESS,
                                 'map': [
                                     {
-                                        'video_id': video.pk,
                                         'operation': 'perform_export',
-                                        'arguments': {'path': path}
+                                        'arguments': {'path': path, 'video_selector': {'pk': video.pk}, }
                                     },
                                 ]}
             else:
                 process_spec = {'process_type': DVAPQL.PROCESS,
                                 'map': [
                                     {
-                                        'video_id': video.pk,
                                         'operation': 'perform_export',
-                                        'arguments': {'destination': 'FILE'}
+                                        'arguments': {'video_selector': {'pk': video.pk}, }
                                     },
                                 ]
                                 }

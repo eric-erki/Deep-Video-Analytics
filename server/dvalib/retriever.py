@@ -1,10 +1,9 @@
 import numpy as np
-import logging
 from scipy import spatial
 from collections import namedtuple
-import pickle
-import json
-import random
+import uuid
+import sys
+
 import logging
 try:
     from sklearn.decomposition import PCA
@@ -17,6 +16,7 @@ except ImportError:
 
 
 try:
+    sys.path.append('/root/thirdparty/faiss/python')
     import faiss
 except ImportError:
     logging.warning("could not import FAISS")
@@ -100,13 +100,71 @@ class LOPQRetriever(BaseRetriever):
         return results
 
 
-class FaissRetriever(BaseRetriever):
+class FaissApproximateRetriever(BaseRetriever):
 
     def __init__(self,name, approximator):
-        super(FaissRetriever, self).__init__(name=name, approximator=approximator, algorithm="FAISS")
+        super(FaissApproximateRetriever, self).__init__(name=name, approximator=approximator, algorithm="FAISS")
+        self.index_path = str(approximator.index_path).replace('//','/')
+        self.ivfs = []
+        self.ivf_vector = faiss.InvertedListsPtrVector()
+        self.uuid = str(uuid.uuid4()).replace('-','_')
+        self.faiss_index = None
+
+    def load_index(self,computed_index_path,entries):
+        if len(entries):
+            computed_index_path = str(computed_index_path).replace('//', '/')
+            logging.info("Adding {}".format(computed_index_path))
+            for i, e in enumerate(entries):
+                self.files[self.findex] = e
+                self.findex += 1
+            if self.faiss_index is None:
+                self.faiss_index = faiss.read_index(computed_index_path)
+            else:
+                index = faiss.read_index(computed_index_path)
+                self.faiss_index.merge_from(index,self.faiss_index.ntotal)
+            logging.info("Index size {}".format(self.faiss_index.ntotal))
+
+    def nearest(self, vector=None, n=12, nprobe=16):
+        self.faiss_index.nprobe = nprobe
+        vector = np.atleast_2d(vector)
+        if vector.shape[-1] != self.faiss_index.d:
+            vector = vector.T
+        results = []
+        dist, ids = self.faiss_index.search(vector, n)
+        for i, k in enumerate(ids[0]):
+            temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
+            temp.update(self.files[k])
+            results.append(temp)
+        return results
+
+
+class FaissFlatRetriever(BaseRetriever):
+
+    def __init__(self,name, components, metric='Flat'):
+        super(FaissFlatRetriever, self).__init__(name=name, algorithm="FAISS_{}".format(metric))
+        self.name=name
+        self.components = components
+        self.algorithm="FAISS_{}".format(metric)
+        self.faiss_index = faiss.index_factory(components, metric)
 
     def load_index(self,numpy_matrix,entries):
-        pass
+        if len(entries):
+            logging.info("Adding {}".format(numpy_matrix.shape))
+            numpy_matrix = np.atleast_2d(numpy_matrix.squeeze())
+            for i, e in enumerate(entries):
+                self.files[self.findex] = e
+                self.findex += 1
+            self.faiss_index.add(numpy_matrix)
+            logging.info("Index size {}".format(self.faiss_index.ntotal))
 
     def nearest(self, vector=None, n=12):
-        pass
+        vector = np.atleast_2d(vector)
+        if vector.shape[-1] != self.components:
+            vector = vector.T
+        results = []
+        dist, ids = self.faiss_index.search(vector, n)
+        for i, k in enumerate(ids[0]):
+            temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
+            temp.update(self.files[k])
+            results.append(temp)
+        return results

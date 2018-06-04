@@ -14,6 +14,7 @@ from ..models import IndexEntries, TrainedModel
 
 class Indexers(object):
     _visual_indexer = {}
+    _shasum_to_index = {}
     _name_to_index = {}
     _session = None
 
@@ -33,6 +34,15 @@ class Indexers(object):
             raise ValueError("Model {} id: {} is not an Indexer".format(di.name,di.pk))
         return cls.get_index(di),di
     
+    @classmethod
+    def get_indexer_by_shasum(cls,shasum):
+        if shasum not in Indexers._shasum_to_index:
+            di = TrainedModel.objects.get(shasum=shasum,model_type=TrainedModel.INDEXER)
+            Indexers._shasum_to_index[shasum] = di
+        else:
+            di = Indexers._shasum_to_index[shasum]
+        return di
+
     @classmethod
     def get_index(cls,di):
         di.ensure()

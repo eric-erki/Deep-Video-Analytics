@@ -10,7 +10,7 @@ from . import models
 from .operations.retrieval import Retrievers
 from .operations.decoding import VideoDecoder
 from .operations.dataset import DatasetCreator
-from .operations.training import train_lopq
+from .operations.training import train_lopq, train_faiss
 from .operations.livestreaming import LivestreamCapture
 from .processing import process_next, mark_as_completed
 from . import global_model_retriever
@@ -533,7 +533,7 @@ def perform_training_set_creation(task_id):
         raise ValueError("Could not find training set {}".format(args))
     if train_set.event:
         raise ValueError("Training set has been already built or failed to build, please clone instead of rebuilding.")
-    if train_set.training_task_type == models.TrainingSet.LOPQINDEX:
+    if train_set.training_task_type == models.TrainingSet.TRAINAPPROX:
         file_list = []
         filters = copy.deepcopy(train_set.source_filters)
         filters['approximate'] = False
@@ -567,16 +567,10 @@ def perform_training(task_id):
     trainer = args['trainer']
     if trainer == 'LOPQ':
         train_lopq(dt, args)
-    elif trainer == 'YOLO':
-        train_detector = subprocess.Popen(['fab', 'train_yolo:{}'.format(dt.pk)],
-                                          cwd=os.path.join(os.path.abspath(__file__).split('tasks.py')[0], '../'))
-        train_detector.wait()
-        if train_detector.returncode != 0:
-            dt.errored = True
-            dt.error_message = "fab train_yolo:{} failed with return code {}".format(dt.pk, train_detector.returncode)
-            dt.duration = (timezone.now() - dt.start_ts).total_seconds()
-            dt.save()
-            raise ValueError(dt.error_message)
+    elif trainer == 'FAISS':
+        train_faiss(dt, args)
+    else:
+        raise ValueError("Unknown trainer {}".format(trainer))
     process_next(dt)
     mark_as_completed(dt)
     return 0

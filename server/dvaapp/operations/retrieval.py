@@ -1,5 +1,6 @@
 import logging
 from .approximation import Approximators
+from .indexing import Indexers
 try:
     from dvalib import indexer, retriever
     import numpy as np
@@ -28,6 +29,16 @@ class Retrievers(object):
                 cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name,approximator=approximator)
             elif dr.algorithm == Retriever.EXACT:
                 cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name)
+            elif dr.algorithm == Retriever.FAISS and dr.approximator_shasum is None:
+                di = Indexers.get_indexer_by_shasum(dr.indexer_shasum)
+                cls._visual_retriever[retriever_pk] = retriever.FaissFlatRetriever(name=dr.name,
+                                                                                   components=di.arguments['components'])
+            elif dr.algorithm == Retriever.FAISS:
+                approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
+                da.ensure()
+                approximator.load()
+                cls._visual_retriever[retriever_pk] = retriever.FaissApproximateRetriever(name=dr.name,
+                                                                                          approximator=approximator)
             elif dr.algorithm == Retriever.LOPQ:
                 approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
                 da.ensure()
@@ -71,14 +82,22 @@ class Retrievers(object):
         visual_index = cls._visual_retriever[dr.pk]
         for index_entry in index_entries:
             if index_entry.pk not in visual_index.loaded_entries and index_entry.count > 0:
-                vectors, entries = index_entry.load_index()
                 if visual_index.algorithm == "LOPQ":
+                    vectors, entries = index_entry.load_index()
                     logging.info("loading approximate index {}".format(index_entry.pk))
                     start_index = len(visual_index.entries)
                     visual_index.load_index(entries=entries)
                     visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
                                                                                      end=len(visual_index.entries)-1)
+                elif visual_index.algorithm == 'FAISS':
+                    index_file_path, entries = index_entry.load_index()
+                    logging.info("loading FAISS index {}".format(index_entry.pk))
+                    start_index = visual_index.findex
+                    visual_index.load_index(index_file_path,entries)
+                    visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
+                                                                                     end=visual_index.findex-1)
                 else:
+                    vectors, entries = index_entry.load_index()
                     logging.info("Starting {} in {} with shape {}".format(index_entry.video_id, visual_index.name,
                                                                           vectors.shape))
                     try:
@@ -90,14 +109,7 @@ class Retrievers(object):
                         logging.info("ERROR Failed to load {} vectors shape {} entries {}".format(
                             index_entry.video_id,vectors.shape,len(entries)))
                     else:
-                        logging.info("finished {} in {}, current shape {}, range".format(index_entry.video_id,
-                                                                             visual_index.name,
-                                                                             visual_index.index.shape,
-                                                                             visual_index.loaded_entries[
-                                                                                 index_entry.pk].start,
-                                                                             visual_index.loaded_entries[
-                                                                                 index_entry.pk].end,
-                                                                             ))
+                        logging.info("finished {} in {}".format(index_entry.pk,visual_index.name))
 
     @classmethod
     def retrieve(cls,event,retriever_pk,vector,count,region=None):

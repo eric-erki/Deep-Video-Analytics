@@ -1,6 +1,10 @@
 from base_approximator import BaseApproximator
 import numpy as np
-import pickle, logging, os
+import pickle
+import logging
+import os
+import sys
+
 try:
     from sklearn.decomposition import PCA
     from lopq import LOPQModel, LOPQSearcher
@@ -11,13 +15,20 @@ try:
 except:
     pass
 
+try:
+    sys.path.append('/root/thirdparty/faiss/python')
+    import faiss
+except ImportError:
+    logging.warning("Could not import faiss in approximator.py")
+    pass
+
 
 class LOPQApproximator(BaseApproximator):
     """
     An approximator converts an n-dimensional vector into PQ fine and coarse codes.
     """
 
-    def __init__(self,name,dirname):
+    def __init__(self, name, dirname):
         super(LOPQApproximator, self).__init__()
         self.name = name
         self.dirname = dirname
@@ -57,7 +68,8 @@ class PCAApproximator(BaseApproximator):
     """
     A PCA approximator used by Youtube 8M.
     """
-    def __init__(self,name,dirname,components=1024,source_components=2048):
+
+    def __init__(self, name, dirname, components=1024, source_components=2048):
         super(PCAApproximator, self).__init__()
         self.name = name
         self.dirname = dirname
@@ -69,10 +81,9 @@ class PCAApproximator(BaseApproximator):
 
     def load(self):
         logging.info("Loading PCA model {}".format(self.name))
-        self.pca_mean = np.load(os.path.join(self.dirname,'mean.npy'))[:, 0]
+        self.pca_mean = np.load(os.path.join(self.dirname, 'mean.npy'))[:, 0]
         self.pca_eigenvals = np.load(os.path.join(self.dirname, 'eigenvals.npy'))[:self.components, 0]
-        self.pca_eigenvecs = np.load(os.path.join(self.dirname,'eigenvecs.npy')).T[:, :self.components]
-
+        self.pca_eigenvecs = np.load(os.path.join(self.dirname, 'eigenvecs.npy')).T[:, :self.components]
 
     def approximate(self, vector):
         vector = self.get_pca_vector(vector)
@@ -85,3 +96,28 @@ class PCAApproximator(BaseApproximator):
         feats = feats.reshape((1, self.source_components)).dot(self.pca_eigenvecs).reshape((self.components,))
         feats /= np.sqrt(self.pca_eigenvals + 1e-4)
         return feats
+
+
+class FAISSApproximator(BaseApproximator):
+
+    def __init__(self, name, dirname, index_filename="faiss.index"):
+        super(FAISSApproximator, self).__init__()
+        self.name = name
+        self.index_path = str('{}/{}'.format(dirname, index_filename).replace('//','/'))
+        self.faiss_index = None
+
+    def load(self):
+        try:
+            self.faiss_index = faiss.read_index(self.index_path)
+        except:
+            raise ValueError("Could not read index file {}".format(self.index_path))
+
+    def approximate(self, vector):
+        raise NotImplementedError
+
+    def approximate_batch(self, vectors, output_path):
+        if self.faiss_index is None:
+            self.load()
+        cloned_index = faiss.clone_index(self.faiss_index)
+        cloned_index.add(vectors)
+        faiss.write_index(cloned_index, str(output_path))

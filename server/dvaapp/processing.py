@@ -418,10 +418,11 @@ class DVAPQLProcess(object):
             self.launch_task(t)
         self.assign_task_group_id(self.process.script.get('reduce', []), 0)
         for t in self.process.script.get('reduce', []):
-            if t['operation'] != 'perform_reduce':
+            if 'operation' not in t:
+                t['operation'] = 'perform_reduce'
                 self.launch_task(t)
             else:
-                raise ValueError('{} is not a valid reduce operation, only "perform_reduce" is valid'.format(
+                raise ValueError('{} is not a valid reduce operation, reduce tasks should not have an operation'.format(
                     t['operation']))
 
     def launch_query_tasks(self):

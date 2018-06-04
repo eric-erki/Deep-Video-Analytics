@@ -6,9 +6,13 @@ django.setup()
 import base64
 from dvaapp.models import DVAPQL, Retriever, QueryResults
 from dvaapp.processing import DVAPQLProcess
-
+from django.conf import settings
 
 if __name__ == '__main__':
+    if settings.ENABLE_FAISS:
+        algo = Retriever.FAISS
+    else:
+        algo = Retriever.EXACT
     query_dict = {
         'process_type': DVAPQL.QUERY,
         'image_data_b64': base64.encodestring(file('queries/query.png').read()),
@@ -21,7 +25,8 @@ if __name__ == '__main__':
                     'map': [
                         {'operation': 'perform_retrieval',
                          'arguments': {'count': 15, 'retriever_pk': Retriever.objects.get(name='inception',
-                                                                                          algorithm=Retriever.EXACT).pk}
+                                                                                          algorithm=algo,
+                                                                                          approximator_shasum=None).pk}
                          }
                     ]
                 }
