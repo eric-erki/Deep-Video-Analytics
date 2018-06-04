@@ -38,6 +38,8 @@ if __name__ == "__main__":
             logging.exception("Could not update youtube-dl")
             pass
         if settings.KUBE_MODE:
+            # This is temporary!
+            subprocess.check_output(['pip', 'install', '--upgrade', 'google-cloud'])
             command = 'celery -A dva worker -l info {} -P solo -c 1 -Q {} -n {}.%h'.format(mute,queue_name, queue_name)
         else:
             command = 'celery -A dva worker -l info {} -c {} -Q {} -n {}.%h {}'.format(mute, max(int(conc), 4),

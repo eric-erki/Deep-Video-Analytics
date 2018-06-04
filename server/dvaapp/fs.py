@@ -274,7 +274,7 @@ def upload_video_to_remote(video_id):
         for root, directories, filenames in os.walk(src):
             for filename in filenames:
                 path = os.path.join(root, filename)
-                logging.info("uploading {}".format(path))
+                logging.info("uploading {} with gcs version {}".format(path,storage.__version__))
                 upload_file_to_remote(path[root_length:], cache=False)
     else:
         raise ValueError
