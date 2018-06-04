@@ -37,16 +37,22 @@ if __name__ == "__main__":
         except:
             logging.exception("Could not update youtube-dl")
             pass
-        command = 'celery -A dva worker -l info {} -c {} -Q {} -n {}.%h {}'.format(mute, max(int(conc), 4),
-                                                                                   queue_name, queue_name,
-                                                                                   log_output(queue_name, settings))
+        if settings.KUBE_MODE:
+            command = 'celery -A dva worker -l info {} -P solo -c 1 -Q {} -n {}.%h'.format(mute,queue_name, queue_name)
+        else:
+            command = 'celery -A dva worker -l info {} -c {} -Q {} -n {}.%h {}'.format(mute, max(int(conc), 4),
+                                                                                       queue_name, queue_name,
+                                                                                       log_output(queue_name, settings))
     elif queue_name == settings.Q_STREAMER:
         try:
             subprocess.check_output(['pip', 'install', '--upgrade', 'streamlink', 'psutil'])
         except:
             logging.exception("Could not install streamlink")
             pass
-        command = 'celery -A dva worker -l info {} -c {} -Q {} -n {}.%h {}'.format(mute, max(int(conc), 2),
+        if settings.KUBE_MODE:
+            command = 'celery -A dva worker -l info {} -P solo -c 1 -Q {} -n {}.%h'.format(mute, queue_name, queue_name)
+        else:
+            command = 'celery -A dva worker -l info {} -c {} -Q {} -n {}.%h {}'.format(mute, max(int(conc), 2),
                                                                                    queue_name, queue_name,
                                                                                    log_output(queue_name, settings))
     elif queue_name == settings.Q_REDUCER:
