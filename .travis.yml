@@ -20,18 +20,20 @@ virtualenv:
 env:
   global:
     - AUTH_DISABLED=1
+    - ENABLE_FAISS=1
     - SECRET_KEY=123213123123213213
     - LAUNCH_BY_NAME_indexer_inception=1
     - LAUNCH_BY_NAME_retriever_inception=1
     - LAUNCH_BY_NAME_detector_coco=1
     - TRAVISTEST=1
+    - export BLASLDFLAGS="/usr/lib/libopenblas.so.0"
 
 before_install:
   - sudo apt-get -qq update
   - wget https://www.dropbox.com/s/bjyzb8hytdwp2tp/ffmpeg-release-64bit-static.tar.xz && tar xvfJ ffmpeg-release-64bit-static.tar.xz
   - shasum ffmpeg-release-64bit-static.tar.xz | awk '$1!="a93bce9e510afef02f7e2592f6b5d117dcd08854"{exit 1}'
   - sudo mv ffmpeg*/* /bin/
-  - sudo apt-get -qq install -y pkg-config python-dev unzip swig3.0 libopencv-dev libhdf5-dev python-pip libav-tools libjpeg-dev  libpng-dev  libtiff-dev  libjasper-dev  python-numpy python-scipy  python-pycurl  python-opencv
+  - sudo apt-get -qq install -y pkg-config python-dev unzip swig3.0 libopenblas-dev libopencv-dev libhdf5-dev python-pip libav-tools libjpeg-dev  libpng-dev  libtiff-dev  libjasper-dev  python-numpy python-scipy  python-pycurl  python-opencv
   - sudo dpkg -L python-opencv
   - sudo wget --quiet https://yt-dl.org/downloads/latest/youtube-dl -O /bin/youtube-dl
   - sudo chmod a+rx /bin/youtube-dl
@@ -42,11 +44,14 @@ before_install:
   - pip install -q --no-deps h5py
   - pip install -q --no-cache-dir http://download.pytorch.org/whl/cpu/torch-0.3.1-cp27-cp27mu-linux_x86_64.whl
   - pip install -q torchvision
+  - git clone https://github.com/DeepVideoAnalytics/faiss && cd faiss && mv example_makefiles/makefile.inc.Linux ./makefile.inc && make -j $(nproc) && make py && cd ..
+
 install: "pip install -q -r requirements.txt > /dev/null"
 
 
 before_script:
   - mkdir ~/media
+  - export PYTHONPATH="${PYTHONPATH}:../faiss/python/"
   - export PYTHONPATH="${PYTHONPATH}:repos/"
   - export PYTHONPATH="${PYTHONPATH}:repos/tf_ctpn_cpu/"
   - cd repos/lopq/python && python setup.py install && cd ../../..
