@@ -242,7 +242,7 @@ def upload_file_to_remote(fpath, cache=True):
 
 
 def download_video_from_remote_to_local(dv):
-    logging.info("Syncing entire directory for {}".format(dv.pk))
+    logging.info("Download entire directory from remote fs for {}".format(dv.pk))
     if S3_MODE:
         dest = '{}/{}/'.format(settings.MEDIA_ROOT, dv.pk)
         src = 's3://{}/{}/'.format(settings.MEDIA_BUCKET, dv.pk)
@@ -260,7 +260,7 @@ def download_video_from_remote_to_local(dv):
 
 
 def upload_video_to_remote(video_id):
-    logging.info("Syncing entire directory for {}".format(video_id))
+    logging.info("Uploading entire directory to remote fs for {}".format(video_id))
     src = '{}/{}/'.format(settings.MEDIA_ROOT, video_id)
     if S3_MODE:
         dest = 's3://{}/{}/'.format(settings.MEDIA_BUCKET, video_id)
@@ -274,6 +274,7 @@ def upload_video_to_remote(video_id):
         for root, directories, filenames in os.walk(src):
             for filename in filenames:
                 path = os.path.join(root, filename)
+                logging.info("uploading {}".format(path))
                 upload_file_to_remote(path[root_length:], cache=False)
     else:
         raise ValueError
