@@ -33,7 +33,7 @@ before_install:
   - wget https://www.dropbox.com/s/bjyzb8hytdwp2tp/ffmpeg-release-64bit-static.tar.xz && tar xvfJ ffmpeg-release-64bit-static.tar.xz
   - shasum ffmpeg-release-64bit-static.tar.xz | awk '$1!="a93bce9e510afef02f7e2592f6b5d117dcd08854"{exit 1}'
   - sudo mv ffmpeg*/* /bin/
-  - sudo apt-get -qq install -y pkg-config python-dev unzip swig swig3.0 libopenblas-dev libopencv-dev libhdf5-dev python-pip libav-tools libjpeg-dev  libpng-dev  libtiff-dev  libjasper-dev  python-numpy python-scipy  python-pycurl  python-opencv
+  - sudo apt-get -qq install -y pkg-config python-dev unzip swig swig3.0 libopenblas-dev liblapack-dev libopencv-dev libhdf5-dev python-pip libav-tools libjpeg-dev  libpng-dev  libtiff-dev  libjasper-dev  python-numpy python-scipy  python-pycurl  python-opencv
   - sudo dpkg -L python-opencv
   - sudo wget --quiet https://yt-dl.org/downloads/latest/youtube-dl -O /bin/youtube-dl
   - sudo chmod a+rx /bin/youtube-dl
