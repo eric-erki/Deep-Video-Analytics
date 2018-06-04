@@ -29,7 +29,7 @@ gunicorn
 django-celery-beat==1.1.0
 cython
 easydict
-google-cloud-storage
+google-cloud
 urllib3
 flask
 redis
