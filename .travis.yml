@@ -20,7 +20,6 @@ virtualenv:
 env:
   global:
     - AUTH_DISABLED=1
-    - ENABLE_FAISS=1
     - SECRET_KEY=123213123123213213
     - LAUNCH_BY_NAME_indexer_inception=1
     - LAUNCH_BY_NAME_retriever_inception=1

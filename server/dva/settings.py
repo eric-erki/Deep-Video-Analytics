@@ -295,5 +295,5 @@ DEFAULT_RATE = int(os.environ.get('DEFAULT_RATE',30))
 # Max task attempts
 MAX_TASK_ATTEMPTS = 5
 # FAISS
-ENABLE_FAISS = 'ENABLE_FAISS' in os.environ
+ENABLE_FAISS = 'DISABLE_FAISS' not in os.environ
 
