@@ -30,7 +30,7 @@ DEFAULT_WORKERS = [
      'max_cpu':1,
      'request_cpu':1,
      'request_memory':"1000Mi",
-     'max_memory':"1000Mi"
+     'max_memory':"10000Mi"
      },
     {'name':'face',
      'worker_env':'LAUNCH_BY_NAME_detector_face',
