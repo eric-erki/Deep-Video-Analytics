@@ -386,7 +386,9 @@ def perform_import(task_id):
         dv.uploaded = False
     # Download and import previously exported file from DVA
     elif export_file:
+        logging.info("importing exported file {}".format(path))
         task_shared.import_path(dv, path, export=True)
+        logging.info("loading exported file {}".format(path))
         task_shared.load_dva_export_file(dv)
     # Download and import .mp4 and .zip files which contain raw video / images.
     elif path.startswith('/') and settings.ENABLE_CLOUDFS and not (export_file or framelist_file):
