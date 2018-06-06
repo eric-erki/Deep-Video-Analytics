@@ -7,7 +7,34 @@ import urllib2
 import os
 import json
 import webbrowser
-from . import test, gpu
+from . import gpu
+
+def generate_multi_gpu_compose(fname, config):
+    blocks = []
+    worker_specs = config['workers']
+    for gpu_id, fraction, env_key, worker_name, in worker_specs:
+        if fraction > 0:
+            blocks.append(
+                gpu.BLOCK.format(worker_name=worker_name, gpu_id=gpu_id, memory_fraction=fraction, env_key=env_key,
+                             env_value=1))
+        else:
+            blocks.append(
+                gpu.CPU_BLOCK.format(worker_name=worker_name, env_key=env_key, env_value=1))
+    with open(fname, 'w') as out:
+        out.write(gpu.SKELETON.format(gpu_workers="\n".join(blocks),
+                                  global_model_gpu_id=config['global_model_gpu_id'],
+                                  global_model_memory_fraction=config['global_model_memory_fraction']))
+
+
+def load_envs(path):
+    return {line.split('=')[0]: line.split('=')[1].strip() for line in file(path)}
+
+
+def clear_media_bucket():
+    envs = load_envs(os.path.expanduser('~/media.env'))
+    print "Erasing bucket {}".format(envs['MEDIA_BUCKET'])
+    subprocess.check_call(['aws','s3','rm','--recursive','--quiet','s3://{}'.format(envs['MEDIA_BUCKET'])])
+    print "Bucket erased"
 
 
 def create_custom_env(init_process, init_models, cred_envs):
@@ -103,7 +130,7 @@ def get_auth():
 
 def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_envs,gpu_compose_filename, gpu_config):
     if mode == 'gpu':
-        gpu.generate_multi_gpu_compose(gpu_compose_filename,gpu_config)
+        generate_multi_gpu_compose(gpu_compose_filename,gpu_config)
     if args.action == 'stop':
         stop_docker_compose(mode, gpus)
     elif args.action == 'start':
@@ -114,14 +141,14 @@ def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_
     elif args.action == 'clean':
         stop_docker_compose(mode, gpus, clean=True)
         if mode == 'test':
-            test.clear_media_bucket()
+            clear_media_bucket()
     elif args.action == 'restart':
         stop_docker_compose(mode, gpus)
         start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
     elif args.action == 'clean_restart':
         stop_docker_compose(mode, gpus, clean=True)
         if mode == 'test':
-            test.clear_media_bucket()
+            clear_media_bucket()
             start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
     else:
         raise NotImplementedError("{} and {}".format(args.action, mode))

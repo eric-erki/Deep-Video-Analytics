@@ -130,12 +130,12 @@ def configure_compose(mode):
     if mode == 'test':
         envs['ENABLE_CLOUDFS'] = 1
         try:
-            envs.update(compose.test.load_envs(os.path.expanduser('~/media.env')))
+            envs.update(compose.load_envs(os.path.expanduser('~/media.env')))
             print '~/media.env found. writing bucket information to config.json'
         except:
             print '~/media.env not found. required for testing rfs mode.'
         try:
-            envs.update(compose.test.load_envs(os.path.expanduser('~/aws.env')))
+            envs.update(compose.load_envs(os.path.expanduser('~/aws.env')))
             print '~/aws.env found. writing credentials to config.json'
         except:
             print '{} not found. not passing AWS creds. Please create ~/aws.env with AWS_ACCESS_KEY_ID ' \
@@ -143,14 +143,14 @@ def configure_compose(mode):
                   'add them to credentials in config.json'.format(os.path.expanduser('~/aws.env'))
     else:
         if os.path.isfile(os.path.expanduser('~/aws.env')):
-            envs.update(compose.test.load_envs(os.path.expanduser('~/aws.env')))
+            envs.update(compose.load_envs(os.path.expanduser('~/aws.env')))
             print '~/aws.env found. writing credentials to config.json'
         else:
             print '{} not found. not passing AWS creds. Please create ~/aws.env with AWS_ACCESS_KEY_ID ' \
                   'and AWS_SECRET_ACCESS_KEY or manually ' \
                   'add them to credentials in config.json'.format(os.path.expanduser('~/aws.env'))
         if os.path.isfile(os.path.expanduser('~/do.env')):
-            envs.update(compose.test.load_envs(os.path.expanduser('~/do.env')))
+            envs.update(compose.load_envs(os.path.expanduser('~/do.env')))
             print '~/do.env found. writing credentials to config.json'
         else:
             print '{} not found. not passing Digital Ocean creds.'.format(os.path.expanduser('~/do.env'))

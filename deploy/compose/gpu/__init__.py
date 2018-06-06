@@ -1,7 +1,3 @@
-"""
-Code in this file assumes that it is being run via dvactl and git repo root as current directory
-"""
-
 SKELETON = """  version: '3'
   services:
    db:
@@ -84,6 +80,7 @@ SKELETON = """  version: '3'
    dvaredis:
     """
 
+
 BLOCK = """   {worker_name}:
          image: akshayubhat/dva-auto:gpu
          env_file:
@@ -101,6 +98,7 @@ BLOCK = """   {worker_name}:
          volumes:
            - dvadata:/root/media"""
 
+
 CPU_BLOCK = """   {worker_name}:
          image: akshayubhat/dva-auto:latest
          env_file:
@@ -114,20 +112,3 @@ CPU_BLOCK = """   {worker_name}:
            - rabbit
          volumes:
            - dvadata:/root/media"""
-
-
-def generate_multi_gpu_compose(fname,config):
-        blocks = []
-        worker_specs = config['workers']
-        for gpu_id, fraction, env_key, worker_name, in worker_specs:
-            if fraction > 0:
-                blocks.append(
-                    BLOCK.format(worker_name=worker_name, gpu_id=gpu_id, memory_fraction=fraction, env_key=env_key,
-                                 env_value=1))
-            else:
-                blocks.append(
-                    CPU_BLOCK.format(worker_name=worker_name, env_key=env_key, env_value=1))
-        with open(fname, 'w') as out:
-            out.write(SKELETON.format(gpu_workers="\n".join(blocks),
-                                      global_model_gpu_id=config['global_model_gpu_id'],
-                                      global_model_memory_fraction=config['global_model_memory_fraction']))
