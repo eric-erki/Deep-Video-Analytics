@@ -19,7 +19,7 @@ def get_mode():
 
 CONFIG = {
     1: {
-        "compose_filename": "deploy/gpu/docker-compose-gpu.yml",
+        "compose_filename": "deploy/compose/gpu/docker-compose-1-gpus.yml",
         "config": {"global_model_gpu_id": 0,
                    "global_model_memory_fraction": 0.05,
                    "workers":
@@ -32,7 +32,7 @@ CONFIG = {
                         (0, 0, "LAUNCH_BY_NAME_analyzer_tagger", "tagger")]
                    }},
     2: {
-        "compose_filename": "deploy/gpu/docker-compose-2-gpus.yml",
+        "compose_filename": "deploy/compose/gpu/docker-compose-2-gpus.yml",
         "config": {"global_model_gpu_id": 0,
                    "global_model_memory_fraction": 0.1,
                    "workers":
@@ -45,7 +45,7 @@ CONFIG = {
                         (1, 0.15, "LAUNCH_BY_NAME_analyzer_tagger", "tagger")]
                    }},
     4: {
-        "compose_filename": "deploy/gpu/docker-compose-4-gpus.yml",
+        "compose_filename": "deploy/compose/gpu/docker-compose-4-gpus.yml",
         "config": {"global_model_gpu_id": 2,
                    "global_model_memory_fraction": 0.29,
                    "workers":
@@ -89,6 +89,10 @@ def configure_kube():
     print "Creating configuration for kubernetes from kubeconfig.example.json"
     if os.path.isfile('config.json'):
         existing_config = json.load(file('config.json'))
+        if existing_config['mode'] != 'kube':
+            existing_config = {}
+        else:
+            print "Existing config.json found loading values from it."
     else:
         existing_config = {}
     for k, v in sorted(config_template.items()):
