@@ -99,12 +99,6 @@ def stop_docker_compose(deployment_type, gpu_count, clean=False):
         raise SystemError("Could not stop containers")
 
 
-def view_uwsgi_logs():
-    print 'Use following auth code to use jupyter notebook on  '
-    print subprocess.check_output(
-        ["docker", "exec", "-it", "webserver", "bash", '-c ', "'cat /var/log/supervisor/app-*'"])
-
-
 def get_auth():
     token = subprocess.check_output(["docker", "exec", "-it", "webserver", "scripts/generate_testing_token.py"]).strip()
     server = 'http://localhost:8000/api/'
@@ -135,7 +129,5 @@ def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_
         if mode == 'test':
             test.clear_media_bucket()
             start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
-    elif args.action == 'wsgi':
-        view_uwsgi_logs()
     else:
         raise NotImplementedError("{} and {}".format(args.action, mode))

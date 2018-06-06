@@ -10,10 +10,11 @@ logging.basicConfig(level=logging.INFO,
 
 
 def log_output(queue_name, settings):
-    if settings.KUBE_MODE:
-        return ""
-    else:
+    if settings.DEBUG and (not settings.KUBE_MODE):
         return "-f ../logs/{}.log".format(queue_name)
+    else:
+        return ""
+
 
 
 if __name__ == "__main__":
