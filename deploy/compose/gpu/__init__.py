@@ -1,31 +1,6 @@
 """
 Code in this file assumes that it is being run via dvactl and git repo root as current directory
 """
-CONFIG = {
-    "deploy/gpu/docker-compose-2-gpus.yml": {"global_model_gpu_id": 0,
-                                             "global_model_memory_fraction": 0.1,
-                                             "workers":
-                                                 [(0, 0.25, "LAUNCH_BY_NAME_indexer_inception", "inception"),
-                                                  (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
-                                                  (0, 0.5, "LAUNCH_BY_NAME_detector_coco", "coco"),
-                                                  (1, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
-                                                  (1, 0.19, "LAUNCH_BY_NAME_detector_face", "face"),
-                                                  (1, 0.15, "LAUNCH_BY_NAME_indexer_facenet", "facenet"),
-                                                  (1, 0.15, "LAUNCH_BY_NAME_analyzer_tagger", "tagger")]
-                                             },
-    "deploy/gpu/docker-compose-4-gpus.yml": {"global_model_gpu_id": 2,
-                                             "global_model_memory_fraction": 0.29,
-                                             "workers":
-                                                 [(0, 0.3, "LAUNCH_BY_NAME_indexer_inception", "inception"),
-                                                  (0, 0.4, "LAUNCH_BY_NAME_analyzer_tagger", "tagger"),
-                                                  (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
-                                                  (1, 1.0, "LAUNCH_BY_NAME_detector_coco", "coco"),
-                                                  (2, 0.7, "LAUNCH_BY_NAME_detector_face", "face"),
-                                                  (3, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
-                                                  (3, 0.45, "LAUNCH_BY_NAME_indexer_facenet", "facenet")
-                                                  ]
-                                             },
-}
 
 SKELETON = """  version: '3'
   services:
@@ -126,16 +101,33 @@ BLOCK = """   {worker_name}:
          volumes:
            - dvadata:/root/media"""
 
+CPU_BLOCK = """   {worker_name}:
+         image: akshayubhat/dva-auto:latest
+         env_file:
+           - ../../../custom.env
+         environment:
+           - {env_key}={env_value}
+         command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
+         depends_on:
+           - db
+           - redis       
+           - rabbit
+         volumes:
+           - dvadata:/root/media"""
 
-def generate_multi_gpu_compose():
-    for fname in CONFIG:
+
+def generate_multi_gpu_compose(fname,config):
         blocks = []
-        worker_specs = CONFIG[fname]['workers']
+        worker_specs = config['workers']
         for gpu_id, fraction, env_key, worker_name, in worker_specs:
-            blocks.append(
-                BLOCK.format(worker_name=worker_name, gpu_id=gpu_id, memory_fraction=fraction, env_key=env_key,
-                             env_value=1))
+            if fraction > 0:
+                blocks.append(
+                    BLOCK.format(worker_name=worker_name, gpu_id=gpu_id, memory_fraction=fraction, env_key=env_key,
+                                 env_value=1))
+            else:
+                blocks.append(
+                    CPU_BLOCK.format(worker_name=worker_name, env_key=env_key, env_value=1))
         with open(fname, 'w') as out:
             out.write(SKELETON.format(gpu_workers="\n".join(blocks),
-                                      global_model_gpu_id=CONFIG[fname]['global_model_gpu_id'],
-                                      global_model_memory_fraction=CONFIG[fname]['global_model_memory_fraction']))
+                                      global_model_gpu_id=config['global_model_gpu_id'],
+                                      global_model_memory_fraction=config['global_model_memory_fraction']))

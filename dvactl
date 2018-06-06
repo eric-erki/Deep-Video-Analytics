@@ -17,6 +17,50 @@ def get_mode():
     return json.load(file("config.json"))
 
 
+CONFIG = {
+    1: {
+        "compose_filename": "deploy/gpu/docker-compose-gpu.yml",
+        "config": {"global_model_gpu_id": 0,
+                   "global_model_memory_fraction": 0.05,
+                   "workers":
+                       [(0, 0, "LAUNCH_BY_NAME_indexer_inception", "inception"),
+                        (0, 0.1, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
+                        (0, 0.4, "LAUNCH_BY_NAME_detector_coco", "coco"),
+                        (0, 0.4, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
+                        (0, 0, "LAUNCH_BY_NAME_detector_face", "face"),
+                        (0, 0, "LAUNCH_BY_NAME_indexer_facenet", "facenet"),
+                        (0, 0, "LAUNCH_BY_NAME_analyzer_tagger", "tagger")]
+                   }},
+    2: {
+        "compose_filename": "deploy/gpu/docker-compose-2-gpus.yml",
+        "config": {"global_model_gpu_id": 0,
+                   "global_model_memory_fraction": 0.1,
+                   "workers":
+                       [(0, 0.25, "LAUNCH_BY_NAME_indexer_inception", "inception"),
+                        (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
+                        (0, 0.5, "LAUNCH_BY_NAME_detector_coco", "coco"),
+                        (1, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
+                        (1, 0.19, "LAUNCH_BY_NAME_detector_face", "face"),
+                        (1, 0.15, "LAUNCH_BY_NAME_indexer_facenet", "facenet"),
+                        (1, 0.15, "LAUNCH_BY_NAME_analyzer_tagger", "tagger")]
+                   }},
+    4: {
+        "compose_filename": "deploy/gpu/docker-compose-4-gpus.yml",
+        "config": {"global_model_gpu_id": 2,
+                   "global_model_memory_fraction": 0.29,
+                   "workers":
+                       [(0, 0.3, "LAUNCH_BY_NAME_indexer_inception", "inception"),
+                        (0, 0.4, "LAUNCH_BY_NAME_analyzer_tagger", "tagger"),
+                        (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
+                        (1, 1.0, "LAUNCH_BY_NAME_detector_coco", "coco"),
+                        (2, 0.7, "LAUNCH_BY_NAME_detector_face", "face"),
+                        (3, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
+                        (3, 0.45, "LAUNCH_BY_NAME_indexer_facenet", "facenet")
+                        ]
+                   }}
+}
+
+
 def configure_kube():
     config_template = {
         "dbusername": "pguser",
@@ -77,6 +121,8 @@ def configure_compose(mode):
     if process.strip():
         init_models = models
     envs = {}
+    gpu_compose_filename = None
+    gpu_config = None
     if mode == 'test':
         envs['ENABLE_CLOUDFS'] = 1
         try:
@@ -106,8 +152,12 @@ def configure_compose(mode):
             print '{} not found. not passing Digital Ocean creds.'.format(os.path.expanduser('~/do.env'))
     if mode == 'gpu':
         gpu_count = int(raw_input("Please select number of GPUs >>").strip())
+        gpu_compose_filename = CONFIG[gpu_count]['compose_filename']
+        gpu_config = CONFIG[gpu_count]['config']
+        print "Memory fraction and gpu allocation for individual workers has been written to config.json, please edit" \
+              "the file to optionally specify custom allocation"
     return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models,
-            'credentials': envs}
+            'credentials': envs, 'gpu_compose_filename': gpu_compose_filename, 'gpu_config': gpu_config}
 
 
 def configure(mode=None):
@@ -170,4 +220,6 @@ if __name__ == '__main__':
             if args.action == 'create':
                 raise ValueError("create  is not required for compose, its used in kube mdoe to create GKE cluster")
             compose.handle_compose_operations(args, mode_dict['mode'], mode_dict['gpus'], mode_dict['init_process'],
-                                              mode_dict['init_models'], mode_dict['credentials'])
+                                              mode_dict['init_models'], mode_dict['credentials'],
+                                              gpu_compose_filename=mode_dict['gpu_compose_filename'],
+                                              gpu_config=mode_dict['gpu_config'])
