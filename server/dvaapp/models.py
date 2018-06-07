@@ -116,20 +116,6 @@ class Video(models.Model):
                         pass
 
 
-class IngestEntry(models.Model):
-    video = models.ForeignKey(Video)
-    ingest_index = models.IntegerField()
-    ingest_filename = models.CharField(max_length=500)
-    start_segment_index = models.IntegerField(null=True)
-    start_frame_index = models.IntegerField(null=True)
-    segments = models.IntegerField(null=True)
-    frames = models.IntegerField(null=True)
-    created = models.DateTimeField('date created', auto_now_add=True)
-
-    class Meta:
-        unique_together = (("video", "ingest_filename", "ingest_index"),)
-
-
 class TEvent(models.Model):
     started = models.BooleanField(default=False)
     completed = models.BooleanField(default=False)
@@ -170,7 +156,7 @@ class TrainingSet(models.Model):
         (CLASSIFICATION, 'Classification')
     )
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    event = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent)
     source_filters = JSONField(blank=True, null=True)
     training_task_type = models.CharField(max_length=1, choices=TRAIN_TASK_TYPES, db_index=True, default=DETECTION)
     instance_type = models.CharField(max_length=1, choices=INSTANCE_TYPES, db_index=True, default=IMAGES)
@@ -224,7 +210,7 @@ class TrainedModel(models.Model):
     model_filename = models.CharField(max_length=200, default="", null=True)
     created = models.DateTimeField('date created', auto_now_add=True)
     arguments = JSONField(null=True, blank=True)
-    event = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent)
     trained = models.BooleanField(default=False)
     training_set = models.ForeignKey(TrainingSet, null=True)
     url = models.CharField(max_length=200, default="")
@@ -339,7 +325,7 @@ class Retriever(models.Model):
 
 class Frame(models.Model):
     video = models.ForeignKey(Video)
-    event = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent)
     frame_index = models.IntegerField()
     name = models.CharField(max_length=200, null=True)
     subdir = models.TextField(default="")  # Retains information if the source is a dataset for labeling
@@ -373,7 +359,7 @@ class Segment(models.Model):
     segment_index = models.IntegerField()
     start_time = models.FloatField(default=0.0)
     end_time = models.FloatField(default=0.0)
-    event = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent)
     metadata = models.TextField(default="{}")
     frame_count = models.IntegerField(default=0)
     start_index = models.IntegerField(default=0)
@@ -415,7 +401,7 @@ class Region(models.Model):
     video = models.ForeignKey(Video)
     user = models.ForeignKey(User, null=True)
     frame = models.ForeignKey(Frame, null=True)
-    event = models.ForeignKey(TEvent, null=True)  # TEvent that created this region
+    event = models.ForeignKey(TEvent)  # TEvent that created this region
     frame_index = models.IntegerField(default=-1)
     segment_index = models.IntegerField(default=-1, null=True)
     text = models.TextField(default="")
@@ -478,7 +464,7 @@ class QueryRegion(models.Model):
     )
     region_type = models.CharField(max_length=1, choices=REGION_TYPES, db_index=True)
     query = models.ForeignKey(DVAPQL)
-    event = models.ForeignKey(TEvent, null=True)  # TEvent that created this region
+    event = models.ForeignKey(TEvent)  # TEvent that created this region
     text = models.TextField(default="")
     metadata = JSONField(blank=True, null=True)
     full_frame = models.BooleanField(default=False)
@@ -495,7 +481,7 @@ class QueryRegion(models.Model):
 
 class QueryResults(models.Model):
     query = models.ForeignKey(DVAPQL)
-    retrieval_event = models.ForeignKey(TEvent, null=True)
+    retrieval_event = models.ForeignKey(TEvent)
     video = models.ForeignKey(Video)
     frame = models.ForeignKey(Frame)
     detection = models.ForeignKey(Region, null=True)
@@ -507,7 +493,7 @@ class QueryResults(models.Model):
 class QueryRegionResults(models.Model):
     query = models.ForeignKey(DVAPQL)
     query_region = models.ForeignKey(QueryRegion)
-    retrieval_event = models.ForeignKey(TEvent, null=True)
+    retrieval_event = models.ForeignKey(TEvent)
     video = models.ForeignKey(Video)
     frame = models.ForeignKey(Frame)
     detection = models.ForeignKey(Region, null=True)
@@ -531,7 +517,7 @@ class IndexEntries(models.Model):
     contains_frames = models.BooleanField(default=False)
     contains_detections = models.BooleanField(default=False)
     created = models.DateTimeField('date created', auto_now_add=True)
-    event = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent)
 
     def __unicode__(self):
         return "{} in {} index by {}".format(self.detection_name, self.algorithm, self.video.name)
@@ -580,7 +566,7 @@ class Tube(models.Model):
     end_region = models.ForeignKey(Region, null=True, related_name="end_region")
     text = models.TextField(default="")
     metadata = JSONField(blank=True, null=True)
-    source = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent)
 
 
 class RegionRelation(models.Model):

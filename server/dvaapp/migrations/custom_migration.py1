@@ -17,7 +17,6 @@ class Migration(migrations.Migration):
             CREATE INDEX region_text_index_object_name ON dvaapp_region USING GIST (to_tsvector('english', object_name));
             CREATE INDEX frame_text_index_name ON dvaapp_frame USING GIST (to_tsvector('english', name ));
             CREATE INDEX frame_text_index_subdir ON dvaapp_frame USING GIST (to_tsvector('english', subdir));
-            CREATE INDEX label_text_index ON dvaapp_label USING GIST (to_tsvector('english', name));
             """
         ),
     ]
