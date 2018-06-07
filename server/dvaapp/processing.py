@@ -404,7 +404,7 @@ class DVAPQLProcess(object):
                 if v == '__timezone.now__':
                     c_copy['spec'][k] = timezone.now()
             if c['MODEL'] != 'Video':
-                c['event_id'] = self.root_task.pk
+                c_copy['spec']['event_id'] = self.root_task.pk
             instance = m.objects.create(**c_copy['spec'])
             self.created_objects.append(instance)
 
