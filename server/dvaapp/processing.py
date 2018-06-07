@@ -372,6 +372,7 @@ class DVAPQLProcess(object):
     def launch(self):
         if self.process.script['process_type'] == DVAPQL.PROCESS:
             self.delete_instances()
+            self.create_root_task()
             self.create_instances()
             self.launch_processing_tasks()
             self.launch_process_monitor()
@@ -402,6 +403,8 @@ class DVAPQLProcess(object):
             for k, v in c['spec'].iteritems():
                 if v == '__timezone.now__':
                     c_copy['spec'][k] = timezone.now()
+            if c['MODEL'] != 'Video':
+                c['event_id'] = self.root_task.pk
             instance = m.objects.create(**c_copy['spec'])
             self.created_objects.append(instance)
 
@@ -412,7 +415,6 @@ class DVAPQLProcess(object):
         self.task_group_index += 1
 
     def launch_processing_tasks(self):
-        self.create_root_task()
         self.assign_task_group_id(self.process.script.get('map', []), 0)
         for t in self.process.script.get('map', []):
             self.launch_task(t)
