@@ -17,7 +17,101 @@ def get_mode():
     return json.load(file("config.json"))
 
 
-CONFIG = {
+DEFAULT_KUBE_WORKERS = [
+    {'name': 'coco',
+     'worker_env': 'LAUNCH_BY_NAME_detector_coco',
+     'max_cpu': 4,
+     'request_cpu': 1,
+     'request_memory': "2000Mi",
+     'max_memory': "4000Mi"
+     },
+    {'name': 'crnn',
+     'worker_env': 'LAUNCH_BY_NAME_analyzer_crnn',
+     'max_cpu': 4,
+     'request_cpu': 1,
+     'request_memory': "2000Mi",
+     'max_memory': "4000Mi"
+     },
+    {'name': 'extractor',
+     'worker_env': 'LAUNCH_Q_qextract',
+     'max_cpu': 1,
+     'request_cpu': 1,
+     'request_memory': "1000Mi",
+     'max_memory': "10000Mi"
+     },
+    {'name': 'face',
+     'worker_env': 'LAUNCH_BY_NAME_detector_face',
+     'max_cpu': 4,
+     'request_cpu': 1,
+     'request_memory': "2000Mi",
+     'max_memory': "4000Mi"
+     },
+    {'name': 'facenet',
+     'worker_env': 'LAUNCH_BY_NAME_indexer_facenet',
+     'max_cpu': 4,
+     'request_cpu': 1,
+     'request_memory': "2000Mi",
+     'max_memory': "4000Mi"
+     },
+    {'name': 'globalmodel',
+     'worker_env': 'LAUNCH_Q_GLOBAL_MODEL',
+     'max_cpu': 4,
+     'request_cpu': 1,
+     'request_memory': "2000Mi",
+     'max_memory': "8000Mi"
+     },
+    {'name': 'globalretriever',
+     'worker_env': 'LAUNCH_Q_GLOBAL_RETRIEVER',
+     'max_cpu': 4,
+     'request_cpu': 1,
+     'request_memory': "2000Mi",
+     'max_memory': "80000Mi"
+     },
+    {'name': 'inception',
+     'worker_env': 'LAUNCH_BY_NAME_indexer_inception',
+     'max_cpu': 4,
+     'request_cpu': 1,
+     'request_memory': "2000Mi",
+     'max_memory': "4000Mi"
+     },
+    {'name': 'retinception',
+     'worker_env': 'LAUNCH_BY_NAME_retriever_inception',
+     'max_cpu': 4,
+     'request_cpu': 1,
+     'request_memory': "2000Mi",
+     'max_memory': "80000Mi"
+     },
+    {'name': 'streamer',
+     'worker_env': 'LAUNCH_Q_qstreamer',
+     'max_cpu': 4,
+     'request_cpu': 1,
+     'request_memory': "500Mi",
+     'max_memory': "4000Mi"
+     },
+    {'name': 'tagger',
+     'worker_env': 'LAUNCH_BY_NAME_analyzer_tagger',
+     'max_cpu': 4,
+     'request_cpu': 1,
+     'request_memory': "2000Mi",
+     'max_memory': "4000Mi"
+     },
+    {'name': 'textbox',
+     'worker_env': 'LAUNCH_BY_NAME_detector_textbox',
+     'max_cpu': 8,
+     'request_cpu': 1,
+     'request_memory': "3000Mi",
+     'max_memory': "8000Mi"
+     },
+    {'name': 'trainer',
+     'worker_env': 'LAUNCH_Q_qtrainer',
+     'max_cpu': 8,
+     'request_cpu': 1,
+     'request_memory': "3000Mi",
+     'max_memory': "8000Mi"
+     },
+]
+
+GPU_CONFIG = {
     1: {
         "compose_filename": "deploy/compose/gpu/docker-compose-1-gpus.yml",
         "config": {"global_model_gpu_id": 0,
@@ -73,6 +167,7 @@ def configure_kube():
         "mediabucket": "dvamedia_{random_string}",
         "secretkey": "{random_string}",
         "superuser": "admin",
+        "namespace": "nsdva",
         "superpass": "please_change_this",
         "superemail": "admin@test.com",
         "cloudfsprefix": "gs",
@@ -83,7 +178,9 @@ def configure_kube():
         "cluster_name": "dvacluster",
         "machine_type": "custom-22-84480",
         "nodes": 1,
-        "branch": "stable"
+        "disk_size":100,
+        "branch": "stable",
+        "workers": DEFAULT_KUBE_WORKERS
     }
     config = {"mode": "kube"}
     print "Creating configuration for kubernetes from kubeconfig.example.json"
@@ -98,17 +195,21 @@ def configure_kube():
     for k, v in sorted(config_template.items()):
         if k in existing_config:
             v = existing_config[k]
-        if (type(v) is str or type(v) is unicode) and "{random_string}" in v:
-            v = v.format(random_string=random.randint(0, 100000000))
-        new_value = raw_input(
-            "Enter value for {} (Current value is '{}' press enter to keep current value) >>".format(k, v))
-        if new_value.strip():
-            if type(v) is int:
-                config[k] = int(new_value)
+        if k != "workers":
+            if (type(v) is str or type(v) is unicode) and "{random_string}" in v:
+                v = v.format(random_string=random.randint(0, 100000000))
+            new_value = raw_input(
+                "Enter value for {} (Current value is '{}' press enter to keep current value) >>".format(k, v))
+            if new_value.strip():
+                if type(v) is int:
+                    config[k] = int(new_value)
+                else:
+                    config[k] = new_value
             else:
-                config[k] = new_value
+                config[k] = v
         else:
             config[k] = v
+    print "worker configurations are stored in config.json"
     return config
 
 
@@ -156,8 +257,8 @@ def configure_compose(mode):
             print '{} not found. not passing Digital Ocean creds.'.format(os.path.expanduser('~/do.env'))
     if mode == 'gpu':
         gpu_count = int(raw_input("Please select number of GPUs >>").strip())
-        gpu_compose_filename = CONFIG[gpu_count]['compose_filename']
-        gpu_config = CONFIG[gpu_count]['config']
+        gpu_compose_filename = GPU_CONFIG[gpu_count]['compose_filename']
+        gpu_config = GPU_CONFIG[gpu_count]['config']
         print "Memory fraction and gpu allocation for individual workers has been written to config.json, please edit" \
               "the file to optionally specify custom allocation"
     return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models,
