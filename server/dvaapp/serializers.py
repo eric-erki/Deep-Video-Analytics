@@ -262,8 +262,8 @@ class FrameExportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Frame
-        fields = ('region_list', 'video', 'frame_index', 'keyframe', 'w', 'h', 't',
-                  'name', 'subdir', 'id', 'segment_index')
+        fields = ('region_list', 'video', 'frame_index', 'keyframe', 'w', 'h', 't','event', 'name', 'subdir', 'id',
+                  'segment_index')
 
 
 class IndexEntryExportSerializer(serializers.ModelSerializer):
@@ -626,8 +626,7 @@ class VideoImporter(object):
         df.h = f.get('h', 0)
         df.w = f.get('w', 0)
         df.t = f.get('t', 0)
-        if f.get('event', None):
-            df.event_id = self.event_to_pk[f['event']]
+        df.event_id = self.event_to_pk[f['event']]
         df.segment_index = f.get('segment_index', 0)
         df.keyframe = f.get('keyframe', False)
         return df
