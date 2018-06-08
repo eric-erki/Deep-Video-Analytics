@@ -74,7 +74,8 @@ if __name__ == "__main__":
             local_models_path = remote_models_path
     default_models = json.loads(file(local_models_path).read())
     if not settings.KUBE_MODE:
-        init_event = TEvent.objects.create(operation="perform_init",duration=0)
+        init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True,
+                                           start_ts=timezone.now())
         for m in default_models:
             create_model(m, init_event)
     if 'LAUNCH_SERVER' in os.environ or 'LAUNCH_SERVER_NGINX' in os.environ:
@@ -82,7 +83,7 @@ if __name__ == "__main__":
             # todo(akshay): This code is prone to race condition when starting the cluster.
             time.sleep(random.randint(0, 15))
             init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True
-                                               ,start_ts=timezone.now())
+                                               , start_ts=timezone.now())
             for m in default_models:
                 create_model(m, init_event)
         if 'INIT_PROCESS' in os.environ:
