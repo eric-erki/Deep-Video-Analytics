@@ -55,6 +55,36 @@ class DVAPQL(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
 
+class TrainingSet(models.Model):
+    DETECTION = constants.DETECTION
+    INDEXING = constants.INDEXING
+    TRAINAPPROX = constants.TRAINAPPROX
+    CLASSIFICATION = constants.CLASSIFICATION
+    IMAGES = constants.IMAGES
+    VIDEOS = constants.VIDEOS
+    INDEX = constants.INDEX
+    INSTANCE_TYPES = (
+        (IMAGES, 'images'),
+        (INDEX, 'index'),
+        (VIDEOS, 'videos'),
+    )
+    TRAIN_TASK_TYPES = (
+        (DETECTION, 'Detection'),
+        (INDEXING, 'Indexing'),
+        (TRAINAPPROX, 'Approximation'),
+        (CLASSIFICATION, 'Classification')
+    )
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    source_filters = JSONField(blank=True, null=True)
+    training_task_type = models.CharField(max_length=1, choices=TRAIN_TASK_TYPES, db_index=True, default=DETECTION)
+    instance_type = models.CharField(max_length=1, choices=INSTANCE_TYPES, db_index=True, default=IMAGES)
+    count = models.IntegerField(null=True)
+    name = models.CharField(max_length=500, default="")
+    files = JSONField(blank=True, null=True)
+    built = models.BooleanField(default=False)
+    created = models.DateTimeField('date created', auto_now_add=True)
+
+
 class Video(models.Model):
     id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     name = models.CharField(max_length=500, default="")
@@ -123,6 +153,7 @@ class TEvent(models.Model):
     worker = models.ForeignKey(Worker, null=True)
     error_message = models.TextField(default="")
     video = models.ForeignKey(Video, null=True)
+    training_set = models.ForeignKey(TrainingSet, null=True)
     operation = models.CharField(max_length=100, default="")
     queue = models.CharField(max_length=100, default="")
     created = models.DateTimeField('date created', auto_now_add=True)
@@ -134,37 +165,6 @@ class TEvent(models.Model):
     parent_process = models.ForeignKey(DVAPQL, null=True)
     imported = models.BooleanField(default=False)
     task_group_id = models.IntegerField(default=-1)
-
-
-class TrainingSet(models.Model):
-    DETECTION = constants.DETECTION
-    INDEXING = constants.INDEXING
-    TRAINAPPROX = constants.TRAINAPPROX
-    CLASSIFICATION = constants.CLASSIFICATION
-    IMAGES = constants.IMAGES
-    VIDEOS = constants.VIDEOS
-    INDEX = constants.INDEX
-    INSTANCE_TYPES = (
-        (IMAGES, 'images'),
-        (INDEX, 'index'),
-        (VIDEOS, 'videos'),
-    )
-    TRAIN_TASK_TYPES = (
-        (DETECTION, 'Detection'),
-        (INDEXING, 'Indexing'),
-        (TRAINAPPROX, 'Approximation'),
-        (CLASSIFICATION, 'Classification')
-    )
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    event = models.ForeignKey(TEvent)
-    source_filters = JSONField(blank=True, null=True)
-    training_task_type = models.CharField(max_length=1, choices=TRAIN_TASK_TYPES, db_index=True, default=DETECTION)
-    instance_type = models.CharField(max_length=1, choices=INSTANCE_TYPES, db_index=True, default=IMAGES)
-    count = models.IntegerField(null=True)
-    name = models.CharField(max_length=500, default="")
-    files = JSONField(blank=True, null=True)
-    built = models.BooleanField(default=False)
-    created = models.DateTimeField('date created', auto_now_add=True)
 
 
 class TrainedModel(models.Model):

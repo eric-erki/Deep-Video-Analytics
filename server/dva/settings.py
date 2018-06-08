@@ -284,6 +284,8 @@ RESTARTABLE_TASKS = {
 
 NON_PROCESSING_TASKS = {'perform_training','perform_training_set_creation','perform_deletion', 'perform_export'}
 
+TRAINING_TASKS = {'perform_training','perform_training_set_creation'}
+
 # Is the code running on kubernetes?
 KUBE_MODE = 'KUBE_MODE' in os.environ
 # How many video segments should we process at a time?

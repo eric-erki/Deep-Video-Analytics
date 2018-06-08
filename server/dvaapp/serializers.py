@@ -214,7 +214,7 @@ class TaskExportSerializer(serializers.ModelSerializer):
         model = TEvent
         fields = ('started', 'completed', 'errored', 'worker', 'error_message', 'video', 'operation', 'queue',
                   'created', 'start_ts', 'duration', 'arguments', 'task_id', 'parent', 'parent_process',
-                  'imported', 'query_results', 'query_regions', 'id')
+                  'training_set', 'imported', 'query_results', 'query_regions', 'id')
 
 
 class TEventSerializer(serializers.HyperlinkedModelSerializer):

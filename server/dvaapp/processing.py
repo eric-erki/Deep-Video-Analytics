@@ -11,7 +11,7 @@ except ImportError:
     np = None
     logging.warning("Could not import indexer / clustering assuming running in front-end mode")
 from django.apps import apps
-from models import Video, DVAPQL, TEvent, TrainedModel, Retriever, Worker, DeletedVideo
+from models import Video, DVAPQL, TEvent, TrainedModel, Retriever, Worker, DeletedVideo, TrainingSet
 from celery.result import AsyncResult
 import fs
 import task_shared
@@ -256,12 +256,22 @@ def launch_tasks(k, dt, inject_filters, map_filters=None, launch_type=""):
                 video_per_task = Video.objects.get(**k['video_selector'])
             else:
                 video_per_task = v
+        if op in settings.TRAINING_TASKS:
+            if "training_set_selector_id" in k:
+                training_set = Video.objects.get(pk=k['training_set_selector_id'])
+            elif "training_set_selector" in k:
+                training_set = Video.objects.get(**k['training_set_selector'])
+            else:
+                training_set = dt.training_set
+        else:
+            training_set = None
         if op == 'perform_sync':
             task_group_id = k.get('task_group_id', -1)
         else:
             task_group_id = k['task_group_id']
         next_task = TEvent.objects.create(video=video_per_task, operation=op, arguments=args, parent=dt,
-                                          task_group_id=task_group_id, parent_process=p, queue=q)
+                                          task_group_id=task_group_id, parent_process=p, queue=q,
+                                          training_set=training_set)
         tids.append(app.send_task(k['operation'], args=[next_task.pk, ], queue=q).id)
     return tids
 
@@ -403,7 +413,7 @@ class DVAPQLProcess(object):
             for k, v in c['spec'].iteritems():
                 if v == '__timezone.now__':
                     c_copy['spec'][k] = timezone.now()
-            if c['MODEL'] != 'Video':
+            if c['MODEL'] != 'Video' and c['MODEL'] != 'TrainingSet':
                 c_copy['spec']['event_id'] = self.root_task.pk
             instance = m.objects.create(**c_copy['spec'])
             self.created_objects.append(instance)
@@ -463,11 +473,16 @@ class DVAPQLProcess(object):
         for k, v in t.get('arguments', {}).iteritems():
             if (type(v) is str or type(v) is unicode) and v.startswith('__created__'):
                 t['arguments'][k] = self.get_created_object_pk(v)
-        if 'video_id' in t:
+        if 'video_id' in t or 'video_selector' in t:
             if (type(t['video_id']) is str or type(t['video_id']) is unicode) and t['video_id'].startswith(
                     '__created__'):
                 t['video_id'] = self.get_created_object_pk(t['video_id'])
-            v = Video.objects.get(pk=t['video_id'])
+                v = Video.objects.get(pk=t['video_id'])
+            elif 'video_selector' in t:
+                v = Video.objects.get(**t['video_selector'])
+                t['video_id'] = v.pk
+            else:
+                v = Video.objects.get(pk=t['video_id'])
             map_filters = get_map_filters(t, v)
         else:
             map_filters = [{}]
@@ -487,6 +502,10 @@ class DVAPQLProcess(object):
             dt.parent = self.root_task
             if 'video_id' in t:
                 dt.video_id = t['video_id']
+            if 'training_set_id' in t:
+                dt.training_set_id = t['training_set_id']
+            elif 'training_set_selector' in t:
+                dt.training_set_id = TrainingSet.objects.get(**t['training_set_selector'])
             dt.arguments = args
             dt.queue, op = get_queue_name_and_operation(t['operation'], t.get('arguments', {}))
             dt.operation = op
