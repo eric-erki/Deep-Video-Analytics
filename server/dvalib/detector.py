@@ -18,8 +18,6 @@ else:
     except:
         logging.info("Could not import TensorFlow assuming front-end mode")
     else:
-        from yolo import trainer
-        from yolo import trainer
         from facenet import facenet
         from facenet.align import detect_face
         from lib.networks.factory import get_network
@@ -145,22 +143,6 @@ class TFDetector(BaseDetector):
             self.scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
             self.classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
             self.num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
-
-
-class YOLODetector(BaseDetector):
-
-    def __init__(self, args):
-        super(YOLODetector, self).__init__()
-        self.model = trainer.YOLOTrainer(boxes=[], images=[], args=args, test_mode=True)
-        self.session = None
-
-    def detect(self, image_path, min_score=0.20):
-        return self.model.apply(image_path, min_score)
-
-    def load(self):
-        if self.session is None:
-            self.model.load()
-            self.session = True
 
 
 class FaceDetector():
