@@ -533,7 +533,7 @@ def perform_training_set_creation(task_id):
         train_set = models.TrainingSet.objects.get(**args['training_set_selector'])
     else:
         raise ValueError("Could not find training set {}".format(args))
-    if train_set.event:
+    if train_set.built:
         raise ValueError("Training set has been already built or failed to build, please clone instead of rebuilding.")
     if train_set.training_task_type == models.TrainingSet.TRAINAPPROX:
         file_list = []
@@ -551,7 +551,6 @@ def perform_training_set_creation(task_id):
         train_set.built = True
         train_set.count = total_count
         train_set.files = file_list
-        train_set.event = dt
         train_set.save()
     else:
         raise NotImplementedError
