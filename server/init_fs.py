@@ -15,6 +15,7 @@ from dvaapp.models import TrainedModel, DVAPQL, TEvent
 from dvaapp.processing import DVAPQLProcess
 from django.contrib.auth.models import User
 from dvaapp.fs import get_path_to_file
+from django.utils import timezone
 
 
 def create_model(m, init_event):
@@ -80,7 +81,8 @@ if __name__ == "__main__":
         if settings.KUBE_MODE:
             # todo(akshay): This code is prone to race condition when starting the cluster.
             time.sleep(random.randint(0, 15))
-            init_event = TEvent.objects.create(operation="perform_init",duration=0)
+            init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True
+                                               ,start_ts=timezone.now())
             for m in default_models:
                 create_model(m, init_event)
         if 'INIT_PROCESS' in os.environ:
