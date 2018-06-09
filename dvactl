@@ -4,6 +4,7 @@ import os
 import json
 import random
 from deploy import compose, kube
+import subprocess
 
 try:
     import requests
@@ -300,6 +301,7 @@ if __name__ == '__main__':
     ./dvactl start 
     ./dvactl auth  # recreates creds.json  
     ./dvactl exec -f script.json  # run process using creds.json and REST API
+    ./dvactl shell -c (container default:webserver) -pod (default:empty)  # enter into a shell
     ./dvactl stop 
     ./dvactl clean 
     """
@@ -309,6 +311,8 @@ if __name__ == '__main__':
                              "| clean_restart ")
     parser.add_argument("-f", help="path to script to exec, e.g. process_livestream.json",
                         default="")
+    parser.add_argument("-container", help="Container to enter shell into",
+                        default="webserver")
     args = parser.parse_args()
     if args.action == 'configure':
         configure()
@@ -324,7 +328,23 @@ if __name__ == '__main__':
         else:
             if args.action == 'create':
                 raise ValueError("create  is not required for compose, its used in kube mdoe to create GKE cluster")
-            compose.handle_compose_operations(args, mode_dict['mode'], mode_dict['gpus'], mode_dict['init_process'],
+            elif args.action == 'shell':
+                containers = {line.strip().split()[-1] for line in
+                               subprocess.check_output(['docker','ps']).splitlines()
+                               if line.strip() and not line.strip().endswith('NAMES')}
+                if args.container in containers:
+                    print "Starting shell into container {}".format(args.container)
+                    command = " ".join(['docker','exec','-u="root"','-it',args.container,'bash'])
+                    print command
+                    # This is not safe and vulnerable to code execution on host, use only for interactive debugging.
+                    os.system(command)
+                else:
+                    raise ValueError("{} is not in list of currently running containers {}".format(args.container,
+                                                                                                   list(containers)))
+
+
+            else:
+                compose.handle_compose_operations(args, mode_dict['mode'], mode_dict['gpus'], mode_dict['init_process'],
                                               mode_dict['init_models'], mode_dict['credentials'],
                                               gpu_compose_filename=mode_dict['gpu_compose_filename'],
                                               gpu_config=mode_dict['gpu_config'])
