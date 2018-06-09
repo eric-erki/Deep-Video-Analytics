@@ -77,13 +77,13 @@ def launch_kube():
     run_commands(init_commands)
     print "sleeping for 120 seconds"
     time.sleep(120)
-    webserver_commands = ['kubectl create -n {} -f deploy/kube/webserver.yaml'.format(namespace), ]
-    run_commands(webserver_commands)
-    print "webserver launched, sleeping for 60 seconds"
-    time.sleep(60)
     scheduler_commands = ['kubectl create -n {} -f deploy/kube/scheduler.yaml'.format(namespace), ]
     run_commands(scheduler_commands)
-    print "scheduler launched, sleeping for 10 seconds"
+    print "scheduler launched, sleeping for 90 seconds"
+    time.sleep(90)
+    webserver_commands = ['kubectl create -n {} -f deploy/kube/webserver.yaml'.format(namespace), ]
+    run_commands(webserver_commands)
+    print "webserver launched, sleeping for 10 seconds"
     time.sleep(10)
     commands = []
     worker_template = file('./deploy/kube/worker.yaml.template').read()

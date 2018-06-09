@@ -17,7 +17,6 @@ from django.contrib.auth.models import User
 from dvaapp.fs import get_path_to_file
 from django.utils import timezone
 
-
 def create_model(m, init_event):
     try:
         if m['model_type'] == TrainedModel.DETECTOR:
@@ -44,6 +43,47 @@ def create_model(m, init_event):
         pass
 
 
+def init_models():
+    # In Kube mode create models when scheduler is launched which is always the first container.
+    local_models_path = "../configs/custom_defaults/trained_models.json"
+    if 'INIT_MODELS' in os.environ and os.environ['INIT_MODELS'].strip():
+        remote_models_path = os.environ['INIT_MODELS']
+        if not remote_models_path.startswith('/root/DVA/configs/custom_defaults/'):
+            local_models_path = 'custom_models.json'
+            get_path_to_file(remote_models_path, local_models_path)
+        else:
+            local_models_path = remote_models_path
+    default_models = json.loads(file(local_models_path).read())
+    if settings.KUBE_MODE and 'LAUNCH_SCHEDULER' in os.environ:
+        init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True
+                                           , start_ts=timezone.now())
+        for m in default_models:
+            create_model(m, init_event)
+    elif not settings.KUBE_MODE:
+        init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True,
+                                           start_ts=timezone.now())
+        for m in default_models:
+            create_model(m, init_event)
+
+
+def init_process():
+    if 'INIT_PROCESS' in os.environ:
+        path = os.environ.get('INIT_PROCESS', None)
+        if path and path.strip():
+            if not path.startswith('/root/DVA/configs/custom_defaults/'):
+                get_path_to_file(path, "temp.json")
+                path = 'temp.json'
+            try:
+                jspec = json.load(file(path))
+            except:
+                logging.exception("could not load : {}".format(path))
+            else:
+                p = DVAPQLProcess()
+                if DVAPQL.objects.count() == 0:
+                    p.create_from_json(jspec)
+                    p.launch()
+
+
 if __name__ == "__main__":
     if 'SUPERUSER' in os.environ and not User.objects.filter(is_superuser=True).exists():
         try:
@@ -64,40 +104,6 @@ if __name__ == "__main__":
         for e in json.loads(file("../configs/custom_defaults/external.json").read()):
             de, _ = ExternalServer.objects.get_or_create(name=e['name'], url=e['url'])
             de.pull()
-    local_models_path = "../configs/custom_defaults/trained_models.json"
-    if 'INIT_MODELS' in os.environ and os.environ['INIT_MODELS'].strip():
-        remote_models_path = os.environ['INIT_MODELS']
-        if not remote_models_path.startswith('/root/DVA/configs/custom_defaults/'):
-            local_models_path = 'custom_models.json'
-            get_path_to_file(remote_models_path, local_models_path)
-        else:
-            local_models_path = remote_models_path
-    default_models = json.loads(file(local_models_path).read())
-    if not settings.KUBE_MODE:
-        init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True,
-                                           start_ts=timezone.now())
-        for m in default_models:
-            create_model(m, init_event)
+    init_models()
     if 'LAUNCH_SERVER' in os.environ or 'LAUNCH_SERVER_NGINX' in os.environ:
-        if settings.KUBE_MODE:
-            # todo(akshay): This code is prone to race condition when starting the cluster.
-            time.sleep(random.randint(0, 15))
-            init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True
-                                               , start_ts=timezone.now())
-            for m in default_models:
-                create_model(m, init_event)
-        if 'INIT_PROCESS' in os.environ:
-            path = os.environ.get('INIT_PROCESS', None)
-            if path and path.strip():
-                if not path.startswith('/root/DVA/configs/custom_defaults/'):
-                    get_path_to_file(path, "temp.json")
-                    path = 'temp.json'
-                try:
-                    jspec = json.load(file(path))
-                except:
-                    logging.exception("could not load : {}".format(path))
-                else:
-                    p = DVAPQLProcess()
-                    if DVAPQL.objects.count() == 0:
-                        p.create_from_json(jspec)
-                        p.launch()
+        init_process()

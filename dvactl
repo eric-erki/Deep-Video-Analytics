@@ -301,7 +301,7 @@ if __name__ == '__main__':
     ./dvactl start 
     ./dvactl auth  # recreates creds.json  
     ./dvactl exec -f script.json  # run process using creds.json and REST API
-    ./dvactl shell -c (container default:webserver) -pod (default:empty)  # enter into a shell
+    ./dvactl shell --container (container default:webserver) --pod (default:empty)  # enter into a shell
     ./dvactl stop 
     ./dvactl clean 
     """
