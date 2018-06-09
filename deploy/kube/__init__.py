@@ -246,6 +246,24 @@ def get_webserver_pod():
             return line.strip().split()[0]
 
 
+def get_pod(container):
+    namespace = get_kube_config()['namespace']
+    output = subprocess.check_output(shlex.split(POD_COMMAND.format(namespace=namespace))).splitlines()
+    for line in output:
+        if line.startswith(container):
+            return line.strip().split()[0]
+    raise ValueError("Container {} not found in any pods".format(container))
+
+
+def shell(container,pod):
+    namespace = get_kube_config()['namespace']
+    if not pod:
+        pod = get_pod(container)
+    # This is unsafe and should not be run in automated manner, its still prevented from arbitary execution on host
+    # by ensuring that get_pod returns with a valid pod name for a given container and namespace.
+    os.system("kubectl -n {} exec -it {} -c {}  bash".format(namespace, pod, container))
+
+
 def get_service_ip():
     namespace = get_kube_config()['namespace']
     output = json.loads(subprocess.check_output(shlex.split(SERVER_COMMAND.format(namespace=namespace))))
@@ -271,6 +289,8 @@ def get_auth():
 def handle_kube_operations(args):
     if args.action == 'create':
         create_cluster()
+    if args.action == 'shell':
+        shell(args.container,args.pod)
     elif args.action == 'auth':
         get_auth()
     elif args.action == 'start':
