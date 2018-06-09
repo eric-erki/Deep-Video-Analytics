@@ -247,6 +247,8 @@ def get_webserver_pod():
 
 
 def get_pod(container):
+    if container == 'webserver':
+        container = 'dvawebserver'
     namespace = get_kube_config()['namespace']
     output = subprocess.check_output(shlex.split(POD_COMMAND.format(namespace=namespace))).splitlines()
     for line in output:
