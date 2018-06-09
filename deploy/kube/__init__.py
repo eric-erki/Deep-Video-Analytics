@@ -289,7 +289,7 @@ def get_auth():
 def handle_kube_operations(args):
     if args.action == 'create':
         create_cluster()
-    if args.action == 'shell':
+    elif args.action == 'shell':
         shell(args.container,args.pod)
     elif args.action == 'auth':
         get_auth()
