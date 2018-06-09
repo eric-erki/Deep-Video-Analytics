@@ -311,8 +311,10 @@ if __name__ == '__main__':
                              "| clean_restart ")
     parser.add_argument("-f", help="path to script to exec, e.g. process_livestream.json",
                         default="")
-    parser.add_argument("-container", help="Container to enter shell into",
+    parser.add_argument("--container", help="Container to enter shell into",
                         default="webserver")
+    parser.add_argument("--pod", help="Pod to enter shell into (required for ./dvactl shell when running in kube mode)",
+                        default="")
     args = parser.parse_args()
     if args.action == 'configure':
         configure()
