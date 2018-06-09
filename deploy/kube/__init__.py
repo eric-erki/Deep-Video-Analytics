@@ -247,8 +247,6 @@ def get_webserver_pod():
 
 
 def get_pod(container):
-    if container == 'webserver':
-        container = 'dvawebserver'
     namespace = get_kube_config()['namespace']
     output = subprocess.check_output(shlex.split(POD_COMMAND.format(namespace=namespace))).splitlines()
     for line in output:
@@ -259,6 +257,9 @@ def get_pod(container):
 
 def shell(container,pod):
     namespace = get_kube_config()['namespace']
+    # fix due to default being webserver and container name for webservers being dvawebserver.
+    if container == 'webserver':
+        container = 'dvawebserver'
     if not pod:
         pod = get_pod(container)
     # This is unsafe and should not be run in automated manner, its still prevented from arbitary execution on host
