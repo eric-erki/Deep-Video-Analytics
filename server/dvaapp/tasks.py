@@ -212,6 +212,29 @@ def perform_retrieval(task_id):
     return 0
 
 
+@app.task(track_started=True, name="perform_matching")
+def perform_matching(task_id):
+    """
+    Generates relations (within selected video/dataset) or hyper-relations (matching Indexed entries in
+    selected video/dataset with external video/dataset) by performing K-NN matching using a selected
+    indexer or approximator.
+    :param task_id:
+    :return:
+    """
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    args = dt.arguments
+    target = args.get('target', "frames")
+    k = args.get('k', 5)
+    indexer_shasum = args.get('indexer_shasum', None)
+    approximator_shasum = args.get('approximator_shasum', None)
+    source_filters = args.get('source_filters', {})
+    target_filters = args.get('target_filters', {})
+    mark_as_completed(dt)
+    return 0
+
+
 @app.task(track_started=True, name="perform_dataset_extraction")
 def perform_dataset_extraction(task_id):
     dt = get_and_check_task(task_id)

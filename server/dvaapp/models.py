@@ -582,6 +582,52 @@ class RegionRelation(models.Model):
     metadata = JSONField(blank=True, null=True)
 
 
+class HyperRegionRelation(models.Model):
+    """
+    Captures relations between a Region in a video/dataset and an external globally addressed path / URL.
+    HyperRegionRelation is an equivalent of anchor tags / hyperlinks.
+    e.g. Region -> http://http://akshaybhat.com/static/img/akshay.jpg
+    """
+    video = models.ForeignKey(Video)
+    region = models.ForeignKey(Region)
+    event = models.ForeignKey(TEvent)
+    name = models.CharField(max_length=400)
+    weight = models.FloatField(null=True)
+    metadata = JSONField(blank=True, null=True)
+    path = models.TextField()
+    full_frame = models.BooleanField(default=False)
+    x = models.IntegerField(default=0)
+    y = models.IntegerField(default=0)
+    h = models.IntegerField(default=0)
+    w = models.IntegerField(default=0)
+    # Unlike region frame_index is only required if the path points to a video or a .gif
+    frame_index = models.IntegerField(null=True)
+    segment_index = models.IntegerField(null=True)
+
+
+class HyperTubeRegionRelation(models.Model):
+    """
+    Captures relations between a Tube in a video/dataset and an external globally addressed path / URL.
+    HyperTubeRegionRelation is an equivalent of anchor tags / hyperlinks.
+    e.g. Tube -> http://http://akshaybhat.com/static/img/akshay.jpg
+    """
+    video = models.ForeignKey(Video)
+    tube = models.ForeignKey(Tube)
+    event = models.ForeignKey(TEvent)
+    name = models.CharField(max_length=400)
+    weight = models.FloatField(null=True)
+    metadata = JSONField(blank=True, null=True)
+    path = models.TextField()
+    full_frame = models.BooleanField(default=False)
+    x = models.IntegerField(default=0)
+    y = models.IntegerField(default=0)
+    h = models.IntegerField(default=0)
+    w = models.IntegerField(default=0)
+    # Unlike region frame_index is only required if the path points to a video or a .gif
+    frame_index = models.IntegerField(null=True)
+    segment_index = models.IntegerField(null=True)
+
+
 class TubeRelation(models.Model):
     """
     Captures relations between Tubes within a video/dataset.
