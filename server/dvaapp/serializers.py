@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from models import Video, Frame, Region, DVAPQL, QueryResults, TEvent, IndexEntries, Tube, Segment, TrainedModel, \
     Retriever, SystemState, QueryRegion, QueryRegionResults, Worker, TrainingSet, RegionRelation, TubeRegionRelation, \
-    TubeRelation, Export
+    TubeRelation, Export, HyperRegionRelation, HyperTubeRegionRelation
 import os, json, glob
 from collections import defaultdict
 from django.conf import settings
@@ -123,6 +123,29 @@ class RegionRelationSerializer(serializers.HyperlinkedModelSerializer):
                   'source_region', 'target_region', 'name', 'weight', 'event', 'metadata', 'id')
 
 
+class HyperRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
+    frame_media_url = serializers.SerializerMethodField()
+
+    def get_frame_media_url(self, obj):
+        if obj.region.frame_id:
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.region.frame_index)
+        else:
+            return None
+
+    class Meta:
+        model = HyperRegionRelation
+        fields = ('url', 'frame_media_url', 'source_frame_media_url', 'target_frame_media_url', 'video', 'path'
+                                                                                                         'source_region',
+                  'target_region', 'name', 'weight', 'event', 'metadata', 'id', 'x', 'y', 'w', 'h', 'full_frame')
+
+
+class HyperTubeRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = HyperTubeRegionRelation
+        fields = ('url', 'source_tube', 'target_tube', 'name', 'weight', 'video', 'event', 'metadata', 'id',
+                  'x', 'y', 'w', 'h', 'full_frame')
+
+
 class TubeRelationSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = TubeRelation
@@ -139,7 +162,7 @@ class TubeRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = TubeRegionRelation
         fields = (
-        'url', 'region_frame_media_url', 'region', 'tube', 'video', 'name', 'weight', 'event', 'metadata', 'id')
+            'url', 'region_frame_media_url', 'region', 'tube', 'video', 'name', 'weight', 'event', 'metadata', 'id')
 
 
 class TubeSerializer(serializers.HyperlinkedModelSerializer):
@@ -245,6 +268,18 @@ class RegionRelationExportSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class HyperRegionRelationExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HyperRegionRelation
+        fields = '__all__'
+
+
+class HyperTubeRegionRelationRelationExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HyperTubeRegionRelation
+        fields = '__all__'
+
+
 class TubeRelationExportSerializer(serializers.ModelSerializer):
     class Meta:
         model = TubeRelation
@@ -262,7 +297,7 @@ class FrameExportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Frame
-        fields = ('region_list', 'video', 'frame_index', 'keyframe', 'w', 'h', 't','event', 'name', 'subdir', 'id',
+        fields = ('region_list', 'video', 'frame_index', 'keyframe', 'w', 'h', 't', 'event', 'name', 'subdir', 'id',
                   'segment_index')
 
 

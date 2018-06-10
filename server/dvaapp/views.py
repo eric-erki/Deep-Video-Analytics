@@ -2,7 +2,7 @@ from django.conf import settings
 import json
 from .models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, Tube, Segment, \
     TubeRegionRelation, TubeRelation, Retriever, SystemState, QueryRegion, QueryRegionResults, \
-    TrainedModel, Worker, TrainingSet, RegionRelation, Export
+    TrainedModel, Worker, TrainingSet, RegionRelation, Export, HyperRegionRelation, HyperTubeRegionRelation
 import serializers
 from rest_framework import viewsets
 from django.contrib.auth.models import User
@@ -166,6 +166,18 @@ class RegionRelationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = RegionRelation.objects.all()
     serializer_class = serializers.RegionRelationSerializer
+
+
+class HyperRegionRelationViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
+    queryset = HyperRegionRelation.objects.all()
+    serializer_class = serializers.HyperRegionRelationSerializer
+
+
+class HyperTubeRegionRelationViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
+    queryset = HyperTubeRegionRelation.objects.all()
+    serializer_class = serializers.HyperTubeRegionRelationSerializer
 
 
 class TubeRelationViewSet(viewsets.ReadOnlyModelViewSet):
