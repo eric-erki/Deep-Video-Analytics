@@ -247,7 +247,7 @@ def handle_perform_matching(dt):
         mat, entries = di.load_index()
         if entries:
             if retriever is None:
-                retrieval.retriever.FaissFlatRetriever("matcher",components=mat.shape[1])
+                retriever = retrieval.retriever.FaissFlatRetriever("matcher",components=mat.shape[1])
             retriever.load_index(mat,entries)
     nn_results = []
     for di in models.IndexEntries.objects.filter(**source_filters):
