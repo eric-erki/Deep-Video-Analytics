@@ -242,6 +242,9 @@ def handle_perform_matching(dt):
         source_filters.update({'approximator_shasum': approximator_shasum})
         target_filters.update({'approximator_shasum': approximator_shasum})
         raise NotImplementedError
+    else:
+        source_filters.update({'approximator_shasum': None})
+        target_filters.update({'approximator_shasum': None})
     retriever = None
     for di in models.IndexEntries.objects.filter(**target_filters).exclude(video_id=dt.video_id):
         mat, entries = di.load_index()
@@ -257,5 +260,7 @@ def handle_perform_matching(dt):
     for di in models.IndexEntries.objects.filter(**source_filters):
         mat, entries = di.load_index()
         if entries:
+            mat = np.atleast_2d(mat.squeeze())
+            print mat.shape
             nn_results.append((entries,retriever.nearest_batch(mat,k)))
     print len(nn_results)
