@@ -245,9 +245,13 @@ def handle_perform_matching(dt):
     retriever = None
     for di in models.IndexEntries.objects.filter(**target_filters).exclude(video_id=dt.video_id):
         mat, entries = di.load_index()
+        print mat.shape
         if entries:
+            mat = np.atleast_2d(mat.squeeze())
+            print mat.shape
             if retriever is None:
-                retriever = retrieval.retriever.FaissFlatRetriever("matcher",components=mat.shape[1])
+                components = mat.shape[0]
+                retriever = retrieval.retriever.FaissFlatRetriever("matcher",components=components)
             retriever.load_index(mat,entries)
     nn_results = []
     for di in models.IndexEntries.objects.filter(**source_filters):
