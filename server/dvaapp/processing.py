@@ -22,6 +22,7 @@ SYNC_TASKS = {
     "perform_video_decode": [{'operation': 'perform_sync', 'arguments': {'dirname': 'frames'}}, ],
     "perform_frame_download": [{'operation': 'perform_sync', 'arguments': {'dirname': 'frames'}}, ],
     'perform_detection': [],
+    'perform_matching': [],
     'perform_region_import': [],
     'perform_transformation': [{'operation': 'perform_sync', 'arguments': {'dirname': 'regions'}}, ],
     'perform_indexing': [{'operation': 'perform_sync', 'arguments': {'dirname': 'indexes'}}, ],

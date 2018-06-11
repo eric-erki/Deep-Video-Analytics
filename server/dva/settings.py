@@ -257,6 +257,7 @@ TASK_NAMES_TO_QUEUE = {
     "perform_sync":Q_EXTRACTOR,
     "perform_import":Q_EXTRACTOR,
     "perform_stream_capture": Q_STREAMER,
+    "perform_matching": Q_TRAINER,
     "perform_training": Q_TRAINER,
     "perform_reduce": Q_REDUCER,
     "perform_video_decode_lambda": Q_LAMBDA

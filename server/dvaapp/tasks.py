@@ -224,13 +224,8 @@ def perform_matching(task_id):
     dt = get_and_check_task(task_id)
     if dt is None:
         return 0
-    args = dt.arguments
-    target = args.get('target', "frames")
-    k = args.get('k', 5)
-    indexer_shasum = args.get('indexer_shasum', None)
-    approximator_shasum = args.get('approximator_shasum', None)
-    source_filters = args.get('source_filters', {})
-    target_filters = args.get('target_filters', {})
+    task_handlers.handle_perform_matching(dt)
+    process_next(dt)
     mark_as_completed(dt)
     return 0
 

@@ -170,3 +170,16 @@ class FaissFlatRetriever(BaseRetriever):
             temp.update(self.files[k])
             results.append(temp)
         return results
+
+    def nearest_batch(self, vectors=None, n=12):
+        vectors = np.atleast_2d(vectors)
+        if vectors.shape[-1] != self.components:
+            vectors = vectors.T
+        dist, ids = self.faiss_index.search(vectors, n)
+        results = {}
+        for k in range(ids.shape[0]):
+            for i, k in enumerate(ids[k]):
+                temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[k, i])}
+                temp.update(self.files[k])
+                results[k].append(temp)
+        return results

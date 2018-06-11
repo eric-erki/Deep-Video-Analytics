@@ -1,5 +1,5 @@
 from django.conf import settings
-from .operations import indexing, detection, analysis, approximation
+from .operations import indexing, detection, analysis, approximation, retrieval
 import io
 import logging
 import tempfile
@@ -226,3 +226,31 @@ def handle_perform_analysis(start):
                 relations.append(models.RegionRelation(source_region_id=source_regions[i].id,target_region_id=k.id,
                                                        name='analysis', event_id=start.pk, video_id=start.video_id))
             models.RegionRelation.objects.bulk_create(relations, 1000)
+
+
+def handle_perform_matching(dt):
+    args = dt.arguments
+    k = args.get('k', 5)
+    indexer_shasum = args['indexer_shasum']
+    approximator_shasum = args.get('approximator_shasum', None)
+    source_filters = args.get('source_filters', {})
+    target_filters = args.get('target_filters', {})
+    source_filters.update({'video_id':dt.video_id})
+    source_filters.update({'indexer_shasum': indexer_shasum})
+    target_filters.update({'indexer_shasum': indexer_shasum})
+    if approximator_shasum:
+        source_filters.update({'approximator_shasum': approximator_shasum})
+        target_filters.update({'approximator_shasum': approximator_shasum})
+        raise NotImplementedError
+    retriever = None
+    for di in models.IndexEntries.objects.filter(**target_filters):
+        mat, entries = di.load_index()
+        if entries:
+            if retriever is None:
+                retrieval.retriever.FaissFlatRetriever("matcher",components=mat.shape[1])
+            retriever.load_index(mat,entries)
+    nn_results = []
+    for di in models.IndexEntries.objects.filter(**source_filters):
+        mat, entries = di.load_index()
+        if entries:
+            nn_results.append((entries,retriever.nearest_batch(mat,k)))
