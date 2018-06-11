@@ -250,7 +250,7 @@ def handle_perform_matching(dt):
             mat = np.atleast_2d(mat.squeeze())
             print mat.shape
             if retriever is None:
-                components = mat.shape[0]
+                components = mat.shape[1]
                 retriever = retrieval.retriever.FaissFlatRetriever("matcher",components=components)
             retriever.load_index(mat,entries)
     nn_results = []
