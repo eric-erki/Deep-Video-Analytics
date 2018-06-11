@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-import os, json, gzip, sys, shutil, zipfile, uuid
+import os, json, gzip, sys, shutil, zipfile, uuid, hashlib
 
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              "../../client/"))  # This ensures that the constants are same between client and server
@@ -259,12 +259,20 @@ class TrainedModel(models.Model):
                 os.mkdir(model_dir)
             except:
                 pass
+        shasums = []
         for m in self.files:
             dlpath = "{}/{}".format(model_dir, m['filename'])
             if m['url'].startswith('/'):
                 shutil.copy(m['url'], dlpath)
             else:
                 fs.get_path_to_file(m['url'], dlpath)
+            shasums.append(str(hashlib.sha1(file(dlpath).read()).hexdigest()))
+        if self.shasum is None:
+            if len(shasums) == 1:
+                self.shasum = shasums[0]
+            else:
+                self.shasum = str(hashlib.sha1(''.join(sorted(shasums))).hexdigest())
+            self.save()
         self.upload()
         if self.model_type == TrainedModel.DETECTOR and self.detector_type == TrainedModel.YOLO:
             source_zip = "{}/models/{}/model.zip".format(settings.MEDIA_ROOT, self.uuid)

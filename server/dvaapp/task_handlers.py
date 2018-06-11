@@ -233,8 +233,8 @@ def handle_perform_matching(dt):
     k = args.get('k', 5)
     indexer_shasum = args['indexer_shasum']
     approximator_shasum = args.get('approximator_shasum', None)
-    source_filters = args.get('source_filters', {})
-    target_filters = args.get('target_filters', {})
+    source_filters = args.get('source_filters', {'event__completed':True})
+    target_filters = args.get('target_filters', {'event__completed':True})
     source_filters.update({'video_id':dt.video_id})
     source_filters.update({'indexer_shasum': indexer_shasum})
     target_filters.update({'indexer_shasum': indexer_shasum})
@@ -243,7 +243,7 @@ def handle_perform_matching(dt):
         target_filters.update({'approximator_shasum': approximator_shasum})
         raise NotImplementedError
     retriever = None
-    for di in models.IndexEntries.objects.filter(**target_filters):
+    for di in models.IndexEntries.objects.filter(**target_filters).exclude(video_id=dt.video_id):
         mat, entries = di.load_index()
         if entries:
             if retriever is None:
@@ -254,3 +254,4 @@ def handle_perform_matching(dt):
         mat, entries = di.load_index()
         if entries:
             nn_results.append((entries,retriever.nearest_batch(mat,k)))
+    print len(nn_results)
