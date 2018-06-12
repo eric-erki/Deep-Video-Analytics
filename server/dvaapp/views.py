@@ -1,7 +1,7 @@
 from django.conf import settings
 import json
 from .models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, Tube, Segment, \
-    TubeRegionRelation, TubeRelation, Retriever, SystemState, QueryRegion, QueryRegionResults, \
+    TubeRegionRelation, TubeRelation, Retriever, SystemState, QueryRegion, \
     TrainedModel, Worker, TrainingSet, RegionRelation, Export, HyperRegionRelation, HyperTubeRegionRelation
 import serializers
 from rest_framework import viewsets
@@ -126,13 +126,6 @@ class QueryResultsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = QueryResults.objects.all()
     serializer_class = serializers.QueryResultsSerializer
-    filter_fields = ('query',)
-
-
-class QueryRegionResultsViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
-    queryset = QueryRegionResults.objects.all()
-    serializer_class = serializers.QueryRegionResultsSerializer
     filter_fields = ('query',)
 
 

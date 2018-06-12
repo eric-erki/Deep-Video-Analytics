@@ -1,6 +1,5 @@
 import os, json, copy, time, subprocess, logging, shutil, zipfile, uuid
-from models import QueryRegion, QueryRegionIndexVector, DVAPQL, Region, Frame, Segment, IndexEntries, TEvent, \
-    DeletedVideo, TaskRestart
+from models import QueryRegion, DVAPQL, Region, Frame, Segment, IndexEntries, TEvent, DeletedVideo, TaskRestart
 
 from django.conf import settings
 from PIL import Image
@@ -184,8 +183,6 @@ def build_queryset(args, video_id=None, query_id=None, target=None, filters=None
         queryset = IndexEntries.objects.all().filter(**kwargs)
     elif target == 'query_regions':
         queryset = QueryRegion.objects.all().filter(**kwargs)
-    elif target == 'query_region_index_vectors':
-        queryset = QueryRegionIndexVector.objects.all().filter(**kwargs)
     elif target == 'segments':
         queryset = Segment.objects.filter(**kwargs)
     else:

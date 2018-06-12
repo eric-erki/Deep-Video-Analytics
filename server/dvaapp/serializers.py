@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from models import Video, Frame, Region, DVAPQL, QueryResults, TEvent, IndexEntries, Tube, Segment, TrainedModel, \
-    Retriever, SystemState, QueryRegion, QueryRegionResults, Worker, TrainingSet, RegionRelation, TubeRegionRelation, \
-    TubeRelation, Export, HyperRegionRelation, HyperTubeRegionRelation
+    Retriever, SystemState, QueryRegion, Worker, TrainingSet, RegionRelation, TubeRegionRelation, TubeRelation, \
+    Export, HyperRegionRelation, HyperTubeRegionRelation
 import os, json, glob
 from collections import defaultdict
 from django.conf import settings
@@ -195,14 +195,6 @@ class QueryResultsSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
 
-class QueryRegionResultsSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = QueryRegionResults
-        fields = '__all__'
-
-
 class QueryResultsExportSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
 
@@ -211,22 +203,14 @@ class QueryResultsExportSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class QueryRegionResultsExportSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = QueryRegionResults
-        fields = '__all__'
-
-
 class QueryRegionExportSerializer(serializers.ModelSerializer):
-    query_region_results = QueryRegionResultsExportSerializer(source='queryregionresults_set', read_only=True,
-                                                              many=True)
+    query_results = QueryResultsExportSerializer(source='queryresults_set', read_only=True, many=True)
 
     class Meta:
         model = QueryRegion
         fields = (
             'id', 'region_type', 'query', 'event', 'text', 'metadata', 'full_frame', 'x', 'y', 'h', 'w',
-            'polygon_points',
-            'created', 'object_name', 'confidence', 'png', 'query_region_results')
+            'polygon_points', 'created', 'object_name', 'confidence', 'png', 'query_results')
 
 
 class TaskExportSerializer(serializers.ModelSerializer):

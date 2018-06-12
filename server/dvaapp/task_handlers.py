@@ -38,9 +38,7 @@ def handle_perform_indexing(start):
             vector = visual_index.apply(local_path)
             s = io.BytesIO()
             np.save(s, vector)
-            # can be replaced by Redis instead of using DB
             redis_client.hset(start.pk, dr.pk, s.getvalue())
-            _ = models.QueryRegionIndexVector.objects.create(vector=s.getvalue(), event=start, query_region=dr)
         sync = False
     elif target == 'regions':
         # For regions simply download/ensure files exists.

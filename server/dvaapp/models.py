@@ -490,18 +490,7 @@ class QueryRegion(models.Model):
 class QueryResults(models.Model):
     query = models.ForeignKey(DVAPQL)
     retrieval_event = models.ForeignKey(TEvent)
-    video = models.ForeignKey(Video)
-    frame = models.ForeignKey(Frame)
-    detection = models.ForeignKey(Region, null=True)
-    rank = models.IntegerField()
-    algorithm = models.CharField(max_length=100)
-    distance = models.FloatField(default=0.0)
-
-
-class QueryRegionResults(models.Model):
-    query = models.ForeignKey(DVAPQL)
-    query_region = models.ForeignKey(QueryRegion)
-    retrieval_event = models.ForeignKey(TEvent)
+    query_region = models.ForeignKey(QueryRegion, null=True)
     video = models.ForeignKey(Video)
     frame = models.ForeignKey(Frame)
     detection = models.ForeignKey(Region, null=True)

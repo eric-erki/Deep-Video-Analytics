@@ -378,10 +378,10 @@ def collect(p):
     rids_to_names = {}
     for rd in dvaapp.models.QueryRegion.objects.all().filter(query=p.process):
         rd_json = get_query_region_json(rd)
-        for r in dvaapp.models.QueryRegionResults.objects.filter(query=p.process, query_region=rd):
+        for r in dvaapp.models.QueryResults.objects.filter(query=p.process, query_region=rd):
             gather_results(r, rids_to_names, rd_json['results'])
         context['regions'].append(rd_json)
-    for r in dvaapp.models.QueryResults.objects.all().filter(query=p.process):
+    for r in dvaapp.models.QueryResults.objects.all().filter(query=p.process, query_region__isnull=True):
         gather_results(r, rids_to_names, context['results'])
     for k, v in context['results'].iteritems():
         if v:
@@ -465,7 +465,7 @@ def create_approximator_training_set(name, indexer_shasum, video_pks, user=None)
                 "MODEL": "TrainingSet",
                 "spec": {
                     "name": name,
-                    "training_task_type": dvaapp.models.TrainingSet.LOPQINDEX,
+                    "training_task_type": dvaapp.models.TrainingSet.TRAINAPPROX,
                     "instance_type": dvaapp.models.TrainingSet.INDEX,
                     "source_filters": {
                         "indexer_shasum": indexer_shasum,

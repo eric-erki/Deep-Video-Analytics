@@ -201,11 +201,11 @@ def perform_retrieval(task_id):
         vector = np.load(io.BytesIO(redis_client.get(dt.parent_id)))
         Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20))
     elif target == 'query_region_index_vectors':
-        queryset, target = task_shared.build_queryset(args=args)
-        for dr in queryset:
-            vector = np.load(io.BytesIO(dr.vector))
+        qr_pk_vector = redis_client.hgetall(dt.parent.pk)
+        for query_region_pk, vector in qr_pk_vector.items():
+            vector = np.load(io.BytesIO(vector))
             Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20),
-                                region=dr.query_region)
+                                region_pk=query_region_pk)
     else:
         raise NotImplementedError(target)
     mark_as_completed(dt)
