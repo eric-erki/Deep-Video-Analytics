@@ -308,9 +308,7 @@
         <div ng-repeat="item in entries" class="col-lg-3 col-sm-3 col-xs-6" >
             <div class="box box-primary">
                 <div class="box-header with-border">
-                    <h4>{[ item.rank ]} {[ item.result_type ]}
-                        <input type="checkbox" class="selection_box pull-right" id="cbox_{[ item.frame_id]}" name="cbox_{[ item.frame_id]}" />
-                    </h4>
+                    <h4>{[ item.rank ]} {[ item.result_type ]}</h4>
                     <p class=""><a href="/videos/{[ item.video_id ]}"> Video/Dataset {[ item.video_id ]} </a> at {[ item.frame_index ]}</p>
                     <div class="text-center">
                     </div>
@@ -349,36 +347,28 @@
                         <div style="margin:5px"><textarea class="uneditable-textarea" disabled="disabled" style="height:100px;width:100%" placeholder="JSON metadata if present">{[ item.metadata ]}</textarea></div>
                     </div>
                 </div>
-                    <div class="row">
-                    <div class="col-lg-12" ng-repeat="(rname, rentries) in item.results">
-                        <h4>Results (using above bounding box region as query): {[ rname ]} </h4>
-                        <div class="row">
-                        <div ng-repeat="ritem in rentries" class="col-lg-3 col-sm-3 col-xs-6" >
-                            <div class="clearfix" ng-if="$index % 4 == 0"></div>
-                            <div class="box">
-                                <div class="box-header with-border">
-                                    <p class=""> {[ ritem.rank ]} : {[ ritem.result_type ]} in <a href="/videos/{[ ritem.video_id ]}"> Video/Dataset {[ ritem.video_id]}</a> at {[ ritem.frame_index ]}</p>
-                                </div>
-                                <div class="box-body" style="height:220px">
-                                    <a href="/frames/{[ ritem.frame_id ]}"><img class="img-responsive img-bordered-sm" style="max-height:200px;margin-left:auto;margin-right:auto"  ng-src="{[ ritem.url ]}">
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
-                    </div>
                 </div>
             </div>
+            <div class="row">
+            <div class="col-lg-12" ng-repeat="(rname, rentries) in item.results">
+                <h4>Results (using above bounding box region as query): {[ rname ]} </h4>
+                <div class="row">
+                <div ng-repeat="ritem in rentries" class="col-lg-3 col-sm-3 col-xs-6" >
+                    <div class="clearfix" ng-if="$index % 4 == 0"></div>
+                    <div class="box">
+                        <div class="box-header with-border">
+                            <p class=""> {[ ritem.rank ]} : {[ ritem.result_type ]} in <a href="/videos/{[ ritem.video_id ]}"> Video/Dataset {[ ritem.video_id]}</a> at {[ ritem.frame_index ]}</p>
+                        </div>
+                        <div class="box-body" style="height:220px">
+                            <a href="/frames/{[ ritem.frame_id ]}"><img class="img-responsive img-bordered-sm" style="max-height:200px;margin-left:auto;margin-right:auto"  ng-src="{[ ritem.url ]}">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
         </div>
-        </div>
-    </div>
-    <div class="col-lg-offset-2 col-lg-8" ng-show="results_available()">
-        <div class="box">
-        <div class="box-body"><div class="row">
-            <div class="col-lg-10 text-center"><textarea rows="1"  style="width:95%;margin: auto" placeholder="comma separated list of labels"></textarea></div>
-            <div class="col-lg-2 text-center"><a ng-click="label_selected" class="btn btn-primary" >Label selected</a></div>
-        </div></div>
         </div>
     </div>
 </div>
