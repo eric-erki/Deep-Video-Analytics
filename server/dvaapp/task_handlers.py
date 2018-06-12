@@ -28,7 +28,7 @@ def handle_perform_indexing(start):
         # TODO: figure out a better way to store numpy arrays.
         s = io.BytesIO()
         np.save(s, vector)
-        redis_client.set(start.pk, s.getvalue())
+        redis_client.set("query_vector_{}".format(start.pk), s.getvalue())
         sync = False
     elif target == 'query_regions':
         queryset, target = task_shared.build_queryset(args=start.arguments)
@@ -38,7 +38,7 @@ def handle_perform_indexing(start):
             vector = visual_index.apply(local_path)
             s = io.BytesIO()
             np.save(s, vector)
-            redis_client.hset(start.pk, dr.pk, s.getvalue())
+            redis_client.hset("query_region_vectors_{}".format(start.pk), dr.pk, s.getvalue())
         sync = False
     elif target == 'regions':
         # For regions simply download/ensure files exists.

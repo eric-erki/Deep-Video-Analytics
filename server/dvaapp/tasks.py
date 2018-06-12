@@ -198,10 +198,10 @@ def perform_retrieval(task_id):
     args = dt.arguments
     target = args.get('target', 'query')  # by default target is query
     if target == 'query':
-        vector = np.load(io.BytesIO(redis_client.get(dt.parent_id)))
+        vector = np.load(io.BytesIO(redis_client.get("query_vector_{}".format(dt.parent_id))))
         Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20))
     elif target == 'query_region_index_vectors':
-        qr_pk_vector = redis_client.hgetall(dt.parent.pk)
+        qr_pk_vector = redis_client.hgetall("query_region_vectors_{}".format(dt.parent_id))
         for query_region_pk, vector in qr_pk_vector.items():
             vector = np.load(io.BytesIO(vector))
             Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20),
