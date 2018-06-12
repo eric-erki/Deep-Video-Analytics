@@ -376,12 +376,12 @@ def create_query_from_request(p, request):
 def collect(p):
     context = {'results': defaultdict(list), 'regions': []}
     rids_to_names = {}
-    for rd in dvaapp.models.QueryRegion.objects.all().filter(query=p.process):
+    for rd in dvaapp.models.QueryRegion.objects.filter(query=p.process):
         rd_json = get_query_region_json(rd)
         for r in dvaapp.models.QueryResults.objects.filter(query=p.process, query_region=rd):
             gather_results(r, rids_to_names, rd_json['results'])
         context['regions'].append(rd_json)
-    for r in dvaapp.models.QueryResults.objects.all().filter(query=p.process, query_region__isnull=True):
+    for r in dvaapp.models.QueryResults.objects.filter(query=p.process, query_region__isnull=True):
         gather_results(r, rids_to_names, context['results'])
     for k, v in context['results'].iteritems():
         if v:

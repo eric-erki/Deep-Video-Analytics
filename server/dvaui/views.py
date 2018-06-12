@@ -423,7 +423,7 @@ def search(request):
         qp = DVAPQLProcess()
         view_shared.create_query_from_request(qp, request)
         qp.launch()
-        qp.wait()
+        qp.wait_query()
         qp_context = view_shared.collect(qp)
         return JsonResponse(data={'task_id': "",
                                   'primary_key': qp.process.pk,

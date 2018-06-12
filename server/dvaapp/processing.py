@@ -456,14 +456,17 @@ class DVAPQLProcess(object):
         app.send_task(name=monitoring_task.operation, args=[monitoring_task.pk, ],
                       queue=monitoring_task.queue)
 
-    def wait(self, timeout=60):
+    def wait_query(self, timeout=60):
+        if self.process.process_type != DVAPQL.QUERY:
+            raise ValueError("wait query is only supported by Query processes")
         for _, result in self.task_results.iteritems():
             try:
                 next_task_ids = result.get(timeout=timeout)
-                if next_task_ids:
-                    for next_task_id in next_task_ids:
-                        next_result = AsyncResult(id=next_task_id)
-                        _ = next_result.get(timeout=timeout)
+                while next_task_ids:
+                    if type(next_task_ids) is list:
+                        for next_task_id in next_task_ids:
+                            next_result = AsyncResult(id=next_task_id)
+                            next_task_ids = next_result.get(timeout=timeout)
             except Exception, e:
                 raise ValueError(e)
 
