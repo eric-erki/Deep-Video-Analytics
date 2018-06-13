@@ -656,7 +656,6 @@ def textsearch(request):
             context['results']['regions_name'] = Region.objects.filter(object_name__search=q)[offset:limit]
         if request.GET.get('frames'):
             context['results']['frames_name'] = Frame.objects.filter(name__search=q)[offset:limit]
-            context['results']['frames_subdir'] = Frame.objects.filter(subdir__search=q)[offset:limit]
     return render(request, 'dvaui/textsearch.html', context)
 
 

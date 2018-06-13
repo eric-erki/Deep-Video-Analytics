@@ -336,7 +336,6 @@ class Frame(models.Model):
     event = models.ForeignKey(TEvent)
     frame_index = models.IntegerField()
     name = models.CharField(max_length=200, null=True)
-    subdir = models.TextField(default="")  # Retains information if the source is a dataset for labeling
     h = models.IntegerField(default=0)
     w = models.IntegerField(default=0)
     t = models.FloatField(null=True)  # time in seconds for keyframes
@@ -357,6 +356,14 @@ class Frame(models.Model):
 
     def original_path(self):
         return self.name
+
+    def global_path(self):
+        if self.name.startswith('http://'):
+            return self.name
+        elif self.video.dataset:
+            return "{}/{}".format(self.video.url,self.name)
+        else:
+            return "{}::{}".format(self.video.url,self.frame_index)
 
 
 class Segment(models.Model):

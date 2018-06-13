@@ -641,7 +641,6 @@ class VideoImporter(object):
         df.video_id = self.video.pk
         df.name = f['name']
         df.frame_index = f['frame_index']
-        df.subdir = f['subdir']
         df.h = f.get('h', 0)
         df.w = f.get('w', 0)
         df.t = f.get('t', 0)

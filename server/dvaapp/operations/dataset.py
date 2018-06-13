@@ -55,8 +55,6 @@ class DatasetCreator(object):
                             df.name = os.path.join(subdir[root_length:], ofname)
                             if not df.name.startswith('/'):
                                 df.name = "/{}".format(df.name)
-                            s = "/{}/".format(subdir[root_length:]).replace('//','/')
-                            df.subdir = s
                             df_list.append(df)
 
                     else:

@@ -121,7 +121,7 @@
                     </div>
                 </div>
                 {% endif %}
-                {% if results.frames_name or results.frames_subdir %}
+                {% if results.frames_name %}
                 <div class="box box-primary">
                     <div class="box-header"><h4>Results: frame names</h4></div>
                     <div class="box-body">
@@ -129,7 +129,6 @@
                     <thead>
                     <tr>
                         <th class="text-center">Name</th>
-                        <th class="text-center">Directory</th>
                         <th class="text-center">details</th>
                     </tr>
                     </thead>
@@ -137,30 +136,6 @@
                     {% for f in results.frames_name %}
                         <tr>
                             <td>{{ f.name }}</td>
-                            <td>{{ f.subdir }}</td>
-                            <td class="text-center"><a href="/frames/{{ f.pk }}">details</a></td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                    </table>
-                    </div>
-                </div>
-                <div class="box box-primary">
-                    <div class="box-header"><h4>Results: frame subdirs</h4></div>
-                    <div class="box-body">
-                    <table class="table dataTables">
-                    <thead>
-                    <tr>
-                        <th class="text-center">Name</th>
-                        <th class="text-center">Directory</th>
-                        <th class="text-center">details</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for f in results.frames_subdir %}
-                        <tr>
-                            <td>{{ f.name }}</td>
-                            <td>{{ f.subdir }}</td>
                             <td class="text-center"><a href="/frames/{{ f.pk }}">details</a></td>
                         </tr>
                     {% endfor %}

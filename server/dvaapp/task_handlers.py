@@ -228,9 +228,11 @@ def handle_perform_analysis(start):
 
 def handle_perform_matching(dt):
     args = dt.arguments
+    video_id = dt.video_id
     k = args.get('k', 5)
     indexer_shasum = args['indexer_shasum']
     approximator_shasum = args.get('approximator_shasum', None)
+    match_self = args.get('match_self', False)
     source_filters = args.get('source_filters', {'event__completed':True})
     target_filters = args.get('target_filters', {'event__completed':True})
     source_filters.update({'video_id':dt.video_id})
@@ -244,7 +246,12 @@ def handle_perform_matching(dt):
         source_filters.update({'approximator_shasum': None})
         target_filters.update({'approximator_shasum': None})
     retriever = None
-    for di in models.IndexEntries.objects.filter(**target_filters).exclude(video_id=dt.video_id):
+    relations = []
+    if match_self:
+        query_set = models.IndexEntries.objects.filter(**target_filters)
+    else:
+        query_set = models.IndexEntries.objects.filter(**target_filters).exclude(video_id=dt.video_id)
+    for di in query_set:
         mat, entries = di.load_index()
         print mat.shape
         if entries:
@@ -254,11 +261,56 @@ def handle_perform_matching(dt):
                 components = mat.shape[1]
                 retriever = retrieval.retriever.FaissFlatRetriever("matcher",components=components)
             retriever.load_index(mat,entries)
-    nn_results = []
+    frame_to_region_id = {}
     for di in models.IndexEntries.objects.filter(**source_filters):
         mat, entries = di.load_index()
         if entries:
             mat = np.atleast_2d(mat.squeeze())
             print mat.shape
-            nn_results.append((entries,retriever.nearest_batch(mat,k)))
-    print len(nn_results)
+            results_batch = retriever.nearest_batch(mat,k)
+            for i,entry in enumerate(entries):
+                results = results_batch[i]
+                if match_self:
+                    pass
+                else:
+                    if 'detection_primary_key' in entry:
+                        region_id = entry['detection_primary_key']
+                    else:
+                        frame_id = entry['frame_primary_key']
+                        if frame_id not in frame_to_region_id:
+                            df = models.Frame.objects.get(pk=frame_id)
+                            frame_to_region_id[frame_id] = models.Region.objects.create(frame_id=frame_id,
+                                                                                        video_id=video_id, x=0, y=0,
+                                                                                        event=dt, w=df.w, h=df.h,
+                                                                                        full_frame=True)
+                        region_id = frame_to_region_id[frame_id]
+
+                    for result in results:
+                        dr = models.HyperRegionRelation()
+                        dr.video_id = video_id
+                        dr.metadata = result
+                        dr.region_id = region_id
+                        if 'detection_primary_key' in result:
+                            tdr = models.Region.objects.get(pk=result['detection_primary_key'])
+                            dr.x = tdr.x
+                            dr.y = tdr.y
+                            dr.w = tdr.w
+                            dr.h = tdr.h
+                            dr.full_frame = tdr.full_frame
+                            dr.path = tdr.frame.global_path()
+                            dr.metadata = tdr.metadata
+                        else:
+                            tdf = models.Frame.objects.get(pk=result['frame_primary_key'])
+                            dr.x = tdr.x
+                            dr.y = tdr.y
+                            dr.w = tdr.w
+                            dr.h = tdr.h
+                            dr.full_frame = True
+                            dr.path = tdf.global_path()
+                        dr.weight = result['distance']
+                        dr.event_id = dt.pk
+                        relations.append(dr)
+    if match_self:
+        pass
+    else:
+        models.HyperRegionRelation.objects.bulk_create(relations,1000)
