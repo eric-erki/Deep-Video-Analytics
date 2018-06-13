@@ -621,14 +621,6 @@ def export_video(request):
 
 
 @user_passes_test(user_check)
-def status(request):
-    context = {'logs': []}
-    for fname in glob.glob('logs/*.log'):
-        context['logs'].append((fname, file(fname).read()))
-    return render(request, 'dvaui/status.html', context)
-
-
-@user_passes_test(user_check)
 def management(request):
     timeout = 1.0
     context = {
