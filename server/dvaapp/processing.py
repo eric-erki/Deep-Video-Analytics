@@ -427,7 +427,7 @@ class DVAPQLProcess(object):
                                                                        start_ts=timezone.now(),
                                                                        parent_process_id=self.process.pk, queue="sync")
                         self.task_group_index += 1
-                    c_copy['spec']['event_id'] = video_id_to_event[vid]
+                    c_copy['spec']['event_id'] = video_id_to_event[vid].pk
                 else:
                     c_copy['spec']['event_id'] = self.root_task.pk
             instance = m.objects.create(**c_copy['spec'])
