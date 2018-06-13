@@ -71,7 +71,7 @@ class FrameViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = Frame.objects.all()
     serializer_class = serializers.FrameSerializer
-    filter_fields = ('frame_index', 'subdir', 'name', 'video')
+    filter_fields = ('frame_index', 'name', 'video')
 
 
 class SegmentViewSet(viewsets.ReadOnlyModelViewSet):
