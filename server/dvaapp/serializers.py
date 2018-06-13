@@ -72,7 +72,7 @@ class FrameSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Frame
         fields = ('url', 'media_url', 'video', 'frame_index', 'keyframe', 'w', 'h', 't',
-                  'name', 'subdir', 'id', 'segment_index')
+                  'name', 'id', 'segment_index')
 
 
 class SegmentSerializer(serializers.HyperlinkedModelSerializer):
@@ -281,7 +281,7 @@ class FrameExportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Frame
-        fields = ('region_list', 'video', 'frame_index', 'keyframe', 'w', 'h', 't', 'event', 'name', 'subdir', 'id',
+        fields = ('region_list', 'video', 'frame_index', 'keyframe', 'w', 'h', 't', 'event', 'name', 'id',
                   'segment_index')
 
 
