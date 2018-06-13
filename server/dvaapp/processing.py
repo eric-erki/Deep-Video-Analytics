@@ -107,7 +107,7 @@ def get_model_specific_queue_name(operation, args):
                                                                              model_type=TrainedModel.DETECTOR).pk
         queue_name = 'q_detector_{}'.format(DETECTOR_NAME_TO_PK[args['detector']])
     else:
-        raise NotImplementedError, "{}, {}".format(operation, args)
+        raise NotImplementedError("{}, {}".format(operation, args))
     return queue_name
 
 
@@ -144,7 +144,7 @@ def get_model_pk_from_args(operation, args):
                                                                           model_type=TrainedModel.APPROXIMATOR).pk
         return APPROXIMATOR_SHASUM_TO_PK[ashasum]
     else:
-        raise NotImplementedError, "{}, {}".format(operation, args)
+        raise NotImplementedError("{}, {}".format(operation, args))
 
 
 def get_queue_name_and_operation(operation, args):
@@ -408,6 +408,7 @@ class DVAPQLProcess(object):
                 self.process.error_message = "Cannot delete {}; Only video deletion implemented.".format(d['MODEL'])
 
     def create_instances(self):
+        video_id_to_event = {}
         for c in self.process.script.get('create', []):
             c_copy = copy.deepcopy(c)
             m = apps.get_model(app_label='dvaapp', model_name=c['MODEL'])
@@ -415,13 +416,28 @@ class DVAPQLProcess(object):
                 if v == '__timezone.now__':
                     c_copy['spec'][k] = timezone.now()
             if c['MODEL'] != 'Video' and c['MODEL'] != 'TrainingSet':
-                c_copy['spec']['event_id'] = self.root_task.pk
+                if 'video_id' in c_copy['spec']:
+                    vid = c_copy['spec']['video_id']
+                    if vid not in video_id_to_event:
+                        # if spec includes video_id then the same video_id must be associated with the event
+                        video_id_to_event[vid] = TEvent.objects.create(operation="perform_create",
+                                                                       task_group_id=self.task_group_index,
+                                                                       completed=False, started=True,
+                                                                       parent=self.root_task, video_id=vid,
+                                                                       start_ts=timezone.now(),
+                                                                       parent_process_id=self.process.pk, queue="sync")
+                        self.task_group_index += 1
+                    c_copy['spec']['event_id'] = video_id_to_event[vid]
+                else:
+                    c_copy['spec']['event_id'] = self.root_task.pk
             instance = m.objects.create(**c_copy['spec'])
             self.created_objects.append(instance)
+        for dt in video_id_to_event.values():
+            mark_as_completed(dt)
 
     def create_root_task(self):
         self.root_task = TEvent.objects.create(operation="perform_launch", task_group_id=self.task_group_index,
-                                               completed=True, started=True,
+                                               completed=True, started=True, start_ts=timezone.now(), duration=0,
                                                parent_process_id=self.process.pk, queue="sync")
         self.task_group_index += 1
 
