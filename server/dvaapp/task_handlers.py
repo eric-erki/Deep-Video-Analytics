@@ -301,10 +301,10 @@ def handle_perform_matching(dt):
                             dr.metadata = tdr.metadata
                         else:
                             tdf = models.Frame.objects.get(pk=result['frame_primary_key'])
-                            dr.x = tdr.x
-                            dr.y = tdr.y
-                            dr.w = tdr.w
-                            dr.h = tdr.h
+                            dr.x = 0
+                            dr.y = 0
+                            dr.w = tdf.w
+                            dr.h = tdf.h
                             dr.full_frame = True
                             dr.path = tdf.global_path()
                         dr.weight = result['distance']
