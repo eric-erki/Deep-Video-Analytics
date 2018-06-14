@@ -282,7 +282,7 @@ def handle_perform_matching(dt):
                             frame_to_region_id[frame_id] = models.Region.objects.create(frame_id=frame_id,
                                                                                         video_id=video_id, x=0, y=0,
                                                                                         event=dt, w=df.w, h=df.h,
-                                                                                        full_frame=True)
+                                                                                        full_frame=True).pk
                         region_id = frame_to_region_id[frame_id]
 
                     for result in results:
@@ -307,7 +307,7 @@ def handle_perform_matching(dt):
                             dr.h = tdf.h
                             dr.full_frame = True
                             dr.path = tdf.global_path()
-                        dr.weight = result['distance']
+                        dr.weight = result['dist']
                         dr.event_id = dt.pk
                         relations.append(dr)
     if match_self:

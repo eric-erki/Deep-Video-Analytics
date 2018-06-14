@@ -1,7 +1,17 @@
 from django.contrib import admin
 from .models import Video, Frame, TEvent, IndexEntries, QueryResults, DVAPQL, Region, Tube, Segment, DeletedVideo, \
     ManagementAction, TrainedModel, Retriever, SystemState, Worker, QueryRegion, TrainingSet, Export, TaskRestart, \
-    RegionRelation, TubeRelation, TubeRegionRelation
+    RegionRelation, TubeRelation, TubeRegionRelation, HyperRegionRelation, HyperTubeRegionRelation
+
+
+@admin.register(HyperRegionRelation)
+class HyperRegionRelationAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(HyperTubeRegionRelation)
+class HyperTubeRegionRelationAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(RegionRelation)

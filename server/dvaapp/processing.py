@@ -253,15 +253,15 @@ def launch_tasks(k, dt, inject_filters, map_filters=None, launch_type=""):
         if op in settings.NON_PROCESSING_TASKS:
             video_per_task = None
         else:
-            if "video_selector" in k:
-                video_per_task = Video.objects.get(**k['video_selector'])
+            if "video_selector" in k['arguments']:
+                video_per_task = Video.objects.get(**k['arguments']['video_selector'])
             else:
                 video_per_task = v
         if op in settings.TRAINING_TASKS:
-            if "training_set_selector_id" in k:
-                training_set = Video.objects.get(pk=k['training_set_selector_id'])
-            elif "training_set_selector" in k:
-                training_set = Video.objects.get(**k['training_set_selector'])
+            if "training_set_id" in k:
+                training_set = Video.objects.get(pk=k['training_set_id'])
+            elif "training_set_selector" in k['arguments']:
+                training_set = Video.objects.get(**k['arguments']['training_set_selector'])
             else:
                 training_set = dt.training_set
         else:
@@ -493,13 +493,13 @@ class DVAPQLProcess(object):
         for k, v in t.get('arguments', {}).iteritems():
             if (type(v) is str or type(v) is unicode) and v.startswith('__created__'):
                 t['arguments'][k] = self.get_created_object_pk(v)
-        if 'video_id' in t or 'video_selector' in t:
+        if 'video_id' in t or 'video_selector' in t['arguments']:
             if (type(t['video_id']) is str or type(t['video_id']) is unicode) and t['video_id'].startswith(
                     '__created__'):
                 t['video_id'] = self.get_created_object_pk(t['video_id'])
                 v = Video.objects.get(pk=t['video_id'])
-            elif 'video_selector' in t:
-                v = Video.objects.get(**t['video_selector'])
+            elif 'video_selector' in t['arguments']:
+                v = Video.objects.get(**t['arguments']['video_selector'])
                 t['video_id'] = v.pk
             else:
                 v = Video.objects.get(pk=t['video_id'])
@@ -524,8 +524,8 @@ class DVAPQLProcess(object):
                 dt.video_id = t['video_id']
             if 'training_set_id' in t:
                 dt.training_set_id = t['training_set_id']
-            elif 'training_set_selector' in t:
-                dt.training_set_id = TrainingSet.objects.get(**t['training_set_selector'])
+            elif 'training_set_selector' in t['arguments']:
+                dt.training_set_id = TrainingSet.objects.get(**t['arguments']['training_set_selector'])
             dt.arguments = args
             dt.queue, op = get_queue_name_and_operation(t['operation'], t.get('arguments', {}))
             dt.operation = op
