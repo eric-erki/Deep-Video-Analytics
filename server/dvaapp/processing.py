@@ -495,11 +495,9 @@ class DVAPQLProcess(object):
                 t['arguments'][k] = self.get_created_object_pk(v)
         dv = None
         if 'video_id' in t:
-            if type(t['video_id']) is basestring and t['video_id'].startswith('__created__'):
+            if t['video_id'].startswith('__created__'):
                 t['video_id'] = self.get_created_object_pk(t['video_id'])
-                dv = Video.objects.get(pk=t['video_id'])
-            else:
-                dv = Video.objects.get(pk=t['video_id'])
+            dv = Video.objects.get(pk=t['video_id'])
         elif 'video_selector' in t['arguments']:
             dv = Video.objects.get(**t['arguments']['video_selector'])
             t['video_id'] = dv.pk
