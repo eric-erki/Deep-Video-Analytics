@@ -134,9 +134,8 @@ class HyperRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = HyperRegionRelation
-        fields = ('url', 'frame_media_url', 'source_frame_media_url', 'target_frame_media_url', 'video', 'path'
-                                                                                                         'source_region',
-                  'target_region', 'name', 'weight', 'event', 'metadata', 'id', 'x', 'y', 'w', 'h', 'full_frame')
+        fields = ('url', 'frame_media_url', 'video', 'path','region',
+                  'name', 'weight', 'event', 'metadata', 'id', 'x', 'y', 'w', 'h', 'full_frame')
 
 
 class HyperTubeRegionRelationSerializer(serializers.HyperlinkedModelSerializer):

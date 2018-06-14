@@ -493,17 +493,18 @@ class DVAPQLProcess(object):
         for k, v in t.get('arguments', {}).iteritems():
             if (type(v) is str or type(v) is unicode) and v.startswith('__created__'):
                 t['arguments'][k] = self.get_created_object_pk(v)
-        if 'video_id' in t or 'video_selector' in t['arguments']:
-            if (type(t['video_id']) is str or type(t['video_id']) is unicode) and t['video_id'].startswith(
-                    '__created__'):
+        dv = None
+        if 'video_id' in t:
+            if type(t['video_id']) is basestring and t['video_id'].startswith('__created__'):
                 t['video_id'] = self.get_created_object_pk(t['video_id'])
-                v = Video.objects.get(pk=t['video_id'])
-            elif 'video_selector' in t['arguments']:
-                v = Video.objects.get(**t['arguments']['video_selector'])
-                t['video_id'] = v.pk
+                dv = Video.objects.get(pk=t['video_id'])
             else:
-                v = Video.objects.get(pk=t['video_id'])
-            map_filters = get_map_filters(t, v)
+                dv = Video.objects.get(pk=t['video_id'])
+        elif 'video_selector' in t['arguments']:
+            dv = Video.objects.get(**t['arguments']['video_selector'])
+            t['video_id'] = dv.pk
+        if dv:
+            map_filters = get_map_filters(t, dv)
         else:
             map_filters = [{}]
         # This is useful in case of perform_stream_capture where batch size is used but number of segments is unknown
