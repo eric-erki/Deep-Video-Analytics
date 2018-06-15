@@ -358,10 +358,11 @@ class Frame(models.Model):
         return self.name
 
     def global_path(self):
-        if self.name and self.name.startswith('http://'):
-            return self.name
-        elif self.video.dataset:
-            return "{}/{}".format(self.video.url,self.name)
+        if self.video.dataset:
+            if self.name and not self.name.startswith('/'):
+                return self.name
+            else:
+                return "{}/{}".format(self.video.url,self.name)
         else:
             return "{}::{}".format(self.video.url,self.frame_index)
 

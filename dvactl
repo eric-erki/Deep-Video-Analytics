@@ -73,7 +73,7 @@ DEFAULT_KUBE_WORKERS = [
      'max_cpu': 4,
      'request_cpu': 1,
      'request_memory': "2000Mi",
-     'max_memory': "4000Mi"
+     'max_memory': "6000Mi"
      },
     {'name': 'retinception',
      'worker_env': 'LAUNCH_BY_NAME_retriever_inception',
