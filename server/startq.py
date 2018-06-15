@@ -30,6 +30,9 @@ if __name__ == "__main__":
     else:
         conc = 3
     mute = '--without-gossip --without-mingle --without-heartbeat' if 'CELERY_MUTE' in os.environ else ''
+    if settings.KUBE_MODE:
+        # This is temporary!
+        subprocess.check_output(['pip', 'install', '--upgrade', 'google-cloud'])
     if queue_name == settings.Q_MANAGER:
         command = 'celery -A dva worker -l info {} -c 1 -Q qmanager -n manager.%h -f ../logs/qmanager.log'.format(mute)
     elif queue_name == settings.Q_EXTRACTOR:
@@ -38,9 +41,6 @@ if __name__ == "__main__":
         except:
             logging.exception("Could not update youtube-dl")
             pass
-        if settings.KUBE_MODE:
-            # This is temporary!
-            subprocess.check_output(['pip', 'install', '--upgrade', 'google-cloud'])
             command = 'celery -A dva worker -l info {} -P solo -c 1 -Q {} -n {}.%h'.format(mute,queue_name, queue_name)
         else:
             command = 'celery -A dva worker -l info {} -c {} -Q {} -n {}.%h {}'.format(mute, max(int(conc), 4),
