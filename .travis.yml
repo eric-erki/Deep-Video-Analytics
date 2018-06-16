@@ -67,7 +67,6 @@ script:
   - cd tests && python test_ci.py && python test_ci_face.py && cd ..
   - cd server && ./launch_from_env.py && cd ..
   - cd tests && python test_ci_search.py && cd ..
-  - cd tests && python test_ci_coco.py && cd ..
   - wget --quiet localhost:8000
   - wget --quiet localhost:8000/videos/
   - wget --quiet localhost:8000/queries/

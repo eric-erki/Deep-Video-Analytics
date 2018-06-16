@@ -16,7 +16,7 @@ if __name__ == '__main__':
         v = handle_uploaded_file(f, name)
         dt = TEvent.objects.get(video=v, operation='perform_import')
         perform_import(dt.pk)
-        dt = TEvent(video=v, operation='perform_dataset_extraction')
+        dt = TEvent(video=v, operation='perform_dataset_extraction', arguments={})
         dt.save()
         perform_dataset_extraction(dt.pk)
         shutil.copy("ci/coco_regions/coco_ci_regions.json", "{}/ingest/coco_ci_regions.json".format(settings.MEDIA_ROOT))
