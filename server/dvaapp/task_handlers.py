@@ -240,7 +240,6 @@ def handle_perform_matching(dt):
     if approximator_shasum:
         source_filters.update({'approximator_shasum': approximator_shasum})
         target_filters.update({'approximator_shasum': approximator_shasum})
-        raise NotImplementedError
     else:
         source_filters.update({'approximator_shasum': None})
         target_filters.update({'approximator_shasum': None})
@@ -257,8 +256,15 @@ def handle_perform_matching(dt):
             mat = np.atleast_2d(mat.squeeze())
             print mat.shape
             if retriever is None:
-                components = mat.shape[1]
-                retriever = retrieval.retriever.FaissFlatRetriever("matcher",components=components)
+                if approximator_shasum:
+                    approximator, da = approximation.Approximators.get_approximator_by_shasum(approximator_shasum)
+                    da.ensure()
+                    approximator.load()
+                    retriever = retrieval.retriever.FaissApproximateRetriever(name="approx_matcher",
+                                                                              approximator=approximator)
+                else:
+                    components = mat.shape[1]
+                    retriever = retrieval.retriever.FaissFlatRetriever("matcher", components=components)
             retriever.load_index(mat,entries)
     frame_to_region_id = {}
     for di in models.IndexEntries.objects.filter(**source_filters):

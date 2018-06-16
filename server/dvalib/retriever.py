@@ -139,6 +139,20 @@ class FaissApproximateRetriever(BaseRetriever):
             results.append(temp)
         return results
 
+    def nearest_batch(self, vectors=None, n=12, nprobe=16):
+        self.faiss_index.nprobe = nprobe
+        vectors = np.atleast_2d(vectors)
+        if vectors.shape[-1] != self.faiss_index.d:
+            vectors = vectors.T
+        dist, ids = self.faiss_index.search(vectors, n)
+        results = defaultdict(list)
+        for vindex in range(ids.shape[0]):
+            for i, k in enumerate(ids[vindex]):
+                temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[vindex, i])}
+                temp.update(self.files[k])
+                results[vindex].append(temp)
+        return results
+
 
 class FaissFlatRetriever(BaseRetriever):
 

@@ -12,7 +12,7 @@ import glob
 
 CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" clusters create 
 "{cluster_name}" --zone "{zone}" --username "admin" --cluster-version "1.8.8-gke.0" --machine-type "{machine_type}"  
---image-type "COS" --disk-size "{disk_size}" --num-nodes "{nodes}" 
+--image-type "COS" --disk-size "{disk_size}" --disk-type pd-ssd --num-nodes "{nodes}" 
 --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_write","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" \
 --network "default" --enable-cloud-logging --enable-cloud-monitoring --subnetwork "default" 
 --addons HorizontalPodAutoscaling,HttpLoadBalancing,KubernetesDashboard --enable-autorepair
@@ -21,7 +21,7 @@ CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" cl
 PREMPTIBLE_CREATE_COMMAND = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}"' \
           ' --zone "{zone}" --cluster "{cluster_name}" ' \
           '--machine-type "{machine_type}" --image-type "COS" ' \
-          '--disk-size "{disk_size}" ' \
+          '--disk-size "{disk_size}" --disk-type pd-ssd ' \
           '--scopes "https://www.googleapis.com/auth/compute",' \
           '"https://www.googleapis.com/auth/devstorage.read_write",' \
           '"https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring",' \
