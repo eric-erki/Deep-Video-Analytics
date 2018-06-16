@@ -15,7 +15,7 @@ if __name__ == '__main__':
         algo = Retriever.EXACT
     query_dict = {
         'process_type': DVAPQL.QUERY,
-        'image_data_b64': base64.encodestring(file('queries/query.png').read()),
+        'image_data_b64': base64.encodestring(file('ci/query.png').read()),
         'map': [
             {
                 'operation': 'perform_indexing',

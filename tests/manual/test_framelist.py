@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import django, sys, glob, os
-sys.path.append('../server/')
+sys.path.append('../../server/')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dva.settings")
 django.setup()
 from dvaui.view_shared import handle_uploaded_file
@@ -9,7 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from dvaapp.models import TEvent
 
 if __name__ == '__main__':
-    for fname in glob.glob('ci/framelist.*'):
+    for fname in glob.glob('../ci/framelist.*'):
         name = fname.split('/')[-1].split('.')[0]
         f = SimpleUploadedFile(fname, file(fname).read(), content_type="application/json")
         v = handle_uploaded_file(f, name)

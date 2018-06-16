@@ -3,9 +3,9 @@ import django, sys, glob, os,time, logging
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename='../logs/tests.log',
+                    filename='/root/DVA/logs/tests.log',
                     filemode='a')
-sys.path.append('../server/')
+sys.path.append('../../server/')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dva.settings")
 django.setup()
 from dvaapp.models import TEvent, Video
