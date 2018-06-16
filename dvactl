@@ -229,33 +229,18 @@ def configure_compose(mode):
     envs = {}
     gpu_compose_filename = None
     gpu_config = None
-    if mode == 'test':
-        envs['ENABLE_CLOUDFS'] = 1
-        try:
-            envs.update(compose.load_envs(os.path.expanduser('~/media.env')))
-            print '~/media.env found. writing bucket information to config.json'
-        except:
-            print '~/media.env not found. required for testing rfs mode.'
-        try:
-            envs.update(compose.load_envs(os.path.expanduser('~/aws.env')))
-            print '~/aws.env found. writing credentials to config.json'
-        except:
-            print '{} not found. not passing AWS creds. Please create ~/aws.env with AWS_ACCESS_KEY_ID ' \
-                  'and AWS_SECRET_ACCESS_KEY or manually ' \
-                  'add them to credentials in config.json'.format(os.path.expanduser('~/aws.env'))
+    if os.path.isfile(os.path.expanduser('~/aws.env')):
+        envs.update(compose.load_envs(os.path.expanduser('~/aws.env')))
+        print '~/aws.env found. writing credentials to config.json'
     else:
-        if os.path.isfile(os.path.expanduser('~/aws.env')):
-            envs.update(compose.load_envs(os.path.expanduser('~/aws.env')))
-            print '~/aws.env found. writing credentials to config.json'
-        else:
-            print '{} not found. not passing AWS creds. Please create ~/aws.env with AWS_ACCESS_KEY_ID ' \
-                  'and AWS_SECRET_ACCESS_KEY or manually ' \
-                  'add them to credentials in config.json'.format(os.path.expanduser('~/aws.env'))
-        if os.path.isfile(os.path.expanduser('~/do.env')):
-            envs.update(compose.load_envs(os.path.expanduser('~/do.env')))
-            print '~/do.env found. writing credentials to config.json'
-        else:
-            print '{} not found. not passing Digital Ocean creds.'.format(os.path.expanduser('~/do.env'))
+        print '{} not found. not passing AWS creds. Please create ~/aws.env with AWS_ACCESS_KEY_ID ' \
+              'and AWS_SECRET_ACCESS_KEY or manually ' \
+              'add them to credentials in config.json'.format(os.path.expanduser('~/aws.env'))
+    if os.path.isfile(os.path.expanduser('~/do.env')):
+        envs.update(compose.load_envs(os.path.expanduser('~/do.env')))
+        print '~/do.env found. writing credentials to config.json'
+    else:
+        print '{} not found. not passing Digital Ocean creds.'.format(os.path.expanduser('~/do.env'))
     if mode == 'gpu':
         gpu_count = int(raw_input("Please select number of GPUs >>").strip())
         gpu_compose_filename = GPU_CONFIG[gpu_count]['compose_filename']
@@ -268,8 +253,8 @@ def configure_compose(mode):
 
 def configure(mode=None):
     if mode is None or not mode:
-        mode = raw_input("Please select mode { dev, test, cpu, gpu, kube } >>").strip()
-    if mode not in {'dev', 'test', 'cpu', 'gpu', 'kube'}:
+        mode = raw_input("Please select mode { dev, cpu, gpu, kube } >>").strip()
+    if mode not in {'dev', 'cpu', 'gpu', 'kube'}:
         raise ValueError("{} is not a valid mode".format(mode))
     if mode == 'kube':
         mode_dict = configure_kube()

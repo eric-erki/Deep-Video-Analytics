@@ -9,6 +9,7 @@ import json
 import webbrowser
 from . import gpu
 
+
 def generate_multi_gpu_compose(fname, config):
     blocks = []
     worker_specs = config['workers']
@@ -28,13 +29,6 @@ def generate_multi_gpu_compose(fname, config):
 
 def load_envs(path):
     return {line.split('=')[0]: line.split('=')[1].strip() for line in file(path)}
-
-
-def clear_media_bucket():
-    envs = load_envs(os.path.expanduser('~/media.env'))
-    print "Erasing bucket {}".format(envs['MEDIA_BUCKET'])
-    subprocess.check_call(['aws','s3','rm','--recursive','--quiet','s3://{}'.format(envs['MEDIA_BUCKET'])])
-    print "Bucket erased"
 
 
 def create_custom_env(init_process, init_models, cred_envs):
@@ -140,15 +134,8 @@ def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_
         get_auth()
     elif args.action == 'clean':
         stop_docker_compose(mode, gpus, clean=True)
-        if mode == 'test':
-            clear_media_bucket()
     elif args.action == 'restart':
         stop_docker_compose(mode, gpus)
         start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
-    elif args.action == 'clean_restart':
-        stop_docker_compose(mode, gpus, clean=True)
-        if mode == 'test':
-            clear_media_bucket()
-            start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
     else:
         raise NotImplementedError("{} and {}".format(args.action, mode))
