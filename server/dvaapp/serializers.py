@@ -7,8 +7,6 @@ import os, json, glob
 from collections import defaultdict
 from django.conf import settings
 
-SERIALIZER_VERSION = "0.1"
-
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -334,16 +332,12 @@ class VideoExportSerializer(serializers.ModelSerializer):
     tube_list = TubeExportSerializer(source='tube_set', read_only=True, many=True)
     region_relation_list = RegionRelationExportSerializer(source='regionrelation_set', read_only=True, many=True)
 
-    @staticmethod
-    def get_version(obj):
-        return SERIALIZER_VERSION
-
     class Meta:
         model = Video
         fields = ('name', 'length_in_seconds', 'height', 'width', 'metadata', 'frames', 'created', 'description',
                   'uploaded', 'dataset', 'uploader', 'segments', 'url', 'frame_list', 'segment_list',
                   'event_list', 'tube_list', 'index_entries_list', 'region_relation_list', "stream", 'region_list',
-                  'hyper_region_relation_list', 'version')
+                  'hyper_region_relation_list')
 
 
 def import_frame_json(f, frame_index, event_id, video_id, w, h):

@@ -299,4 +299,6 @@ DEFAULT_RATE = int(os.environ.get('DEFAULT_RATE',30))
 MAX_TASK_ATTEMPTS = 5
 # FAISS
 ENABLE_FAISS = 'DISABLE_FAISS' not in os.environ
+# Serializer version
+SERIALIZER_VERSION = "0.1"
 
