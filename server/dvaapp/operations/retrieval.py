@@ -9,7 +9,7 @@ except ImportError:
     np = None
     logging.warning("Could not import indexer / clustering assuming running in front-end mode")
 
-from ..models import IndexEntries, QueryResults, Region, Retriever
+from ..models import IndexEntries, QueryResults, Region, Retriever, Frame
 
 
 class Retrievers(object):
@@ -125,9 +125,11 @@ class Retrievers(object):
                 dd = Region.objects.get(pk=r['detection_primary_key'])
                 qr.detection = dd
                 qr.frame_id = dd.frame_id
+                qr.video_id = dd.video_id
             else:
-                qr.frame_id = r['frame_primary_key']
-            qr.video_id = r['video_primary_key']
+                dd = Frame.objects.get(pk=r['frame_primary_key'])
+                qr.frame = dd
+                qr.video_id = dd.video_id
             qr.algorithm = dr.algorithm
             qr.rank = r.get('rank', rank)
             qr.distance = r.get('dist', rank)
