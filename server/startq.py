@@ -33,9 +33,6 @@ if __name__ == "__main__":
     if queue_name == settings.Q_MANAGER:
         command = 'celery -A dva worker -l info {} -c 1 -Q qmanager -n manager.%h -f ../logs/qmanager.log'.format(mute)
     elif queue_name == settings.Q_EXTRACTOR:
-        if settings.KUBE_MODE:
-            # This is temporary!
-            subprocess.check_output(['pip', 'install', '--upgrade', 'google-cloud'])
         try:
             subprocess.check_output(['youtube-dl', '-U'])
         except:

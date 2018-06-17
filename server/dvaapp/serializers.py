@@ -326,6 +326,9 @@ class DVAPQLSerializer(serializers.HyperlinkedModelSerializer):
 
 class VideoExportSerializer(serializers.ModelSerializer):
     frame_list = FrameExportSerializer(source='frame_set', read_only=True, many=True)
+    region_list = RegionExportSerializer(source='region_set', read_only=True, many=True)
+    hyper_region_relation_list = HyperRegionRelationExportSerializer(source='hyperregionrelation_set',
+                                                                     read_only=True, many=True)
     segment_list = SegmentExportSerializer(source='segment_set', read_only=True, many=True)
     index_entries_list = IndexEntryExportSerializer(source='indexentries_set', read_only=True, many=True)
     event_list = TEventExportSerializer(source='tevent_set', read_only=True, many=True)
@@ -336,7 +339,8 @@ class VideoExportSerializer(serializers.ModelSerializer):
         model = Video
         fields = ('name', 'length_in_seconds', 'height', 'width', 'metadata', 'frames', 'created', 'description',
                   'uploaded', 'dataset', 'uploader', 'segments', 'url', 'frame_list', 'segment_list',
-                  'event_list', 'tube_list', 'index_entries_list', 'region_relation_list', "stream")
+                  'event_list', 'tube_list', 'index_entries_list', 'region_relation_list', "stream", 'region_list',
+                  'hyper_region_relation_list')
 
 
 def import_frame_json(f, frame_index, event_id, video_id, w, h):

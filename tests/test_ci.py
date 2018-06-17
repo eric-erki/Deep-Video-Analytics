@@ -14,12 +14,12 @@ from dvaapp.tasks import perform_dataset_extraction, perform_indexing, perform_e
     perform_video_segmentation, perform_transformation
 
 if __name__ == '__main__':
-    for fname in glob.glob('ci/citest*.mp4'):
+    for fname in glob.glob('data/citest*.mp4'):
         name = fname.split('/')[-1].split('.')[0]
         f = SimpleUploadedFile(fname, file(fname).read(), content_type="video/mp4")
         handle_uploaded_file(f, name)
     if settings.DEBUG:
-        for fname in glob.glob('ci/*.zip'):
+        for fname in glob.glob('data/*.zip'):
             name = fname.split('/')[-1].split('.')[0]
             f = SimpleUploadedFile(fname, file(fname).read(), content_type="application/zip")
             handle_uploaded_file(f, name)
