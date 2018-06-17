@@ -7,6 +7,8 @@ import os, json, glob
 from collections import defaultdict
 from django.conf import settings
 
+SERIALIZER_VERSION = "0.1"
+
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -134,8 +136,8 @@ class HyperRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = HyperRegionRelation
-        fields = ('url', 'frame_media_url', 'video', 'path','region',
-                  'name', 'weight', 'event', 'metadata', 'id', 'x', 'y', 'w', 'h', 'full_frame')
+        fields = ('url', 'frame_media_url', 'video', 'path', 'region', 'name', 'weight', 'event', 'metadata', 'id',
+                  'x', 'y', 'w', 'h', 'full_frame')
 
 
 class HyperTubeRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
@@ -276,12 +278,9 @@ class TubeRegionRelationExportSerializer(serializers.ModelSerializer):
 
 
 class FrameExportSerializer(serializers.ModelSerializer):
-    region_list = RegionExportSerializer(source='region_set', read_only=True, many=True)
-
     class Meta:
         model = Frame
-        fields = ('region_list', 'video', 'frame_index', 'keyframe', 'w', 'h', 't', 'event', 'name', 'id',
-                  'segment_index')
+        fields = ('frame_index', 'keyframe', 'w', 'h', 't', 'event', 'name', 'id', 'segment_index')
 
 
 class IndexEntryExportSerializer(serializers.ModelSerializer):
@@ -335,12 +334,16 @@ class VideoExportSerializer(serializers.ModelSerializer):
     tube_list = TubeExportSerializer(source='tube_set', read_only=True, many=True)
     region_relation_list = RegionRelationExportSerializer(source='regionrelation_set', read_only=True, many=True)
 
+    @staticmethod
+    def get_version(obj):
+        return SERIALIZER_VERSION
+
     class Meta:
         model = Video
         fields = ('name', 'length_in_seconds', 'height', 'width', 'metadata', 'frames', 'created', 'description',
                   'uploaded', 'dataset', 'uploader', 'segments', 'url', 'frame_list', 'segment_list',
                   'event_list', 'tube_list', 'index_entries_list', 'region_relation_list', "stream", 'region_list',
-                  'hyper_region_relation_list')
+                  'hyper_region_relation_list', 'version')
 
 
 def import_frame_json(f, frame_index, event_id, video_id, w, h):
@@ -561,7 +564,7 @@ class VideoImporter(object):
             region_index_to_fid[i] = a['id']
         bulk_regions = Region.objects.bulk_create(regions)
         for i, k in enumerate(bulk_regions):
-                self.region_to_pk[region_index_to_fid[i]] = k.id
+            self.region_to_pk[region_index_to_fid[i]] = k.id
 
     def bulk_import_region_relations(self):
         region_relations = []
