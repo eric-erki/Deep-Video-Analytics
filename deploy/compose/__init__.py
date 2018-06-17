@@ -15,14 +15,14 @@ def generate_multi_gpu_compose(fname, config):
     for gpu_id, fraction, env_key, worker_name, in worker_specs:
         if fraction > 0:
             blocks.append(
-                file('compose/gpu/gpu_block.yaml').read().format(worker_name=worker_name, gpu_id=gpu_id,
+                file('compose/gpu_block.yaml').read().format(worker_name=worker_name, gpu_id=gpu_id,
                                                                  memory_fraction=fraction, env_key=env_key,
                                                                  env_value=1))
         else:
             blocks.append(
-                file('compose/gpu/cpu_block.yaml').read().format(worker_name=worker_name, env_key=env_key, env_value=1))
+                file('compose/gpu_cpu_block.yaml').read().format(worker_name=worker_name, env_key=env_key, env_value=1))
     with open(fname, 'w') as out:
-        out.write(file('compose/gpu/skeleton.yaml').read().format(gpu_workers="\n".join(blocks),
+        out.write(file('compose/gpu_skeleton.yaml').read().format(gpu_workers="\n".join(blocks),
                                                                   global_model_gpu_id=config['global_model_gpu_id'],
                                                                   global_model_memory_fraction=config[
                                                                       'global_model_memory_fraction']))
@@ -48,9 +48,9 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
     if deployment_type == 'gpu':
         fname = 'docker-compose-{}-gpus.yaml'.format(gpu_count)
     else:
-        fname = 'docker-compose.yaml'
+        fname = 'docker-compose-{}.yaml'.format(deployment_type)
     create_custom_env(init_process, init_models, cred_envs)
-    print "Starting deploy/compose/{}/{}".format(deployment_type, fname)
+    print "Starting deploy/compose/{}".format(fname)
     try:
         # Fixed to dev since deployment directory does not matters for checking if docker-compose exists.
         subprocess.check_call(["docker-compose", 'ps'],
@@ -75,8 +75,7 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
     try:
         args = ["docker-compose", '-f', fname, 'up', '-d']
         print " ".join(args)
-        compose_process = subprocess.Popen(args, cwd=os.path.join(os.path.dirname(os.path.curdir),
-                                                                  'deploy/compose/{}'.format(deployment_type)))
+        compose_process = subprocess.Popen(args, cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/'))
     except:
         raise SystemError("Could not start container")
     while max_minutes:
@@ -105,8 +104,8 @@ def stop_docker_compose(deployment_type, gpu_count, clean=False):
     if deployment_type == 'gpu':
         fname = 'docker-compose-{}-gpus.yaml'.format(gpu_count)
     else:
-        fname = 'docker-compose.yaml'
-    print "Stopping deploy/compose/{}/{}".format(deployment_type, fname)
+        fname = 'docker-compose-{}.yaml'.format(deployment_type)
+    print "Stopping deploy/compose/{}".format(fname)
     try:
         subprocess.check_call(["docker-compose", '-f', fname, 'down'] + extra_args,
                               cwd=os.path.join(os.path.dirname(os.path.curdir),
