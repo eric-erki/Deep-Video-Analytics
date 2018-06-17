@@ -259,9 +259,9 @@ def launch_tasks(k, dt, inject_filters, map_filters=None, launch_type=""):
                 video_per_task = v
         if op in settings.TRAINING_TASKS:
             if "training_set_id" in k:
-                training_set = Video.objects.get(pk=k['training_set_id'])
+                training_set = TrainingSet.objects.get(pk=k['training_set_id'])
             elif "training_set_selector" in k['arguments']:
-                training_set = Video.objects.get(**k['arguments']['training_set_selector'])
+                training_set = TrainingSet.objects.get(**k['arguments']['training_set_selector'])
             else:
                 training_set = dt.training_set
         else:
