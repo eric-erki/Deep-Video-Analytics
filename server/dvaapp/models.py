@@ -416,7 +416,7 @@ class Region(models.Model):
     region_type = models.CharField(max_length=1, choices=REGION_TYPES, db_index=True)
     video = models.ForeignKey(Video)
     user = models.ForeignKey(User, null=True)
-    frame = models.ForeignKey(Frame, null=True)
+    frame = models.ForeignKey(Frame, null=True, on_delete=models.SET_NULL)
     event = models.ForeignKey(TEvent)  # TEvent that created this region
     frame_index = models.IntegerField(default=-1)
     segment_index = models.IntegerField(default=-1, null=True)

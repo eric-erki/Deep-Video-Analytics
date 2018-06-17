@@ -7,7 +7,6 @@ import urllib2
 import os
 import json
 import webbrowser
-from . import gpu
 
 
 def generate_multi_gpu_compose(fname, config):
@@ -16,15 +15,17 @@ def generate_multi_gpu_compose(fname, config):
     for gpu_id, fraction, env_key, worker_name, in worker_specs:
         if fraction > 0:
             blocks.append(
-                gpu.BLOCK.format(worker_name=worker_name, gpu_id=gpu_id, memory_fraction=fraction, env_key=env_key,
-                             env_value=1))
+                file('compose/gpu/gpu_block.yaml').read().format(worker_name=worker_name, gpu_id=gpu_id,
+                                                                 memory_fraction=fraction, env_key=env_key,
+                                                                 env_value=1))
         else:
             blocks.append(
-                gpu.CPU_BLOCK.format(worker_name=worker_name, env_key=env_key, env_value=1))
+                file('compose/gpu/cpu_block.yaml').read().format(worker_name=worker_name, env_key=env_key, env_value=1))
     with open(fname, 'w') as out:
-        out.write(gpu.SKELETON.format(gpu_workers="\n".join(blocks),
-                                  global_model_gpu_id=config['global_model_gpu_id'],
-                                  global_model_memory_fraction=config['global_model_memory_fraction']))
+        out.write(file('compose/gpu/skeleton.yaml').read().format(gpu_workers="\n".join(blocks),
+                                                                  global_model_gpu_id=config['global_model_gpu_id'],
+                                                                  global_model_memory_fraction=config[
+                                                                      'global_model_memory_fraction']))
 
 
 def load_envs(path):
@@ -45,9 +46,9 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
     print "Checking if docker-compose is available"
     max_minutes = 20
     if deployment_type == 'gpu':
-        fname = 'docker-compose-{}-gpus.yml'.format(gpu_count)
+        fname = 'docker-compose-{}-gpus.yaml'.format(gpu_count)
     else:
-        fname = 'docker-compose.yml'
+        fname = 'docker-compose.yaml'
     create_custom_env(init_process, init_models, cred_envs)
     print "Starting deploy/compose/{}/{}".format(deployment_type, fname)
     try:
@@ -102,9 +103,9 @@ def stop_docker_compose(deployment_type, gpu_count, clean=False):
     else:
         extra_args = []
     if deployment_type == 'gpu':
-        fname = 'docker-compose-{}-gpus.yml'.format(gpu_count)
+        fname = 'docker-compose-{}-gpus.yaml'.format(gpu_count)
     else:
-        fname = 'docker-compose.yml'
+        fname = 'docker-compose.yaml'
     print "Stopping deploy/compose/{}/{}".format(deployment_type, fname)
     try:
         subprocess.check_call(["docker-compose", '-f', fname, 'down'] + extra_args,
@@ -122,9 +123,9 @@ def get_auth():
     print "token and server information are stored in creds.json"
 
 
-def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_envs,gpu_compose_filename, gpu_config):
+def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_envs, gpu_compose_filename, gpu_config):
     if mode == 'gpu':
-        generate_multi_gpu_compose(gpu_compose_filename,gpu_config)
+        generate_multi_gpu_compose(gpu_compose_filename, gpu_config)
     if args.action == 'stop':
         stop_docker_compose(mode, gpus)
     elif args.action == 'start':
