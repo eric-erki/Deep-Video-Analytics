@@ -552,7 +552,7 @@ class VideoImporter(object):
     def bulk_import_regions(self):
         regions = []
         region_index_to_fid = {}
-        for i, a in self.json['region_list']:
+        for i, a in enumerate(self.json['region_list']):
             ra = self.create_region(a)
             regions.append(ra)
             region_index_to_fid[i] = a['id']
