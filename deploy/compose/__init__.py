@@ -109,7 +109,7 @@ def stop_docker_compose(deployment_type, gpu_count, clean=False):
     try:
         subprocess.check_call(["docker-compose", '-f', fname, 'down'] + extra_args,
                               cwd=os.path.join(os.path.dirname(os.path.curdir),
-                                               'deploy/compose/{}'.format(deployment_type)))
+                                               'deploy/compose'))
     except:
         raise SystemError("Could not stop containers")
 
