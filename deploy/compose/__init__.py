@@ -53,7 +53,7 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
     print "Starting deploy/compose/{}".format(fname)
     try:
         # Fixed to dev since deployment directory does not matters for checking if docker-compose exists.
-        subprocess.check_call(["docker-compose", 'ps','-f','docker-compose-dev.yaml'],
+        subprocess.check_call(["docker-compose", '--help'],
                               cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/'))
     except:
         raise SystemError("Docker-compose is not available")
