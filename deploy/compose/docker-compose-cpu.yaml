@@ -6,26 +6,26 @@
      volumes:
       - dvapgdata:/var/lib/postgresql/data
      env_file:
-       - ../../../custom.env
+       - ../../custom.env
    rabbit:
      image: rabbitmq
      container_name: dva-rmq
      env_file:
-       - ../../../custom.env
+       - ../../custom.env
      volumes:
        - dvarabbit:/var/lib/rabbitmq
    redis:
      image: bitnami/redis:latest
      container_name: dva-redis
      env_file:
-       - ../../../custom.env
+       - ../../custom.env
      volumes:
        - dvaredis:/bitnami
    dva:
      image: akshayubhat/dva-auto:latest
      container_name: webserver
      env_file:
-       - ../../../custom.env
+       - ../../custom.env
      environment:
        - LAUNCH_SERVER_NGINX=1
        - LAUNCH_Q_GLOBAL_MODEL=1
@@ -55,8 +55,8 @@
        - rabbit
        - redis
      volumes:
-       - ../../../:/root/DVA/
-       - ../../../configs/custom_defaults:/root/DVA/configs/custom_defaults
+       - ../../:/root/DVA/
+       - ../../configs/custom_defaults:/root/DVA/configs/custom_defaults
      tmpfs:
        - /root/media
  volumes:

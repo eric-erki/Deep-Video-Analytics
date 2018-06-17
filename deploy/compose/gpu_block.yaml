@@ -1,7 +1,7 @@
    {worker_name}:
          image: akshayubhat/dva-auto:gpu
          env_file:
-           - ../../../custom.env
+           - ../../custom.env
          environment:
            - GPU_AVAILABLE=1
            - NVIDIA_VISIBLE_DEVICES={gpu_id}

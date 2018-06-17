@@ -6,26 +6,26 @@
      volumes:
       - dvapgdata:/var/lib/postgresql/data
      env_file:
-       - ../../../custom.env
+       - ../../custom.env
    rabbit:
      image: rabbitmq
      container_name: dva-rmq
      env_file:
-       - ../../../custom.env
+       - ../../custom.env
      volumes:
        - dvarabbit:/var/lib/rabbitmq
    redis:
      image: bitnami/redis:latest
      container_name: dva-redis
      env_file:
-       - ../../../custom.env
+       - ../../custom.env
      volumes:
        - dvaredis:/bitnami
    webserver:
      image: akshayubhat/dva-auto:gpu
      container_name: webserver
      env_file:
-       - ../../../custom.env
+       - ../../custom.env
      environment:
        - LAUNCH_SERVER_NGINX=1
      command: bash -c "git reset --hard && git pull && sleep 10 && ./start_container.py"
@@ -41,7 +41,7 @@
    non-gpu-workers:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../../../custom.env
+       - ../../custom.env
      environment:
        - LAUNCH_BY_NAME_retriever_inception=1
        - LAUNCH_BY_NAME_retriever_facenet=1
@@ -60,7 +60,7 @@
    global-model:
      image: akshayubhat/dva-auto:gpu
      env_file:
-       - ../../../custom.env
+       - ../../custom.env
      environment:
        - GPU_AVAILABLE=1
        - NVIDIA_VISIBLE_DEVICES={global_model_gpu_id}

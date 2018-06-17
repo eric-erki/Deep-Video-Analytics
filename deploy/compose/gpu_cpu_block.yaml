@@ -1,7 +1,7 @@
    {worker_name}:
          image: akshayubhat/dva-auto:latest
          env_file:
-           - ../../../custom.env
+           - ../../custom.env
          environment:
            - {env_key}={env_value}
          command: bash -c "git reset --hard && git pull && sleep 45 && ./start_container.py"
