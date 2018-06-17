@@ -54,7 +54,7 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
     try:
         # Fixed to dev since deployment directory does not matters for checking if docker-compose exists.
         subprocess.check_call(["docker-compose", 'ps'],
-                              cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/dev'))
+                              cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/'))
     except:
         raise SystemError("Docker-compose is not available")
     print "Pulling/Refreshing container images, first time it might take a while to download the image"
