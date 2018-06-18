@@ -14,12 +14,12 @@ from dvaapp.tasks import perform_dataset_extraction, perform_indexing, perform_e
     perform_video_segmentation, perform_transformation
 
 if __name__ == '__main__':
-    for fname in glob.glob('ci/*.mp4'):
+    for fname in glob.glob('data/citest*.mp4'):
         name = fname.split('/')[-1].split('.')[0]
         f = SimpleUploadedFile(fname, file(fname).read(), content_type="video/mp4")
         handle_uploaded_file(f, name)
     if settings.DEBUG:
-        for fname in glob.glob('ci/*.zip'):
+        for fname in glob.glob('data/*.zip'):
             name = fname.split('/')[-1].split('.')[0]
             f = SimpleUploadedFile(fname, file(fname).read(), content_type="application/zip")
             handle_uploaded_file(f, name)
@@ -63,43 +63,3 @@ if __name__ == '__main__':
         print fname
         vimported = handle_uploaded_file(f, fname)
         perform_import(TEvent.objects.get(video=vimported, operation='perform_import').pk)
-        # dc = Retriever()
-        # args = {}
-        # args['components'] = 32
-        # args['m'] = 8
-        # args['v'] = 8
-        # args['sub'] = 64
-        # dc.algorithm = Retriever.LOPQ
-        # dc.source_filters = {'indexer_shasum': TrainedModel.objects.get(name="inception",model_type=TrainedModel.INDEXER).shasum}
-        # dc.arguments = args
-        # dc.save()
-        # clustering_task = TEvent()
-        # clustering_task.arguments = {'retriever_pk': dc.pk}
-        # clustering_task.operation = 'perform_retriever_creation'
-        # clustering_task.save()
-        # perform_retriever_creation(clustering_task.pk)
-        # query_dict = {
-        #     'process_type': DVAPQL.QUERY,
-        #     'image_data_b64': base64.encodestring(file('tests/queries/query.png').read()),
-        #     'tasks': [
-        #         {
-        #             'operation': 'perform_indexing',
-        #             'arguments': {
-        #                 'index': 'inception',
-        #                 'target': 'query',
-        #                 'map': [
-        #                     {'operation': 'perform_retrieval',
-        #                      'arguments': {'count': 20, 'retriever_pk': Retriever.objects.get(name='inception').pk}
-        #                      }
-        #                 ]
-        #             }
-        #
-        #         }
-        #
-        #     ]
-        # }
-        # launch_workers_and_scheduler_from_environment()
-        # qp = DVAPQLProcess()
-        # qp.create_from_json(query_dict)
-        # qp.launch()
-        # qp.wait()

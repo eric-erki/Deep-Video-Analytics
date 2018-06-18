@@ -1,6 +1,5 @@
 import os, json, copy, time, subprocess, logging, shutil, zipfile, uuid
-from models import QueryRegion, QueryRegionIndexVector, DVAPQL, Region, Frame, Segment, IndexEntries, TEvent, \
-    DeletedVideo, TaskRestart
+from models import QueryRegion, DVAPQL, Region, Frame, Segment, IndexEntries, TEvent, DeletedVideo, TaskRestart
 
 from django.conf import settings
 from PIL import Image
@@ -141,6 +140,7 @@ def export_video_to_file(video_obj, export, task_obj):
                     "{}/exports/{}".format(settings.MEDIA_ROOT, export_uuid))
     a = serializers.VideoExportSerializer(instance=video_obj)
     data = copy.deepcopy(a.data)
+    data['version'] = settings.SERIALIZER_VERSION
     with file("{}/exports/{}/table_data.json".format(settings.MEDIA_ROOT, export_uuid), 'w') as output:
         json.dump(data, output)
     zipper = subprocess.Popen(['zip', file_name, '-r', '{}'.format(export_uuid)],
@@ -184,8 +184,6 @@ def build_queryset(args, video_id=None, query_id=None, target=None, filters=None
         queryset = IndexEntries.objects.all().filter(**kwargs)
     elif target == 'query_regions':
         queryset = QueryRegion.objects.all().filter(**kwargs)
-    elif target == 'query_region_index_vectors':
-        queryset = QueryRegionIndexVector.objects.all().filter(**kwargs)
     elif target == 'segments':
         queryset = Segment.objects.filter(**kwargs)
     else:
@@ -263,19 +261,6 @@ def get_query_dimensions(start):
     return width, height
 
 
-def crop_and_get_region_path(df, images, temp_root):
-    if not df.materialized:
-        frame_path = df.frame_path()
-        if frame_path not in images:
-            images[frame_path] = Image.open(frame_path)
-        img2 = images[frame_path].crop((df.x, df.y, df.x + df.w, df.y + df.h))
-        region_path = df.path(temp_root=temp_root)
-        img2.save(region_path)
-    else:
-        return df.path()
-    return region_path
-
-
 def ensure_files(queryset, target):
     dirnames = {}
     if target == 'frames':
@@ -283,10 +268,7 @@ def ensure_files(queryset, target):
             ensure(k.path(media_root=''), dirnames)
     elif target == 'regions':
         for k in queryset:
-            if k.materialized:
-                ensure(k.path(media_root=''), dirnames)
-            else:
-                ensure(k.frame_path(media_root=''), dirnames)
+            ensure(k.frame_path(media_root=''), dirnames)
     elif target == 'segments':
         for k in queryset:
             ensure(k.path(media_root=''), dirnames)
@@ -351,14 +333,13 @@ def get_sync_paths(dirname, task_id):
             f.append(k.path(media_root=""))
     elif dirname == 'regions':
         e = TEvent.objects.get(pk=task_id)
-        # TODO: transformation events merely materialize, fix this
         if e.operation == 'perform_transformation':
             fargs = copy.deepcopy(e.arguments['filters'])
-            fargs['materialized'] = True
             fargs['video_id'] = e.video_id
             f = [k.path(media_root="") for k in Region.objects.filter(**fargs)]
         else:
-            f = [k.path(media_root="") for k in Region.objects.filter(event_id=task_id) if k.materialized]
+            # todo fix this for the case where a region has an associated pixel wise information.
+            f = [k.path(media_root="") for k in Region.objects.filter(event_id=task_id) if k.png]
     else:
         raise NotImplementedError("dirname : {} not configured".format(dirname))
     return f

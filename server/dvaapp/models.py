@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-import os, json, gzip, sys, shutil, zipfile, uuid
+import os, json, gzip, sys, shutil, zipfile, uuid, hashlib
 
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              "../../client/"))  # This ensures that the constants are same between client and server
@@ -10,6 +10,7 @@ from django.conf import settings
 from django.utils import timezone
 from dvaclient import constants
 from . import fs
+from PIL import Image
 
 try:
     import numpy as np
@@ -53,6 +54,36 @@ class DVAPQL(models.Model):
     failed = models.BooleanField(default=False)
     error_message = models.TextField(default="", blank=True, null=True)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+
+
+class TrainingSet(models.Model):
+    DETECTION = constants.DETECTION
+    INDEXING = constants.INDEXING
+    TRAINAPPROX = constants.TRAINAPPROX
+    CLASSIFICATION = constants.CLASSIFICATION
+    IMAGES = constants.IMAGES
+    VIDEOS = constants.VIDEOS
+    INDEX = constants.INDEX
+    INSTANCE_TYPES = (
+        (IMAGES, 'images'),
+        (INDEX, 'index'),
+        (VIDEOS, 'videos'),
+    )
+    TRAIN_TASK_TYPES = (
+        (DETECTION, 'Detection'),
+        (INDEXING, 'Indexing'),
+        (TRAINAPPROX, 'Approximation'),
+        (CLASSIFICATION, 'Classification')
+    )
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    source_filters = JSONField(blank=True, null=True)
+    training_task_type = models.CharField(max_length=1, choices=TRAIN_TASK_TYPES, db_index=True, default=DETECTION)
+    instance_type = models.CharField(max_length=1, choices=INSTANCE_TYPES, db_index=True, default=IMAGES)
+    count = models.IntegerField(null=True)
+    name = models.CharField(max_length=500, default="")
+    files = JSONField(blank=True, null=True)
+    built = models.BooleanField(default=False)
+    created = models.DateTimeField('date created', auto_now_add=True)
 
 
 class Video(models.Model):
@@ -116,20 +147,6 @@ class Video(models.Model):
                         pass
 
 
-class IngestEntry(models.Model):
-    video = models.ForeignKey(Video)
-    ingest_index = models.IntegerField()
-    ingest_filename = models.CharField(max_length=500)
-    start_segment_index = models.IntegerField(null=True)
-    start_frame_index = models.IntegerField(null=True)
-    segments = models.IntegerField(null=True)
-    frames = models.IntegerField(null=True)
-    created = models.DateTimeField('date created', auto_now_add=True)
-
-    class Meta:
-        unique_together = (("video", "ingest_filename", "ingest_index"),)
-
-
 class TEvent(models.Model):
     started = models.BooleanField(default=False)
     completed = models.BooleanField(default=False)
@@ -137,6 +154,7 @@ class TEvent(models.Model):
     worker = models.ForeignKey(Worker, null=True)
     error_message = models.TextField(default="")
     video = models.ForeignKey(Video, null=True)
+    training_set = models.ForeignKey(TrainingSet, null=True)
     operation = models.CharField(max_length=100, default="")
     queue = models.CharField(max_length=100, default="")
     created = models.DateTimeField('date created', auto_now_add=True)
@@ -148,37 +166,6 @@ class TEvent(models.Model):
     parent_process = models.ForeignKey(DVAPQL, null=True)
     imported = models.BooleanField(default=False)
     task_group_id = models.IntegerField(default=-1)
-
-
-class TrainingSet(models.Model):
-    DETECTION = constants.DETECTION
-    INDEXING = constants.INDEXING
-    TRAINAPPROX = constants.TRAINAPPROX
-    CLASSIFICATION = constants.CLASSIFICATION
-    IMAGES = constants.IMAGES
-    VIDEOS = constants.VIDEOS
-    INDEX = constants.INDEX
-    INSTANCE_TYPES = (
-        (IMAGES, 'images'),
-        (INDEX, 'index'),
-        (VIDEOS, 'videos'),
-    )
-    TRAIN_TASK_TYPES = (
-        (DETECTION, 'Detection'),
-        (INDEXING, 'Indexing'),
-        (TRAINAPPROX, 'Approximation'),
-        (CLASSIFICATION, 'Classification')
-    )
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    event = models.ForeignKey(TEvent, null=True)
-    source_filters = JSONField(blank=True, null=True)
-    training_task_type = models.CharField(max_length=1, choices=TRAIN_TASK_TYPES, db_index=True, default=DETECTION)
-    instance_type = models.CharField(max_length=1, choices=INSTANCE_TYPES, db_index=True, default=IMAGES)
-    count = models.IntegerField(null=True)
-    name = models.CharField(max_length=500, default="")
-    files = JSONField(blank=True, null=True)
-    built = models.BooleanField(default=False)
-    created = models.DateTimeField('date created', auto_now_add=True)
 
 
 class TrainedModel(models.Model):
@@ -224,7 +211,7 @@ class TrainedModel(models.Model):
     model_filename = models.CharField(max_length=200, default="", null=True)
     created = models.DateTimeField('date created', auto_now_add=True)
     arguments = JSONField(null=True, blank=True)
-    event = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent)
     trained = models.BooleanField(default=False)
     training_set = models.ForeignKey(TrainingSet, null=True)
     url = models.CharField(max_length=200, default="")
@@ -273,12 +260,20 @@ class TrainedModel(models.Model):
                 os.mkdir(model_dir)
             except:
                 pass
+        shasums = []
         for m in self.files:
             dlpath = "{}/{}".format(model_dir, m['filename'])
             if m['url'].startswith('/'):
                 shutil.copy(m['url'], dlpath)
             else:
                 fs.get_path_to_file(m['url'], dlpath)
+            shasums.append(str(hashlib.sha1(file(dlpath).read()).hexdigest()))
+        if self.shasum is None:
+            if len(shasums) == 1:
+                self.shasum = shasums[0]
+            else:
+                self.shasum = str(hashlib.sha1(''.join(sorted(shasums))).hexdigest())
+            self.save()
         self.upload()
         if self.model_type == TrainedModel.DETECTOR and self.detector_type == TrainedModel.YOLO:
             source_zip = "{}/models/{}/model.zip".format(settings.MEDIA_ROOT, self.uuid)
@@ -339,10 +334,9 @@ class Retriever(models.Model):
 
 class Frame(models.Model):
     video = models.ForeignKey(Video)
-    event = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent)
     frame_index = models.IntegerField()
     name = models.CharField(max_length=200, null=True)
-    subdir = models.TextField(default="")  # Retains information if the source is a dataset for labeling
     h = models.IntegerField(default=0)
     w = models.IntegerField(default=0)
     t = models.FloatField(null=True)  # time in seconds for keyframes
@@ -364,6 +358,15 @@ class Frame(models.Model):
     def original_path(self):
         return self.name
 
+    def global_path(self):
+        if self.video.dataset:
+            if self.name and not self.name.startswith('/'):
+                return self.name
+            else:
+                return "{}/{}".format(self.video.url, self.name)
+        else:
+            return "{}::{}".format(self.video.url, self.frame_index)
+
 
 class Segment(models.Model):
     """
@@ -373,7 +376,7 @@ class Segment(models.Model):
     segment_index = models.IntegerField()
     start_time = models.FloatField(default=0.0)
     end_time = models.FloatField(default=0.0)
-    event = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent)
     metadata = models.TextField(default="{}")
     frame_count = models.IntegerField(default=0)
     start_index = models.IntegerField(default=0)
@@ -414,8 +417,8 @@ class Region(models.Model):
     region_type = models.CharField(max_length=1, choices=REGION_TYPES, db_index=True)
     video = models.ForeignKey(Video)
     user = models.ForeignKey(User, null=True)
-    frame = models.ForeignKey(Frame, null=True)
-    event = models.ForeignKey(TEvent, null=True)  # TEvent that created this region
+    frame = models.ForeignKey(Frame, null=True, on_delete=models.SET_NULL)
+    event = models.ForeignKey(TEvent)  # TEvent that created this region
     frame_index = models.IntegerField(default=-1)
     segment_index = models.IntegerField(default=-1, null=True)
     text = models.TextField(default="")
@@ -429,7 +432,6 @@ class Region(models.Model):
     created = models.DateTimeField('date created', auto_now_add=True)
     object_name = models.CharField(max_length=100)
     confidence = models.FloatField(default=0.0)
-    materialized = models.BooleanField(default=False)
     png = models.BooleanField(default=False)
 
     def clean(self):
@@ -459,6 +461,23 @@ class Region(models.Model):
         else:
             return "{}/{}/frames/{}.jpg".format(settings.MEDIA_ROOT, self.video_id, self.frame_index)
 
+    def crop_and_get_region_path(self, images, temp_root):
+        bare_path = self.path(media_root="")
+        cached_data = fs.get_from_cache(bare_path)
+        region_path = self.path(temp_root=temp_root)
+        if cached_data:
+            with open(region_path, 'wb') as out:
+                out.write(cached_data)
+        else:
+            frame_path = self.frame_path()
+            if frame_path not in images:
+                images[frame_path] = Image.open(frame_path)
+            img2 = images[frame_path].crop((self.x, self.y, self.x + self.w, self.y + self.h))
+            img2.save(region_path)
+            with open(region_path, 'rb') as fr:
+                fs.cache_path(bare_path, payload=fr.read())
+        return region_path
+
 
 class QueryRegion(models.Model):
     """
@@ -478,7 +497,7 @@ class QueryRegion(models.Model):
     )
     region_type = models.CharField(max_length=1, choices=REGION_TYPES, db_index=True)
     query = models.ForeignKey(DVAPQL)
-    event = models.ForeignKey(TEvent, null=True)  # TEvent that created this region
+    event = models.ForeignKey(TEvent)  # TEvent that created this region
     text = models.TextField(default="")
     metadata = JSONField(blank=True, null=True)
     full_frame = models.BooleanField(default=False)
@@ -495,19 +514,8 @@ class QueryRegion(models.Model):
 
 class QueryResults(models.Model):
     query = models.ForeignKey(DVAPQL)
-    retrieval_event = models.ForeignKey(TEvent, null=True)
-    video = models.ForeignKey(Video)
-    frame = models.ForeignKey(Frame)
-    detection = models.ForeignKey(Region, null=True)
-    rank = models.IntegerField()
-    algorithm = models.CharField(max_length=100)
-    distance = models.FloatField(default=0.0)
-
-
-class QueryRegionResults(models.Model):
-    query = models.ForeignKey(DVAPQL)
-    query_region = models.ForeignKey(QueryRegion)
-    retrieval_event = models.ForeignKey(TEvent, null=True)
+    retrieval_event = models.ForeignKey(TEvent)
+    query_region = models.ForeignKey(QueryRegion, null=True)
     video = models.ForeignKey(Video)
     frame = models.ForeignKey(Frame)
     detection = models.ForeignKey(Region, null=True)
@@ -531,7 +539,7 @@ class IndexEntries(models.Model):
     contains_frames = models.BooleanField(default=False)
     contains_detections = models.BooleanField(default=False)
     created = models.DateTimeField('date created', auto_now_add=True)
-    event = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent)
 
     def __unicode__(self):
         return "{} in {} index by {}".format(self.detection_name, self.algorithm, self.video.name)
@@ -580,7 +588,7 @@ class Tube(models.Model):
     end_region = models.ForeignKey(Region, null=True, related_name="end_region")
     text = models.TextField(default="")
     metadata = JSONField(blank=True, null=True)
-    source = models.ForeignKey(TEvent, null=True)
+    event = models.ForeignKey(TEvent)
 
 
 class RegionRelation(models.Model):
@@ -594,6 +602,52 @@ class RegionRelation(models.Model):
     name = models.CharField(max_length=400)
     weight = models.FloatField(null=True)
     metadata = JSONField(blank=True, null=True)
+
+
+class HyperRegionRelation(models.Model):
+    """
+    Captures relations between a Region in a video/dataset and an external globally addressed path / URL.
+    HyperRegionRelation is an equivalent of anchor tags / hyperlinks.
+    e.g. Region -> http://http://akshaybhat.com/static/img/akshay.jpg
+    """
+    video = models.ForeignKey(Video)
+    region = models.ForeignKey(Region)
+    event = models.ForeignKey(TEvent)
+    name = models.CharField(max_length=400)
+    weight = models.FloatField(null=True)
+    metadata = JSONField(blank=True, null=True)
+    path = models.TextField()
+    full_frame = models.BooleanField(default=False)
+    x = models.IntegerField(default=0)
+    y = models.IntegerField(default=0)
+    h = models.IntegerField(default=0)
+    w = models.IntegerField(default=0)
+    # Unlike region frame_index is only required if the path points to a video or a .gif
+    frame_index = models.IntegerField(null=True)
+    segment_index = models.IntegerField(null=True)
+
+
+class HyperTubeRegionRelation(models.Model):
+    """
+    Captures relations between a Tube in a video/dataset and an external globally addressed path / URL.
+    HyperTubeRegionRelation is an equivalent of anchor tags / hyperlinks.
+    e.g. Tube -> http://http://akshaybhat.com/static/img/akshay.jpg
+    """
+    video = models.ForeignKey(Video)
+    tube = models.ForeignKey(Tube)
+    event = models.ForeignKey(TEvent)
+    name = models.CharField(max_length=400)
+    weight = models.FloatField(null=True)
+    metadata = JSONField(blank=True, null=True)
+    path = models.TextField()
+    full_frame = models.BooleanField(default=False)
+    x = models.IntegerField(default=0)
+    y = models.IntegerField(default=0)
+    h = models.IntegerField(default=0)
+    w = models.IntegerField(default=0)
+    # Unlike region frame_index is only required if the path points to a video or a .gif
+    frame_index = models.IntegerField(null=True)
+    segment_index = models.IntegerField(null=True)
 
 
 class TubeRelation(models.Model):

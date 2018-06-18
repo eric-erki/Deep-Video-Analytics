@@ -1,0 +1,65 @@
+ version: '3'
+ services:
+   db:
+     image: postgres:9.6.6
+     container_name: dva-pg
+     volumes:
+      - dvapgdata:/var/lib/postgresql/data
+     env_file:
+       - ../../custom.env
+   rabbit:
+     image: rabbitmq
+     container_name: dva-rmq
+     env_file:
+       - ../../custom.env
+     volumes:
+       - dvarabbit:/var/lib/rabbitmq
+   redis:
+     image: bitnami/redis:latest
+     container_name: dva-redis
+     env_file:
+       - ../../custom.env
+     volumes:
+       - dvaredis:/bitnami
+   dva:
+     image: akshayubhat/dva-auto:latest
+     container_name: webserver
+     env_file:
+       - ../../custom.env
+     environment:
+       - LAUNCH_SERVER_NGINX=1
+       - LAUNCH_Q_GLOBAL_MODEL=1
+       - LAUNCH_Q_GLOBAL_RETRIEVER=1
+       - LAUNCH_BY_NAME_indexer_inception=1
+       - LAUNCH_BY_NAME_indexer_facenet=1
+       - LAUNCH_BY_NAME_retriever_inception=1
+       - LAUNCH_BY_NAME_retriever_facenet=1
+       - LAUNCH_BY_NAME_detector_coco=1
+       - LAUNCH_BY_NAME_analyzer_crnn=1
+       - LAUNCH_BY_NAME_analyzer_tagger=1
+       - LAUNCH_BY_NAME_detector_face=1
+       - LAUNCH_BY_NAME_detector_textbox=1
+       - LAUNCH_Q_qextract=1
+       - LAUNCH_Q_qtrainer=1
+       - LAUNCH_Q_qstreamer=1
+       - LAUNCH_SCHEDULER=1
+       - LAUNCH_SERVER=1 # This supersedes NGINX and launches django development server with auto-reload
+       - LAUNCH_NOTEBOOK=1 # Run a jupyter notebook server inside the container to enable easy debugging
+       - ENABLE_DEBUG=1 # Enables django debug mode
+     command: bash -c "cd /root/DVA/repos/tf_ctpn_cpu/lib/utils/ && ./make.sh && cd /root/DVA/server/ && sleep 10 && ./start_container.py"
+     ports:
+       - "127.0.0.1:8000:80"
+       - "127.0.0.1:8889:8888"
+     depends_on:
+       - db
+       - rabbit
+       - redis
+     volumes:
+       - ../../:/root/DVA/
+       - ../../configs/custom_defaults:/root/DVA/configs/custom_defaults
+     tmpfs:
+       - /root/media
+ volumes:
+  dvapgdata:
+  dvarabbit:
+  dvaredis:

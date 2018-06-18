@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from models import Video, Frame, Region, DVAPQL, QueryResults, TEvent, IndexEntries, Tube, Segment, TrainedModel, \
-    Retriever, SystemState, QueryRegion, QueryRegionResults, Worker, TrainingSet, RegionRelation, TubeRegionRelation, \
-    TubeRelation, Export
+    Retriever, SystemState, QueryRegion, Worker, TrainingSet, RegionRelation, TubeRegionRelation, TubeRelation, \
+    Export, HyperRegionRelation, HyperTubeRegionRelation
 import os, json, glob
 from collections import defaultdict
 from django.conf import settings
@@ -72,7 +72,7 @@ class FrameSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Frame
         fields = ('url', 'media_url', 'video', 'frame_index', 'keyframe', 'w', 'h', 't',
-                  'name', 'subdir', 'id', 'segment_index')
+                  'name', 'id', 'segment_index')
 
 
 class SegmentSerializer(serializers.HyperlinkedModelSerializer):
@@ -88,19 +88,16 @@ class SegmentSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class RegionSerializer(serializers.HyperlinkedModelSerializer):
-    media_url = serializers.SerializerMethodField()
+    frame_media_url = serializers.SerializerMethodField()
 
-    def get_media_url(self, obj):
-        if obj.materialized:
-            return "{}{}/regions/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.pk)
-        else:
-            return None
+    def get_frame_media_url(self, obj):
+        return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.frame_index)
 
     class Meta:
         model = Region
-        fields = ('url', 'media_url', 'region_type', 'video', 'user', 'frame', 'event', 'frame_index',
+        fields = ('url', 'frame_media_url', 'region_type', 'video', 'user', 'frame', 'event', 'frame_index',
                   'segment_index', 'text', 'metadata', 'full_frame', 'x', 'y', 'h', 'w',
-                  'polygon_points', 'created', 'object_name', 'confidence', 'materialized', 'png', 'id')
+                  'polygon_points', 'created', 'object_name', 'confidence', 'png', 'id')
 
 
 class RegionRelationSerializer(serializers.HyperlinkedModelSerializer):
@@ -123,6 +120,28 @@ class RegionRelationSerializer(serializers.HyperlinkedModelSerializer):
                   'source_region', 'target_region', 'name', 'weight', 'event', 'metadata', 'id')
 
 
+class HyperRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
+    frame_media_url = serializers.SerializerMethodField()
+
+    def get_frame_media_url(self, obj):
+        if obj.region.frame_id:
+            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.region.frame_index)
+        else:
+            return None
+
+    class Meta:
+        model = HyperRegionRelation
+        fields = ('url', 'frame_media_url', 'video', 'path', 'region', 'name', 'weight', 'event', 'metadata', 'id',
+                  'x', 'y', 'w', 'h', 'full_frame')
+
+
+class HyperTubeRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = HyperTubeRegionRelation
+        fields = ('url', 'source_tube', 'target_tube', 'name', 'weight', 'video', 'event', 'metadata', 'id',
+                  'x', 'y', 'w', 'h', 'full_frame')
+
+
 class TubeRelationSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = TubeRelation
@@ -139,7 +158,7 @@ class TubeRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = TubeRegionRelation
         fields = (
-        'url', 'region_frame_media_url', 'region', 'tube', 'video', 'name', 'weight', 'event', 'metadata', 'id')
+            'url', 'region_frame_media_url', 'region', 'tube', 'video', 'name', 'weight', 'event', 'metadata', 'id')
 
 
 class TubeSerializer(serializers.HyperlinkedModelSerializer):
@@ -172,14 +191,6 @@ class QueryResultsSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
 
-class QueryRegionResultsSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = QueryRegionResults
-        fields = '__all__'
-
-
 class QueryResultsExportSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
 
@@ -188,22 +199,14 @@ class QueryResultsExportSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class QueryRegionResultsExportSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = QueryRegionResults
-        fields = '__all__'
-
-
 class QueryRegionExportSerializer(serializers.ModelSerializer):
-    query_region_results = QueryRegionResultsExportSerializer(source='queryregionresults_set', read_only=True,
-                                                              many=True)
+    query_results = QueryResultsExportSerializer(source='queryresults_set', read_only=True, many=True)
 
     class Meta:
         model = QueryRegion
         fields = (
             'id', 'region_type', 'query', 'event', 'text', 'metadata', 'full_frame', 'x', 'y', 'h', 'w',
-            'polygon_points',
-            'created', 'object_name', 'confidence', 'png', 'query_region_results')
+            'polygon_points', 'created', 'object_name', 'confidence', 'png', 'query_results')
 
 
 class TaskExportSerializer(serializers.ModelSerializer):
@@ -214,7 +217,7 @@ class TaskExportSerializer(serializers.ModelSerializer):
         model = TEvent
         fields = ('started', 'completed', 'errored', 'worker', 'error_message', 'video', 'operation', 'queue',
                   'created', 'start_ts', 'duration', 'arguments', 'task_id', 'parent', 'parent_process',
-                  'imported', 'query_results', 'query_regions', 'id')
+                  'training_set', 'imported', 'query_results', 'query_regions', 'id')
 
 
 class TEventSerializer(serializers.HyperlinkedModelSerializer):
@@ -245,6 +248,18 @@ class RegionRelationExportSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class HyperRegionRelationExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HyperRegionRelation
+        fields = '__all__'
+
+
+class HyperTubeRegionRelationRelationExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HyperTubeRegionRelation
+        fields = '__all__'
+
+
 class TubeRelationExportSerializer(serializers.ModelSerializer):
     class Meta:
         model = TubeRelation
@@ -258,12 +273,9 @@ class TubeRegionRelationExportSerializer(serializers.ModelSerializer):
 
 
 class FrameExportSerializer(serializers.ModelSerializer):
-    region_list = RegionExportSerializer(source='region_set', read_only=True, many=True)
-
     class Meta:
         model = Frame
-        fields = ('region_list', 'video', 'frame_index', 'keyframe', 'w', 'h', 't',
-                  'name', 'subdir', 'id', 'segment_index')
+        fields = ('frame_index', 'keyframe', 'w', 'h', 't', 'event', 'name', 'id', 'segment_index')
 
 
 class IndexEntryExportSerializer(serializers.ModelSerializer):
@@ -308,6 +320,9 @@ class DVAPQLSerializer(serializers.HyperlinkedModelSerializer):
 
 class VideoExportSerializer(serializers.ModelSerializer):
     frame_list = FrameExportSerializer(source='frame_set', read_only=True, many=True)
+    region_list = RegionExportSerializer(source='region_set', read_only=True, many=True)
+    hyper_region_relation_list = HyperRegionRelationExportSerializer(source='hyperregionrelation_set',
+                                                                     read_only=True, many=True)
     segment_list = SegmentExportSerializer(source='segment_set', read_only=True, many=True)
     index_entries_list = IndexEntryExportSerializer(source='indexentries_set', read_only=True, many=True)
     event_list = TEventExportSerializer(source='tevent_set', read_only=True, many=True)
@@ -318,7 +333,8 @@ class VideoExportSerializer(serializers.ModelSerializer):
         model = Video
         fields = ('name', 'length_in_seconds', 'height', 'width', 'metadata', 'frames', 'created', 'description',
                   'uploaded', 'dataset', 'uploader', 'segments', 'url', 'frame_list', 'segment_list',
-                  'event_list', 'tube_list', 'index_entries_list', 'region_relation_list', "stream")
+                  'event_list', 'tube_list', 'index_entries_list', 'region_relation_list', "stream", 'region_list',
+                  'hyper_region_relation_list')
 
 
 def import_frame_json(f, frame_index, event_id, video_id, w, h):
@@ -416,6 +432,7 @@ class VideoImporter(object):
         self.import_events()
         self.import_segments()
         self.bulk_import_frames()
+        self.bulk_import_regions()
         self.convert_regions_files()
         self.import_index_entries()
         self.bulk_import_region_relations()
@@ -464,18 +481,13 @@ class VideoImporter(object):
                 ce.save()
 
     def convert_regions_files(self):
-        if os.path.isdir('{}/detections/'.format(self.root)):
-            source_subdir = 'detections'  # temporary for previous version imports
-            os.mkdir('{}/regions'.format(self.root))
-        else:
-            source_subdir = 'regions'
         convert_list = []
         for k, v in self.region_to_pk.iteritems():
             dd = Region.objects.get(pk=v)
-            original = '{}/{}/{}.jpg'.format(self.root, source_subdir, k)
+            original = '{}/{}/{}.jpg'.format(self.root, 'regions', k)
             temp_file = "{}/regions/d_{}.jpg".format(self.root, v)
             converted = "{}/regions/{}.jpg".format(self.root, v)
-            if dd.materialized or os.path.isfile(original):
+            if os.path.isfile(original):
                 try:
                     os.rename(original, temp_file)
                     convert_list.append((temp_file, converted))
@@ -514,7 +526,6 @@ class VideoImporter(object):
             di.metadata = i.get('metadata', {})
             transformed = []
             for entry in entries:
-                entry['video_primary_key'] = self.video.pk
                 if 'detection_primary_key' in entry:
                     entry['detection_primary_key'] = self.region_to_pk[entry['detection_primary_key']]
                 if 'frame_primary_key' in entry:
@@ -524,38 +535,27 @@ class VideoImporter(object):
             di.save()
 
     def bulk_import_frames(self):
-        frame_regions = defaultdict(list)
         frames = []
         frame_index_to_fid = {}
         for i, f in enumerate(self.json['frame_list']):
             frames.append(self.create_frame(f))
             frame_index_to_fid[i] = f['id']
             if 'region_list' in f:
-                for a in f['region_list']:
-                    ra = self.create_region(a)
-                    if 'id' in a:
-                        frame_regions[i].append((ra, a['id']))
-            elif 'detection_list' in f or 'annotation_list' in f:
-                raise NotImplementedError, "Older format no longer supported"
+                raise NotImplementedError, "Older format with nested region list no longer supported"
         bulk_frames = Frame.objects.bulk_create(frames)
-        regions = []
-        regions_index_to_rid = {}
-        region_index = 0
-        bulk_regions = []
         for i, k in enumerate(bulk_frames):
             self.frame_to_pk[frame_index_to_fid[i]] = k.id
-            for r, rid in frame_regions[i]:
-                r.frame_id = k.id
-                regions.append(r)
-                regions_index_to_rid[region_index] = rid
-                region_index += 1
-                if len(regions) == 1000:
-                    bulk_regions.extend(Region.objects.bulk_create(regions))
-                    regions = []
-        bulk_regions.extend(Region.objects.bulk_create(regions))
+
+    def bulk_import_regions(self):
+        regions = []
+        region_index_to_fid = {}
+        for i, a in enumerate(self.json['region_list']):
+            ra = self.create_region(a)
+            regions.append(ra)
+            region_index_to_fid[i] = a['id']
+        bulk_regions = Region.objects.bulk_create(regions)
         for i, k in enumerate(bulk_regions):
-            if regions_index_to_rid[i]:
-                self.region_to_pk[regions_index_to_rid[i]] = k.id
+            self.region_to_pk[region_index_to_fid[i]] = k.id
 
     def bulk_import_region_relations(self):
         region_relations = []
@@ -575,31 +575,18 @@ class VideoImporter(object):
         da.y = a['y']
         da.h = a['h']
         da.w = a['w']
-        da.vdn_key = a['id']
-        if 'text' in a:
-            da.text = a['text']
-        elif 'metadata_text' in a:
-            da.text = a['metadata_text']
-        if 'metadata' in a:
-            da.metadata = a['metadata']
-        elif 'metadata_json' in a:
-            da.metadata = a['metadata_json']
-        da.materialized = a.get('materialized', False)
+        if 'frame' in a:
+            da.frame_id = self.frame_to_pk[a['frame']]
+        da.text = a['text']
+        da.metadata = a['metadata']
         da.png = a.get('png', False)
         da.region_type = a['region_type']
         da.confidence = a['confidence']
         da.object_name = a['object_name']
         da.full_frame = a['full_frame']
-        if a.get('event', None):
-            da.event_id = self.event_to_pk[a['event']]
-        if 'parent_frame_index' in a:
-            da.frame_index = a['parent_frame_index']
-        else:
-            da.frame_index = a['frame_index']
-        if 'parent_segment_index' in a:
-            da.segment_index = a.get('parent_segment_index', -1)
-        else:
-            da.segment_index = a.get('segment_index', -1)
+        da.event_id = self.event_to_pk[a['event']]
+        da.frame_index = a['frame_index']
+        da.segment_index = a.get('segment_index', -1)
         return da
 
     def create_region_relation(self, a):
@@ -622,12 +609,10 @@ class VideoImporter(object):
         df.video_id = self.video.pk
         df.name = f['name']
         df.frame_index = f['frame_index']
-        df.subdir = f['subdir']
         df.h = f.get('h', 0)
         df.w = f.get('w', 0)
         df.t = f.get('t', 0)
-        if f.get('event', None):
-            df.event_id = self.event_to_pk[f['event']]
+        df.event_id = self.event_to_pk[f['event']]
         df.segment_index = f.get('segment_index', 0)
         df.keyframe = f.get('keyframe', False)
         return df

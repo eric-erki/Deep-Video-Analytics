@@ -6,7 +6,7 @@
     <div class="box box-info">
         <div class="box-header">
             <h4>Details for <a href="/videos/{{ object.video_id }}">{{ object.video.name }}</a>
-                {% if object.video.dataset %} file named: {{ object.name }} in directory {{ object.subdir }} {% else %} at {{ object.frame_index }}
+                {% if object.video.dataset %} file {{ object.name }} {% else %} at {{ object.frame_index }}
                 <a href="/segments/by_index/{{ object.video_id }}/{{ object.segment_index }}"> in Segment {{ object.segment_index }} </a>
                 {% endif %}
             </h4>
@@ -142,13 +142,9 @@
             <h4>{{ d.object_name }}</h4>
         </div>
         <div class="box-body text-center">
-            {% if d.materialized %}
-                <img class="img-responsive" src="{{ MEDIA_URL }}{{ object.video_id }}/regions/{{ d.pk }}.jpg" style="margin-left:auto;margin-right: auto">
-            {% else %}
-                <div style="width: {{ d.w }}px; height: {{ d.h }}px; position: relative;overflow:hidden;margin: auto;">
-                    <img src="{{ url }}" id="image" style="position: absolute; top: -{{ d.y }}px; left: -{{ d.x }}px" />
-                </div>
-            {% endif %}
+            <div style="width: {{ d.w }}px; height: {{ d.h }}px; position: relative;overflow:hidden;margin: auto;">
+                <img src="{{ url }}" id="image" style="position: absolute; top: -{{ d.y }}px; left: -{{ d.x }}px" />
+            </div>
         </div>
         <div class="box-footer text-center">
             <h5>Confidence: {{ d.confidence|floatformat }}</h5>

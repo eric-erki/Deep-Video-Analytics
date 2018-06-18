@@ -423,7 +423,7 @@ def search(request):
         qp = DVAPQLProcess()
         view_shared.create_query_from_request(qp, request)
         qp.launch()
-        qp.wait()
+        qp.wait_query()
         qp_context = view_shared.collect(qp)
         return JsonResponse(data={'task_id': "",
                                   'primary_key': qp.process.pk,
@@ -621,14 +621,6 @@ def export_video(request):
 
 
 @user_passes_test(user_check)
-def status(request):
-    context = {'logs': []}
-    for fname in glob.glob('logs/*.log'):
-        context['logs'].append((fname, file(fname).read()))
-    return render(request, 'dvaui/status.html', context)
-
-
-@user_passes_test(user_check)
 def management(request):
     timeout = 1.0
     context = {
@@ -664,7 +656,6 @@ def textsearch(request):
             context['results']['regions_name'] = Region.objects.filter(object_name__search=q)[offset:limit]
         if request.GET.get('frames'):
             context['results']['frames_name'] = Frame.objects.filter(name__search=q)[offset:limit]
-            context['results']['frames_subdir'] = Frame.objects.filter(subdir__search=q)[offset:limit]
     return render(request, 'dvaui/textsearch.html', context)
 
 

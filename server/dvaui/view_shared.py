@@ -376,12 +376,12 @@ def create_query_from_request(p, request):
 def collect(p):
     context = {'results': defaultdict(list), 'regions': []}
     rids_to_names = {}
-    for rd in dvaapp.models.QueryRegion.objects.all().filter(query=p.process):
+    for rd in dvaapp.models.QueryRegion.objects.filter(query=p.process):
         rd_json = get_query_region_json(rd)
-        for r in dvaapp.models.QueryRegionResults.objects.filter(query=p.process, query_region=rd):
+        for r in dvaapp.models.QueryResults.objects.filter(query=p.process, query_region=rd):
             gather_results(r, rids_to_names, rd_json['results'])
         context['regions'].append(rd_json)
-    for r in dvaapp.models.QueryResults.objects.all().filter(query=p.process):
+    for r in dvaapp.models.QueryResults.objects.filter(query=p.process, query_region__isnull=True):
         gather_results(r, rids_to_names, context['results'])
     for k, v in context['results'].iteritems():
         if v:
@@ -404,28 +404,30 @@ def get_url(r):
     if r.detection_id:
         dd = r.detection
         frame_index = r.frame.frame_index
-        if dd.materialized:
-            return '{}{}/regions/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.detection_id)
-        else:
-            if settings.ENABLE_CLOUDFS:
-                cached_frame = fs.get_from_cache('/{}/frames/{}.jpg'.format(r.video_id, frame_index))
-                if cached_frame:
-                    if settings.DEBUG:
-                        logging.info("Cache used!")
-                    content = cStringIO.StringIO(cached_frame)
-                else:
-                    if settings.DEBUG:
-                        logging.info("Cache NOT used!")
-                    frame_url = '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, frame_index)
-                    response = requests.get(frame_url)
-                    content = cStringIO.StringIO(response.content)
-                img = Image.open(content)
+        cached_region = fs.get_from_cache('/{}/regions/{}.jpg'.format(r.video_id, frame_index))
+        if cached_region:
+            if settings.DEBUG:
+                logging.info("Cache used for region!")
+            return "data:image/jpeg;base64, {}".format(base64.b64encode(cached_region))
+        if settings.ENABLE_CLOUDFS:
+            cached_frame = fs.get_from_cache('/{}/frames/{}.jpg'.format(r.video_id, frame_index))
+            if cached_frame:
+                if settings.DEBUG:
+                    logging.info("Cache used!")
+                content = cStringIO.StringIO(cached_frame)
             else:
-                img = Image.open('{}/{}/frames/{}.jpg'.format(settings.MEDIA_ROOT, r.video_id, frame_index))
-            cropped = img.crop((dd.x, dd.y, dd.x + dd.w, dd.y + dd.h))
-            ibuffer = cStringIO.StringIO()
-            cropped.save(ibuffer, format="JPEG")
-            return "data:image/jpeg;base64, {}".format(base64.b64encode(ibuffer.getvalue()))
+                if settings.DEBUG:
+                    logging.info("Cache NOT used!")
+                frame_url = '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, frame_index)
+                response = requests.get(frame_url)
+                content = cStringIO.StringIO(response.content)
+            img = Image.open(content)
+        else:
+            img = Image.open('{}/{}/frames/{}.jpg'.format(settings.MEDIA_ROOT, r.video_id, frame_index))
+        cropped = img.crop((dd.x, dd.y, dd.x + dd.w, dd.y + dd.h))
+        ibuffer = cStringIO.StringIO()
+        cropped.save(ibuffer, format="JPEG")
+        return "data:image/jpeg;base64, {}".format(base64.b64encode(ibuffer.getvalue()))
     else:
         return '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.frame.frame_index)
 
@@ -465,7 +467,7 @@ def create_approximator_training_set(name, indexer_shasum, video_pks, user=None)
                 "MODEL": "TrainingSet",
                 "spec": {
                     "name": name,
-                    "training_task_type": dvaapp.models.TrainingSet.LOPQINDEX,
+                    "training_task_type": dvaapp.models.TrainingSet.TRAINAPPROX,
                     "instance_type": dvaapp.models.TrainingSet.INDEX,
                     "source_filters": {
                         "indexer_shasum": indexer_shasum,

@@ -257,6 +257,7 @@ TASK_NAMES_TO_QUEUE = {
     "perform_sync":Q_EXTRACTOR,
     "perform_import":Q_EXTRACTOR,
     "perform_stream_capture": Q_STREAMER,
+    "perform_matching": Q_TRAINER,
     "perform_training": Q_TRAINER,
     "perform_reduce": Q_REDUCER,
     "perform_video_decode_lambda": Q_LAMBDA
@@ -284,6 +285,8 @@ RESTARTABLE_TASKS = {
 
 NON_PROCESSING_TASKS = {'perform_training','perform_training_set_creation','perform_deletion', 'perform_export'}
 
+TRAINING_TASKS = {'perform_training','perform_training_set_creation'}
+
 # Is the code running on kubernetes?
 KUBE_MODE = 'KUBE_MODE' in os.environ
 # How many video segments should we process at a time?
@@ -296,4 +299,6 @@ DEFAULT_RATE = int(os.environ.get('DEFAULT_RATE',30))
 MAX_TASK_ATTEMPTS = 5
 # FAISS
 ENABLE_FAISS = 'DISABLE_FAISS' not in os.environ
+# Serializer version
+SERIALIZER_VERSION = "0.1"
 

@@ -1,5 +1,5 @@
 from django.conf import settings
-from .operations import indexing, detection, analysis, approximation
+from .operations import indexing, detection, analysis, approximation, retrieval
 import io
 import logging
 import tempfile
@@ -28,7 +28,7 @@ def handle_perform_indexing(start):
         # TODO: figure out a better way to store numpy arrays.
         s = io.BytesIO()
         np.save(s, vector)
-        redis_client.set(start.pk, s.getvalue())
+        redis_client.set("query_vector_{}".format(start.pk), s.getvalue())
         sync = False
     elif target == 'query_regions':
         queryset, target = task_shared.build_queryset(args=start.arguments)
@@ -38,9 +38,7 @@ def handle_perform_indexing(start):
             vector = visual_index.apply(local_path)
             s = io.BytesIO()
             np.save(s, vector)
-            # can be replaced by Redis instead of using DB
-            redis_client.hset(start.pk, dr.pk, s.getvalue())
-            _ = models.QueryRegionIndexVector.objects.create(vector=s.getvalue(), event=start, query_region=dr)
+            redis_client.hset("query_region_vectors_{}".format(start.pk), dr.pk, s.getvalue())
         sync = False
     elif target == 'regions':
         # For regions simply download/ensure files exists.
@@ -49,8 +47,7 @@ def handle_perform_indexing(start):
         indexing.Indexers.index_queryset(di, visual_index, start, target, queryset)
     elif target == 'frames':
         queryset, target = task_shared.build_queryset(args=start.arguments, video_id=start.video_id)
-        if visual_index.cloud_fs_support and settings.ENABLE_CLOUDFS and (not settings.KUBE_MODE):
-            # TODO Re-enable this in Kube Mode when issues with GCS are resolved.
+        if visual_index.cloud_fs_support and settings.ENABLE_CLOUDFS:
             # if NFS is disabled and index supports cloud file systems natively (e.g. like Tensorflow)
             indexing.Indexers.index_queryset(di, visual_index, start, target, queryset, cloud_paths=True)
         else:
@@ -200,7 +197,7 @@ def handle_perform_analysis(start):
                 a.frame_index = f.frame_index
                 a.segment_index = f.segment_index
                 source_regions.append(f)
-                path = task_shared.crop_and_get_region_path(f, image_data, temp_root)
+                path = f.crop_and_get_region_path(image_data, temp_root)
             elif target == 'frames':
                 a.full_frame = True
                 a.frame_index = f.frame_index
@@ -226,3 +223,99 @@ def handle_perform_analysis(start):
                 relations.append(models.RegionRelation(source_region_id=source_regions[i].id,target_region_id=k.id,
                                                        name='analysis', event_id=start.pk, video_id=start.video_id))
             models.RegionRelation.objects.bulk_create(relations, 1000)
+
+
+def handle_perform_matching(dt):
+    args = dt.arguments
+    video_id = dt.video_id
+    k = args.get('k', 5)
+    indexer_shasum = args['indexer_shasum']
+    approximator_shasum = args.get('approximator_shasum', None)
+    match_self = args.get('match_self', False)
+    source_filters = args.get('source_filters', {'event__completed':True})
+    target_filters = args.get('target_filters', {'event__completed':True})
+    source_filters.update({'video_id':dt.video_id})
+    source_filters.update({'indexer_shasum': indexer_shasum})
+    target_filters.update({'indexer_shasum': indexer_shasum})
+    if approximator_shasum:
+        source_filters.update({'approximator_shasum': approximator_shasum})
+        target_filters.update({'approximator_shasum': approximator_shasum})
+    else:
+        source_filters.update({'approximator_shasum': None})
+        target_filters.update({'approximator_shasum': None})
+    retriever = None
+    relations = []
+    if match_self:
+        query_set = models.IndexEntries.objects.filter(**target_filters)
+    else:
+        query_set = models.IndexEntries.objects.filter(**target_filters).exclude(video_id=dt.video_id)
+    for di in query_set:
+        mat, entries = di.load_index()
+        print mat.shape
+        if entries:
+            mat = np.atleast_2d(mat.squeeze())
+            print mat.shape
+            if retriever is None:
+                if approximator_shasum:
+                    approximator, da = approximation.Approximators.get_approximator_by_shasum(approximator_shasum)
+                    da.ensure()
+                    approximator.load()
+                    retriever = retrieval.retriever.FaissApproximateRetriever(name="approx_matcher",
+                                                                              approximator=approximator)
+                else:
+                    components = mat.shape[1]
+                    retriever = retrieval.retriever.FaissFlatRetriever("matcher", components=components)
+            retriever.load_index(mat,entries)
+    frame_to_region_id = {}
+    for di in models.IndexEntries.objects.filter(**source_filters):
+        mat, entries = di.load_index()
+        if entries:
+            mat = np.atleast_2d(mat.squeeze())
+            print mat.shape
+            results_batch = retriever.nearest_batch(mat,k)
+            for i,entry in enumerate(entries):
+                results = results_batch[i]
+                if match_self:
+                    pass
+                else:
+                    if 'detection_primary_key' in entry:
+                        region_id = entry['detection_primary_key']
+                    else:
+                        frame_id = entry['frame_primary_key']
+                        if frame_id not in frame_to_region_id:
+                            df = models.Frame.objects.get(pk=frame_id)
+                            frame_to_region_id[frame_id] = models.Region.objects.create(frame_id=frame_id,
+                                                                                        video_id=video_id, x=0, y=0,
+                                                                                        event=dt, w=df.w, h=df.h,
+                                                                                        full_frame=True).pk
+                        region_id = frame_to_region_id[frame_id]
+
+                    for result in results:
+                        dr = models.HyperRegionRelation()
+                        dr.video_id = video_id
+                        dr.metadata = result
+                        dr.region_id = region_id
+                        if 'detection_primary_key' in result:
+                            tdr = models.Region.objects.get(pk=result['detection_primary_key'])
+                            dr.x = tdr.x
+                            dr.y = tdr.y
+                            dr.w = tdr.w
+                            dr.h = tdr.h
+                            dr.full_frame = tdr.full_frame
+                            dr.path = tdr.frame.global_path()
+                            dr.metadata = tdr.metadata
+                        else:
+                            tdf = models.Frame.objects.get(pk=result['frame_primary_key'])
+                            dr.x = 0
+                            dr.y = 0
+                            dr.w = tdf.w
+                            dr.h = tdf.h
+                            dr.full_frame = True
+                            dr.path = tdf.global_path()
+                        dr.weight = result['dist']
+                        dr.event_id = dt.pk
+                        relations.append(dr)
+    if match_self:
+        pass
+    else:
+        models.HyperRegionRelation.objects.bulk_create(relations,1000)

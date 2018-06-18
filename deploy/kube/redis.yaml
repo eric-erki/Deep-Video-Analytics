@@ -25,8 +25,8 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 3Gi
-  storageClassName: standard
+      storage: 10Gi
+  storageClassName: faster
 ---
 apiVersion: apps/v1beta1
 kind: Deployment

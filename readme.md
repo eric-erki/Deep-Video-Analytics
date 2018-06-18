@@ -60,13 +60,11 @@ We provide instructions for developing, testing and deploying DVA.
 | Original CRNN code by Baoguang Shi  |  [MIT License](https://github.com/bgshih/crnn) |
 | Object Detector App using TF Object detection API |  [MIT License](https://github.com/datitran/Object-Detector-App) | 
 | Plotly.js |  [MIT License](https://github.com/plotly/plotly.js/blob/master/LICENSE) | 
-| CRF as RNN  |  [MIT License](https://github.com/sadeepj/crfasrnn_keras/blob/master/LICENSE) | 
-| Text Detection CTPN  |  [MIT License](https://github.com/eragonruan/text-detection-ctpn/LICENSE) | 
+| Text Detection CTPN  |  [MIT License](https://github.com/eragonruan/text-detection-ctpn/LICENSE) |
 | SphereFace  |  [MIT License](https://github.com/wy1iu/sphereface/blob/master/license) |
 | Segment annotator  |   [BSD 3-clause](https://github.com/kyamagu/js-segment-annotator/blob/master/LICENSE) |
 | TF Object detection API  | [Apache 2.0](https://github.com/tensorflow/models/tree/master/research/object_detection) |
 | TF models/slim  | [Apache 2.0](https://github.com/tensorflow/models/tree/master/research/slim) |
-| TF models/delf  | [Apache 2.0](https://github.com/tensorflow/models/tree/master/research/delf) |
 | Youtube 8M feature extractor  | [Apache 2.0](https://github.com/google/youtube-8m) |
 | CROW   |  [Apache 2.0](https://github.com/yahoo/crow/blob/master/LICENSE)  | 
 | LOPQ   |  [Apache 2.0](https://github.com/yahoo/lopq/blob/master/LICENSE)  | 

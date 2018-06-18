@@ -4,103 +4,15 @@ Code in this file assumes that it is being run via dvactl and git repo root as c
 import shlex
 import subprocess
 import time
-import random
 import json
 import os
 import base64
 import glob
 
-DEFAULT_WORKERS = [
-    {'name':'coco',
-     'worker_env':'LAUNCH_BY_NAME_detector_coco',
-     'max_cpu':4,
-     'request_cpu':1,
-     'request_memory':"2000Mi",
-     'max_memory':"4000Mi"
-     },
-    {'name':'crnn',
-     'worker_env':'LAUNCH_BY_NAME_analyzer_crnn',
-     'max_cpu':4,
-     'request_cpu':1,
-     'request_memory':"2000Mi",
-     'max_memory':"4000Mi"
-     },
-    {'name':'extractor',
-     'worker_env':'LAUNCH_Q_qextract',
-     'max_cpu':1,
-     'request_cpu':1,
-     'request_memory':"1000Mi",
-     'max_memory':"1000Mi"
-     },
-    {'name':'face',
-     'worker_env':'LAUNCH_BY_NAME_detector_face',
-     'max_cpu':4,
-     'request_cpu':1,
-     'request_memory':"2000Mi",
-     'max_memory':"4000Mi"
-     },
-    {'name':'facenet',
-     'worker_env':'LAUNCH_BY_NAME_indexer_facenet',
-     'max_cpu':4,
-     'request_cpu':1,
-     'request_memory':"2000Mi",
-     'max_memory':"4000Mi"
-     },
-    {'name':'globalmodel',
-     'worker_env':'LAUNCH_Q_GLOBAL_MODEL',
-     'max_cpu':4,
-     'request_cpu':1,
-     'request_memory':"2000Mi",
-     'max_memory':"8000Mi"
-     },
-    {'name':'globalretriever',
-     'worker_env':'LAUNCH_Q_GLOBAL_RETRIEVER',
-     'max_cpu':4,
-     'request_cpu':1,
-     'request_memory':"2000Mi",
-     'max_memory':"80000Mi"
-     },
-    {'name':'inception',
-     'worker_env':'LAUNCH_BY_NAME_indexer_inception',
-     'max_cpu':4,
-     'request_cpu':1,
-     'request_memory':"2000Mi",
-     'max_memory':"4000Mi"
-     },
-    {'name':'retinception',
-     'worker_env':'LAUNCH_BY_NAME_retriever_inception',
-     'max_cpu':4,
-     'request_cpu':1,
-     'request_memory':"2000Mi",
-     'max_memory':"80000Mi"
-     },
-    {'name':'streamer',
-     'worker_env':'LAUNCH_Q_qstreamer',
-     'max_cpu':4,
-     'request_cpu':1,
-     'request_memory':"500Mi",
-     'max_memory':"4000Mi"
-     },
-    {'name':'tagger',
-     'worker_env':'LAUNCH_BY_NAME_analyzer_tagger',
-     'max_cpu':4,
-     'request_cpu':1,
-     'request_memory':"2000Mi",
-     'max_memory':"4000Mi"
-     },
-    {'name':'textbox',
-     'worker_env':'LAUNCH_BY_NAME_detector_textbox',
-     'max_cpu':8,
-     'request_cpu':1,
-     'request_memory':"3000Mi",
-     'max_memory':"8000Mi"
-     },
-]
-
 
 CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" clusters create 
 "{cluster_name}" --zone "{zone}" --username "admin" --cluster-version "1.8.8-gke.0" --machine-type "{machine_type}"  
---image-type "COS" --disk-size "100" --num-nodes "{nodes}" 
+--image-type "COS" --disk-size "{disk_size}" --disk-type pd-ssd --num-nodes "{nodes}" 
 --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_write","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" \
 --network "default" --enable-cloud-logging --enable-cloud-monitoring --subnetwork "default" 
 --addons HorizontalPodAutoscaling,HttpLoadBalancing,KubernetesDashboard --enable-autorepair
@@ -109,7 +21,7 @@ CLUSTER_CREATE_COMMAND = """ gcloud beta container --project "{project_name}" cl
 PREMPTIBLE_CREATE_COMMAND = 'gcloud beta container --project "{project_name}" node-pools create "{pool_name}"' \
           ' --zone "{zone}" --cluster "{cluster_name}" ' \
           '--machine-type "{machine_type}" --image-type "COS" ' \
-          '--disk-size "100" ' \
+          '--disk-size "{disk_size}" --disk-type pd-ssd ' \
           '--scopes "https://www.googleapis.com/auth/compute",' \
           '"https://www.googleapis.com/auth/devstorage.read_write",' \
           '"https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring",' \
@@ -133,37 +45,53 @@ def run_commands(command_list):
         subprocess.check_call(shlex.split(k))
 
 
-def get_namespace():
-    return json.load(file('deploy/kube/namespace.json'))['metadata']['name']
+def set_namespace(namespace):
+    data = {
+      "kind": "Namespace",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": namespace,
+        "labels": {
+          "name": namespace
+        }
+      }
+    }
+    with open('deploy/kube/namespace.json','w') as out:
+        json.dump(data,out)
 
 
 def launch_kube():
     setup_kube()
     config = get_kube_config()
-    namespace = get_namespace()
+    namespace = config['namespace']
+    set_namespace(namespace)
     try:
         print "Attempting to create namespace {}".format(namespace)
         run_commands(['kubectl create -f deploy/kube/namespace.json',])
     except:
         print "Could not create namespace {}, it might already exist".format(namespace)
-    init_deployments = ['secrets.yml', 'postgres.yaml', 'rabbitmq.yaml', 'redis.yaml']
+    init_commands = []
+    for k in ['ssd.yaml',]:
+        init_commands.append("kubectl apply -n {} -f deploy/kube/{}".format(namespace,k))
+    run_commands(init_commands)
+    init_deployments = ['secrets.yaml', 'postgres.yaml', 'rabbitmq.yaml', 'redis.yaml']
     init_commands = []
     for k in init_deployments:
         init_commands.append("kubectl create -n {} -f deploy/kube/{}".format(namespace,k))
     run_commands(init_commands)
     print "sleeping for 120 seconds"
     time.sleep(120)
-    webserver_commands = ['kubectl create -n {} -f deploy/kube/webserver.yaml'.format(namespace), ]
-    run_commands(webserver_commands)
-    print "webserver launched, sleeping for 60 seconds"
-    time.sleep(60)
     scheduler_commands = ['kubectl create -n {} -f deploy/kube/scheduler.yaml'.format(namespace), ]
     run_commands(scheduler_commands)
-    print "scheduler launched, sleeping for 10 seconds"
+    print "scheduler launched, sleeping for 90 seconds"
+    time.sleep(90)
+    webserver_commands = ['kubectl create -n {} -f deploy/kube/webserver.yaml'.format(namespace), ]
+    run_commands(webserver_commands)
+    print "webserver launched, sleeping for 10 seconds"
     time.sleep(10)
     commands = []
     worker_template = file('./deploy/kube/worker.yaml.template').read()
-    for k in DEFAULT_WORKERS:
+    for k in config['workers']:
         yaml_fname = './deploy/kube/{}.yaml'.format(k['name'])
         with open(yaml_fname, 'w') as out:
             k['common'] = config['common_env']
@@ -177,7 +105,7 @@ def launch_kube():
 
 
 def delete_kube():
-    namespace = get_namespace()
+    namespace = get_kube_config()['namespace']
     delete_commands = ['kubectl -n {} delete po,svc,pvc,deployment,statefulset,secrets --all'.format(namespace), ]
     run_commands(delete_commands)
 
@@ -226,7 +154,7 @@ def kube_create_premptible_node_pool():
         count = int(v)
     command = PREMPTIBLE_CREATE_COMMAND.format(project_name=config['project_name'], pool_name="premptpool",
                                                cluster_name=config['cluster_name'], zone=config['zone'], count=count,
-                                               machine_type=machine_type)
+                                               disk_size=config['disk_size'], machine_type=machine_type)
     print "Creating pre-emptible node pool"
     print command
     subprocess.check_call(shlex.split(command))
@@ -269,10 +197,10 @@ def setup_kube():
         subprocess.check_call(shlex.split('gsutil cors set cors.json gs://{}'.format(config['mediabucket'])))
     except:
         print "failed to set bucket policy"
-    print "Attempting to create deploy/kube/secrets.yml from deploy/kube/secrets_template.yml and config."
-    with open('deploy/kube/secrets_template.yml') as f:
+    print "Attempting to create deploy/kube/secrets.yaml from deploy/kube/secrets_template.yaml and config."
+    with open('deploy/kube/secrets_template.yaml') as f:
         template = f.read()
-    with open('deploy/kube/secrets.yml', 'w') as out:
+    with open('deploy/kube/secrets.yaml', 'w') as out:
         out.write(template.format(
             dbusername=base64.encodestring(config['dbusername']),
             dbpassword=base64.encodestring(config['dbpassword']),
@@ -302,6 +230,7 @@ def create_cluster():
     command = CLUSTER_CREATE_COMMAND.replace('\n','').format(cluster_name=config['cluster_name'],
                                                              project_name=config['project_name'],
                                                              machine_type=config['machine_type'],
+                                                             disk_size=config['disk_size'],
                                                              nodes=config['nodes'],
                                                              zone=config['zone'])
     print "Creating cluster by running {}".format(command)
@@ -314,15 +243,36 @@ def create_cluster():
 
 
 def get_webserver_pod():
-    namespace = get_namespace()
+    namespace = get_kube_config()['namespace']
     output = subprocess.check_output(shlex.split(POD_COMMAND.format(namespace=namespace))).splitlines()
     for line in output:
         if line.startswith('dvawebserver'):
             return line.strip().split()[0]
 
 
+def get_pod(container):
+    namespace = get_kube_config()['namespace']
+    output = subprocess.check_output(shlex.split(POD_COMMAND.format(namespace=namespace))).splitlines()
+    for line in output:
+        if line.startswith(container):
+            return line.strip().split()[0]
+    raise ValueError("Container {} not found in any pods".format(container))
+
+
+def shell(container,pod):
+    namespace = get_kube_config()['namespace']
+    # fix due to default being webserver and container name for webservers being dvawebserver.
+    if container == 'webserver':
+        container = 'dvawebserver'
+    if not pod:
+        pod = get_pod(container)
+    # This is unsafe and should not be run in automated manner, its still prevented from arbitary execution on host
+    # by ensuring that get_pod returns with a valid pod name for a given container and namespace.
+    os.system("kubectl -n {} exec -it {} -c {}  bash".format(namespace, pod, container))
+
+
 def get_service_ip():
-    namespace = get_namespace()
+    namespace = get_kube_config()['namespace']
     output = json.loads(subprocess.check_output(shlex.split(SERVER_COMMAND.format(namespace=namespace))))
     for i in output['items']:
         if i['metadata']['name'] == 'dvawebserver':
@@ -333,7 +283,7 @@ def get_service_ip():
 def get_auth():
     config = get_kube_config()
     pod_name = get_webserver_pod()
-    namespace = get_namespace()
+    namespace = config['namespace']
     token = subprocess.check_output(shlex.split(TOKEN_COMMAND.format(namespace=namespace,pod_name=pod_name))).strip()
     ip = get_service_ip()
     server = 'http://{}/api/'.format(ip)
@@ -346,6 +296,8 @@ def get_auth():
 def handle_kube_operations(args):
     if args.action == 'create':
         create_cluster()
+    elif args.action == 'shell':
+        shell(args.container,args.pod)
     elif args.action == 'auth':
         get_auth()
     elif args.action == 'start':

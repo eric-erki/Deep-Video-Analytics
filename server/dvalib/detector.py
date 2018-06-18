@@ -1,17 +1,15 @@
-import os,logging, sys
-try:
-    import PIL
-    from scipy import misc
-    import numpy as np
-except:
-    pass
+import os, logging, sys
+import PIL
+from scipy import misc
+import numpy as np
 from .base_detector import BaseDetector
-sys.path.append(os.path.join(os.path.dirname(__file__),"../../repos/"))  # remove once container is rebuilt
-sys.path.append(os.path.join(os.path.dirname(__file__),"../../repos/tf_ctpn_cpu/"))  # remove once container is rebuilt
 
-if os.environ.get('PYTORCH_MODE',False):
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../repos/"))  # remove once container is rebuilt
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../repos/tf_ctpn_cpu/"))  # remove once container is rebuilt
+
+if os.environ.get('PYTORCH_MODE', False):
     pass
-elif os.environ.get('CAFFE_MODE',False):
+elif os.environ.get('CAFFE_MODE', False):
     logging.info("Using Caffe only mode")
 else:
     try:
@@ -20,8 +18,6 @@ else:
     except:
         logging.info("Could not import TensorFlow assuming front-end mode")
     else:
-        from yolo import trainer
-        from yolo import trainer
         from facenet import facenet
         from facenet.align import detect_face
         from lib.networks.factory import get_network
@@ -33,9 +29,8 @@ else:
 
 def _parse_function(filename):
     image_string = tf.read_file(filename)
-    image_decoded = tf.image.decode_image(image_string,channels=3)
+    image_decoded = tf.image.decode_image(image_string, channels=3)
     return tf.expand_dims(image_decoded, 0), filename
-
 
 
 def pil_to_array(pilImage):
@@ -44,6 +39,7 @@ def pil_to_array(pilImage):
     images, the return array is MxN.  For RGB images, the return value
     is MxNx3.  For RGBA images the return value is MxNx4
     """
+
     def toarray(im, dtype=np.uint8):
         """Return a 1D array of dtype."""
         # Pillow wants us to use "tobytes"
@@ -89,14 +85,12 @@ def pil_to_array(pilImage):
     return x
 
 
-
-
 class TFDetector(BaseDetector):
 
-    def __init__(self,model_path,class_index_to_string,gpu_fraction=None):
+    def __init__(self, model_path, class_index_to_string, gpu_fraction=None):
         super(TFDetector, self).__init__()
         self.model_path = model_path
-        self.class_index_to_string = {int(k):v for k,v in class_index_to_string.items()}
+        self.class_index_to_string = {int(k): v for k, v in class_index_to_string.items()}
         self.session = None
         self.dataset = None
         self.filenames_placeholder = None
@@ -107,24 +101,23 @@ class TFDetector(BaseDetector):
         else:
             self.gpu_fraction = float(os.environ.get('GPU_MEMORY', 0.20))
 
-
-    def detect(self,image_path,min_score=0.20):
-        self.session.run(self.iterator.initializer, feed_dict={self.filenames_placeholder: [image_path,]})
+    def detect(self, image_path, min_score=0.20):
+        self.session.run(self.iterator.initializer, feed_dict={self.filenames_placeholder: [image_path, ]})
         (fname, boxes, scores, classes, num_detections) = self.session.run(
-            [self.fname,self.boxes, self.scores, self.classes, self.num_detections])
+            [self.fname, self.boxes, self.scores, self.classes, self.num_detections])
         detections = []
         for i, _ in enumerate(boxes[0]):
             plimg = PIL.Image.open(image_path)
             frame_width, frame_height = plimg.size
-            shape = (frame_height,frame_width)
+            shape = (frame_height, frame_width)
             if scores[0][i] > min_score:
-                top,left = (int(boxes[0][i][0] * shape[0]), int(boxes[0][i][1] * shape[1]))
-                bot,right = (int(boxes[0][i][2] * shape[0]), int(boxes[0][i][3] * shape[1]))
+                top, left = (int(boxes[0][i][0] * shape[0]), int(boxes[0][i][1] * shape[1]))
+                bot, right = (int(boxes[0][i][2] * shape[0]), int(boxes[0][i][3] * shape[1]))
                 detections.append({
                     'x': left,
-                    'y':top,
-                    'w':right-left,
-                    'h':bot-top,
+                    'y': top,
+                    'w': right - left,
+                    'h': bot - top,
                     'score': scores[0][i],
                     'object_name': self.class_index_to_string[int(classes[0][i])]
                 })
@@ -142,35 +135,19 @@ class TFDetector(BaseDetector):
                 serialized_graph = fid.read()
                 self.od_graph_def.ParseFromString(serialized_graph)
                 self.image, self.fname = self.iterator.get_next()
-                tf.import_graph_def(self.od_graph_def, name='',input_map={'image_tensor': self.image})
+                tf.import_graph_def(self.od_graph_def, name='', input_map={'image_tensor': self.image})
             config = tf.ConfigProto()
             config.gpu_options.per_process_gpu_memory_fraction = self.gpu_fraction
-            self.session = tf.Session(graph=self.detection_graph,config=config)
+            self.session = tf.Session(graph=self.detection_graph, config=config)
             self.boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
             self.scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
             self.classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
             self.num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
 
 
-class YOLODetector(BaseDetector):
-
-    def __init__(self,args):
-        super(YOLODetector, self).__init__()
-        self.model = trainer.YOLOTrainer(boxes=[], images=[], args=args,test_mode=True)
-        self.session = None
-
-    def detect(self,image_path,min_score=0.20):
-        return self.model.apply(image_path,min_score)
-
-    def load(self):
-        if self.session is None:
-            self.model.load()
-            self.session = True
-
-
 class FaceDetector():
 
-    def __init__(self,session=None,gpu_fraction=None):
+    def __init__(self, session=None, gpu_fraction=None):
         self.image_size = 182
         self.margin = 44
         self.session = session
@@ -182,7 +159,6 @@ class FaceDetector():
         else:
             self.gpu_fraction = float(os.environ.get('GPU_MEMORY', 0.20))
 
-
     def load(self):
         logging.info('Creating networks and loading parameters')
         with tf.Graph().as_default():
@@ -191,7 +167,7 @@ class FaceDetector():
             with self.session.as_default():
                 self.pnet, self.rnet, self.onet = detect_face.create_mtcnn(self.session, None)
 
-    def detect(self,image_path):
+    def detect(self, image_path):
         aligned = []
         try:
             img = misc.imread(image_path)
@@ -205,7 +181,8 @@ class FaceDetector():
             if img.ndim == 2:
                 img = facenet.to_rgb(img)
             img = img[:, :, 0:3]
-            bounding_boxes, _ = detect_face.detect_face(img, self.minsize, self.pnet, self.rnet, self.onet, self.threshold, self.factor)
+            bounding_boxes, _ = detect_face.detect_face(img, self.minsize, self.pnet, self.rnet, self.onet,
+                                                        self.threshold, self.factor)
             nrof_faces = bounding_boxes.shape[0]
             if nrof_faces > 0:
                 det_all = bounding_boxes[:, 0:4]
@@ -218,13 +195,13 @@ class FaceDetector():
                     bb[2] = np.minimum(det[2] + self.margin / 2, img_size[1])
                     bb[3] = np.minimum(det[3] + self.margin / 2, img_size[0])
                     left, top, right, bottom = bb[0], bb[1], bb[2], bb[3]
-                    aligned.append({'x': left,'y':top,'w':right-left,'h':bottom-top})
+                    aligned.append({'x': left, 'y': top, 'w': right - left, 'h': bottom - top})
             return aligned
 
 
 class TextBoxDetector():
 
-    def __init__(self,model_path,gpu_fraction=None):
+    def __init__(self, model_path, gpu_fraction=None):
         self.session = None
         if gpu_fraction:
             self.gpu_fraction = gpu_fraction
@@ -234,9 +211,9 @@ class TextBoxDetector():
 
     def load(self):
         logging.info('Creating networks and loading parameters')
-        cfg_from_file(os.path.join(os.path.dirname(__file__),'text.yml'))
+        cfg_from_file(os.path.join(os.path.dirname(__file__), 'text.yml'))
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=self.gpu_fraction)
-        config = tf.ConfigProto(allow_soft_placement=True,gpu_options=gpu_options)
+        config = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options)
         self.session = tf.Session(config=config)
         self.net = get_network("VGGnet_test")
         self.textdetector = TextDetector()
@@ -244,7 +221,7 @@ class TextBoxDetector():
         ckpt = tf.train.get_checkpoint_state(self.model_path)
         saver.restore(self.session, ckpt.model_checkpoint_path)
 
-    def detect(self,image_path):
+    def detect(self, image_path):
         if self.session is None:
             self.load()
         regions = []
@@ -260,12 +237,12 @@ class TextBoxDetector():
             right, bottom = int(box[6]), int(box[7])
             score = float(box[8])
             left, top, right, bottom = int(left * mul_w), int(top * mul_h), int(right * mul_w), int(bottom * mul_h)
-            r = {'score':float(score),'y':top,'x':left,'w':right - left,'h':bottom - top,}
+            r = {'score': float(score), 'y': top, 'x': left, 'w': right - left, 'h': bottom - top, }
             regions.append(r)
         return regions
 
     def resize_im(self, im, scale, max_scale=None):
-        f=float(scale)/min(im.shape[0], im.shape[1])
-        if max_scale!=None and f*max(im.shape[0], im.shape[1])>max_scale:
-            f=float(max_scale)/max(im.shape[0], im.shape[1])
-        return cv2.resize(im, None,None, fx=f, fy=f,interpolation=cv2.INTER_LINEAR), f
+        f = float(scale) / min(im.shape[0], im.shape[1])
+        if max_scale != None and f * max(im.shape[0], im.shape[1]) > max_scale:
+            f = float(max_scale) / max(im.shape[0], im.shape[1])
+        return cv2.resize(im, None, None, fx=f, fy=f, interpolation=cv2.INTER_LINEAR), f

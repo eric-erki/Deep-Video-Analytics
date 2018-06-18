@@ -67,7 +67,6 @@ class Indexers(object):
             if target == 'frames':
                 entry = {'frame_index': df.frame_index,
                          'frame_primary_key': df.pk,
-                         'video_primary_key': event.video_id,
                          'index': i,
                          'type': 'frame'}
                 if cloud_paths:
@@ -76,25 +75,16 @@ class Indexers(object):
                     paths.append(df.path())
             elif target == 'regions':
                 entry = {
-                    'frame_index': df.frame.frame_index,
+                    'frame_index': df.frame_index,
                     'detection_primary_key': df.pk,
-                    'frame_primary_key': df.frame.pk,
-                    'video_primary_key': event.video_id,
+                    'frame_primary_key': df.frame_id,
                     'index': i,
                     'type': df.region_type
                 }
                 if df.full_frame:
                     paths.append(df.frame_path())
-                elif df.materialized:
-                    paths.append(df.path())
                 else:
-                    frame_path = df.frame_path()
-                    if frame_path not in images:
-                        images[frame_path] = Image.open(frame_path)
-                    img2 = images[frame_path].crop((df.x, df.y, df.x + df.w, df.y + df.h))
-                    region_path = df.path(temp_root=temp_root)
-                    img2.save(region_path)
-                    paths.append(region_path)
+                    paths.append(df.crop_and_get_region_path(images,temp_root))
             else:
                 raise ValueError,"{} target not configured".format(target)
             entries.append(entry)

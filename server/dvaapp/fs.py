@@ -45,16 +45,19 @@ if 'DO_ACCESS_KEY_ID' in os.environ and 'DO_SECRET_ACCESS_KEY' and os.environ:
 
 
 def cacheable(path):
-    return path.startswith('/queries/') or '/segments/' in path \
+    return path.startswith('/queries/') or '/segments/' in path or '/regions/' in path \
            or ('/frames/' in path and (path.endswith('.jpg') or path.endswith('.png')))
 
 
-def cache_path(path, expire_in_seconds=600):
+def cache_path(path, payload=None, expire_in_seconds=600):
     if not path.startswith('/'):
         path = "/{}".format(path)
     if cacheable(path):
-        with open('{}{}'.format(settings.MEDIA_ROOT, path), 'rb') as body:
-            redis_client.set(path, body.read(), ex=expire_in_seconds, nx=True)
+        if payload is None:
+            with open('{}{}'.format(settings.MEDIA_ROOT, path), 'rb') as body:
+                redis_client.set(path, body.read(), ex=expire_in_seconds, nx=True)
+        else:
+            redis_client.set(path, payload, ex=expire_in_seconds, nx=True)
         return True
     else:
         return False
@@ -242,7 +245,7 @@ def upload_file_to_remote(fpath, cache=True):
 
 
 def download_video_from_remote_to_local(dv):
-    logging.info("Syncing entire directory for {}".format(dv.pk))
+    logging.info("Download entire directory from remote fs for {}".format(dv.pk))
     if S3_MODE:
         dest = '{}/{}/'.format(settings.MEDIA_ROOT, dv.pk)
         src = 's3://{}/{}/'.format(settings.MEDIA_BUCKET, dv.pk)
@@ -260,7 +263,7 @@ def download_video_from_remote_to_local(dv):
 
 
 def upload_video_to_remote(video_id):
-    logging.info("Syncing entire directory for {}".format(video_id))
+    logging.info("Uploading entire directory to remote fs for {}".format(video_id))
     src = '{}/{}/'.format(settings.MEDIA_ROOT, video_id)
     if S3_MODE:
         dest = 's3://{}/{}/'.format(settings.MEDIA_BUCKET, video_id)
@@ -274,6 +277,7 @@ def upload_video_to_remote(video_id):
         for root, directories, filenames in os.walk(src):
             for filename in filenames:
                 path = os.path.join(root, filename)
+                logging.info("uploading {} with gcs version {}".format(path,storage.__version__))
                 upload_file_to_remote(path[root_length:], cache=False)
     else:
         raise ValueError

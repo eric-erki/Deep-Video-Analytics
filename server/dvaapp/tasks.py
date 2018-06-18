@@ -171,7 +171,6 @@ def perform_transformation(task_id):
     kwargs = args.get('filters', {})
     paths_to_regions = defaultdict(list)
     kwargs['video_id'] = dt.video_id
-    kwargs['materialized'] = False
     logging.info("executing crop with kwargs {}".format(kwargs))
     queryset = models.Region.objects.all().filter(**kwargs)
     for dr in queryset:
@@ -185,7 +184,6 @@ def perform_transformation(task_id):
                 resized.save(dr.path())
             else:
                 cropped.save(dr.path())
-    queryset.update(materialized=True)
     process_next(dt)
     mark_as_completed(dt)
 
@@ -198,16 +196,34 @@ def perform_retrieval(task_id):
     args = dt.arguments
     target = args.get('target', 'query')  # by default target is query
     if target == 'query':
-        vector = np.load(io.BytesIO(redis_client.get(dt.parent_id)))
+        vector = np.load(io.BytesIO(redis_client.get("query_vector_{}".format(dt.parent_id))))
         Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20))
     elif target == 'query_region_index_vectors':
-        queryset, target = task_shared.build_queryset(args=args)
-        for dr in queryset:
-            vector = np.load(io.BytesIO(dr.vector))
+        qr_pk_vector = redis_client.hgetall("query_region_vectors_{}".format(dt.parent_id))
+        for query_region_pk, vector in qr_pk_vector.items():
+            vector = np.load(io.BytesIO(vector))
             Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20),
-                                region=dr.query_region)
+                                region_pk=query_region_pk)
     else:
         raise NotImplementedError(target)
+    mark_as_completed(dt)
+    return 0
+
+
+@app.task(track_started=True, name="perform_matching")
+def perform_matching(task_id):
+    """
+    Generates relations (within selected video/dataset) or hyper-relations (matching Indexed entries in
+    selected video/dataset with external video/dataset) by performing K-NN matching using a selected
+    indexer or approximator.
+    :param task_id:
+    :return:
+    """
+    dt = get_and_check_task(task_id)
+    if dt is None:
+        return 0
+    task_handlers.handle_perform_matching(dt)
+    process_next(dt)
     mark_as_completed(dt)
     return 0
 
@@ -386,7 +402,9 @@ def perform_import(task_id):
         dv.uploaded = False
     # Download and import previously exported file from DVA
     elif export_file:
+        logging.info("importing exported file {}".format(path))
         task_shared.import_path(dv, path, export=True)
+        logging.info("loading exported file {}".format(path))
         task_shared.load_dva_export_file(dv)
     # Download and import .mp4 and .zip files which contain raw video / images.
     elif path.startswith('/') and settings.ENABLE_CLOUDFS and not (export_file or framelist_file):
@@ -531,7 +549,7 @@ def perform_training_set_creation(task_id):
         train_set = models.TrainingSet.objects.get(**args['training_set_selector'])
     else:
         raise ValueError("Could not find training set {}".format(args))
-    if train_set.event:
+    if train_set.built:
         raise ValueError("Training set has been already built or failed to build, please clone instead of rebuilding.")
     if train_set.training_task_type == models.TrainingSet.TRAINAPPROX:
         file_list = []
@@ -549,7 +567,6 @@ def perform_training_set_creation(task_id):
         train_set.built = True
         train_set.count = total_count
         train_set.files = file_list
-        train_set.event = dt
         train_set.save()
     else:
         raise NotImplementedError

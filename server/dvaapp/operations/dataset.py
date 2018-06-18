@@ -55,8 +55,6 @@ class DatasetCreator(object):
                             df.name = os.path.join(subdir[root_length:], ofname)
                             if not df.name.startswith('/'):
                                 df.name = "/{}".format(df.name)
-                            s = "/{}/".format(subdir[root_length:]).replace('//','/')
-                            df.subdir = s
                             df_list.append(df)
 
                     else:
@@ -73,7 +71,9 @@ class DatasetCreator(object):
                 a.video_id = self.dvideo.pk
                 a.frame_id = df_ids[i].id
                 a.frame_index = f.frame_index
-                a.metadata = {'labels':list({ l.strip() for l in f.subdir.split('/')[1:] if l.strip() })}
+                if '/' in f.name:
+                    a.metadata = {'labels':list({ l.strip() for l in f.name.split('/')[1:] if l.strip() })}
+                    a.text = f.name.split('/')
                 a.region_type = a.ANNOTATION
                 a.object_name = 'directory_labels'
                 a.event_id = event.pk

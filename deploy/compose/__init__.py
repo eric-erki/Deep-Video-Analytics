@@ -7,7 +7,29 @@ import urllib2
 import os
 import json
 import webbrowser
-from . import test, gpu
+
+
+def generate_multi_gpu_compose(fname, config):
+    blocks = []
+    worker_specs = config['workers']
+    for gpu_id, fraction, env_key, worker_name, in worker_specs:
+        if fraction > 0:
+            blocks.append(
+                file('compose/gpu_block.yaml').read().format(worker_name=worker_name, gpu_id=gpu_id,
+                                                                 memory_fraction=fraction, env_key=env_key,
+                                                                 env_value=1))
+        else:
+            blocks.append(
+                file('compose/gpu_cpu_block.yaml').read().format(worker_name=worker_name, env_key=env_key, env_value=1))
+    with open(fname, 'w') as out:
+        out.write(file('compose/gpu_skeleton.yaml').read().format(gpu_workers="\n".join(blocks),
+                                                                  global_model_gpu_id=config['global_model_gpu_id'],
+                                                                  global_model_memory_fraction=config[
+                                                                      'global_model_memory_fraction']))
+
+
+def load_envs(path):
+    return {line.split('=')[0]: line.split('=')[1].strip() for line in file(path)}
 
 
 def create_custom_env(init_process, init_models, cred_envs):
@@ -24,18 +46,15 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
     print "Checking if docker-compose is available"
     max_minutes = 20
     if deployment_type == 'gpu':
-        if gpu_count == 1:
-            fname = 'docker-compose-gpu.yml'
-        else:
-            fname = 'docker-compose-{}-gpus.yml'.format(gpu_count)
+        fname = 'docker-compose-{}-gpus.yaml'.format(gpu_count)
     else:
-        fname = 'docker-compose.yml'
+        fname = 'docker-compose-{}.yaml'.format(deployment_type)
     create_custom_env(init_process, init_models, cred_envs)
-    print "Starting deploy/compose/{}/{}".format(deployment_type, fname)
+    print "Starting deploy/compose/{}".format(fname)
     try:
         # Fixed to dev since deployment directory does not matters for checking if docker-compose exists.
-        subprocess.check_call(["docker-compose", 'ps'],
-                              cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/dev'))
+        subprocess.check_call(["docker-compose", '--help'],
+                              cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/'))
     except:
         raise SystemError("Docker-compose is not available")
     print "Pulling/Refreshing container images, first time it might take a while to download the image"
@@ -56,8 +75,7 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
     try:
         args = ["docker-compose", '-f', fname, 'up', '-d']
         print " ".join(args)
-        compose_process = subprocess.Popen(args, cwd=os.path.join(os.path.dirname(os.path.curdir),
-                                                                  'deploy/compose/{}'.format(deployment_type)))
+        compose_process = subprocess.Popen(args, cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/'))
     except:
         raise SystemError("Could not start container")
     while max_minutes:
@@ -84,25 +102,16 @@ def stop_docker_compose(deployment_type, gpu_count, clean=False):
     else:
         extra_args = []
     if deployment_type == 'gpu':
-        if gpu_count == 1:
-            fname = 'docker-compose-gpu.yml'
-        else:
-            fname = 'docker-compose-{}-gpus.yml'.format(gpu_count)
+        fname = 'docker-compose-{}-gpus.yaml'.format(gpu_count)
     else:
-        fname = 'docker-compose.yml'
-    print "Stopping deploy/compose/{}/{}".format(deployment_type, fname)
+        fname = 'docker-compose-{}.yaml'.format(deployment_type)
+    print "Stopping deploy/compose/{}".format(fname)
     try:
         subprocess.check_call(["docker-compose", '-f', fname, 'down'] + extra_args,
                               cwd=os.path.join(os.path.dirname(os.path.curdir),
-                                               'deploy/compose/{}'.format(deployment_type)))
+                                               'deploy/compose'))
     except:
         raise SystemError("Could not stop containers")
-
-
-def view_uwsgi_logs():
-    print 'Use following auth code to use jupyter notebook on  '
-    print subprocess.check_output(
-        ["docker", "exec", "-it", "webserver", "bash", '-c ', "'cat /var/log/supervisor/app-*'"])
 
 
 def get_auth():
@@ -113,9 +122,9 @@ def get_auth():
     print "token and server information are stored in creds.json"
 
 
-def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_envs):
+def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_envs, gpu_compose_filename, gpu_config):
     if mode == 'gpu':
-        gpu.generate_multi_gpu_compose()
+        generate_multi_gpu_compose(gpu_compose_filename, gpu_config)
     if args.action == 'stop':
         stop_docker_compose(mode, gpus)
     elif args.action == 'start':
@@ -125,17 +134,8 @@ def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_
         get_auth()
     elif args.action == 'clean':
         stop_docker_compose(mode, gpus, clean=True)
-        if mode == 'test':
-            test.clear_media_bucket()
     elif args.action == 'restart':
         stop_docker_compose(mode, gpus)
         start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
-    elif args.action == 'clean_restart':
-        stop_docker_compose(mode, gpus, clean=True)
-        if mode == 'test':
-            test.clear_media_bucket()
-            start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
-    elif args.action == 'wsgi':
-        view_uwsgi_logs()
     else:
         raise NotImplementedError("{} and {}".format(args.action, mode))

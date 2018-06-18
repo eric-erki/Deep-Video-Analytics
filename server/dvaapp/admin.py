@@ -1,8 +1,17 @@
 from django.contrib import admin
 from .models import Video, Frame, TEvent, IndexEntries, QueryResults, DVAPQL, Region, Tube, Segment, DeletedVideo, \
-    ManagementAction, TrainedModel, Retriever, SystemState, Worker, QueryRegion, QueryRegionIndexVector, \
-    QueryRegionResults, TrainingSet, Export, TaskRestart, RegionRelation, TubeRelation, \
-    TubeRegionRelation
+    ManagementAction, TrainedModel, Retriever, SystemState, Worker, QueryRegion, TrainingSet, Export, TaskRestart, \
+    RegionRelation, TubeRelation, TubeRegionRelation, HyperRegionRelation, HyperTubeRegionRelation
+
+
+@admin.register(HyperRegionRelation)
+class HyperRegionRelationAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(HyperTubeRegionRelation)
+class HyperTubeRegionRelationAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(RegionRelation)
@@ -107,16 +116,6 @@ class ManagementActionAdmin(admin.ModelAdmin):
 
 @admin.register(QueryRegion)
 class QueryRegionAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(QueryRegionIndexVector)
-class QueryRegionIndexVectorAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(QueryRegionResults)
-class QueryRegionResultsAdmin(admin.ModelAdmin):
     pass
 
 

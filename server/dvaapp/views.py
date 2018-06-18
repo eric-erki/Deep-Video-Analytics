@@ -1,8 +1,8 @@
 from django.conf import settings
 import json
 from .models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, Tube, Segment, \
-    TubeRegionRelation, TubeRelation, Retriever, SystemState, QueryRegion, QueryRegionResults, \
-    TrainedModel, Worker, TrainingSet, RegionRelation, Export
+    TubeRegionRelation, TubeRelation, Retriever, SystemState, QueryRegion, \
+    TrainedModel, Worker, TrainingSet, RegionRelation, Export, HyperRegionRelation, HyperTubeRegionRelation
 import serializers
 from rest_framework import viewsets
 from django.contrib.auth.models import User
@@ -71,7 +71,7 @@ class FrameViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = Frame.objects.all()
     serializer_class = serializers.FrameSerializer
-    filter_fields = ('frame_index', 'subdir', 'name', 'video')
+    filter_fields = ('frame_index', 'name', 'video')
 
 
 class SegmentViewSet(viewsets.ReadOnlyModelViewSet):
@@ -129,13 +129,6 @@ class QueryResultsViewSet(viewsets.ReadOnlyModelViewSet):
     filter_fields = ('query',)
 
 
-class QueryRegionResultsViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
-    queryset = QueryRegionResults.objects.all()
-    serializer_class = serializers.QueryRegionResultsSerializer
-    filter_fields = ('query',)
-
-
 class TEventViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = TEvent.objects.all()
@@ -166,6 +159,18 @@ class RegionRelationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = RegionRelation.objects.all()
     serializer_class = serializers.RegionRelationSerializer
+
+
+class HyperRegionRelationViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
+    queryset = HyperRegionRelation.objects.all()
+    serializer_class = serializers.HyperRegionRelationSerializer
+
+
+class HyperTubeRegionRelationViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
+    queryset = HyperTubeRegionRelation.objects.all()
+    serializer_class = serializers.HyperTubeRegionRelationSerializer
 
 
 class TubeRelationViewSet(viewsets.ReadOnlyModelViewSet):

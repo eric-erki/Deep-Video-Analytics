@@ -15,7 +15,7 @@ if __name__ == '__main__':
         algo = Retriever.EXACT
     query_dict = {
         'process_type': DVAPQL.QUERY,
-        'image_data_b64': base64.encodestring(file('queries/query.png').read()),
+        'image_data_b64': base64.encodestring(file('data/query.png').read()),
         'map': [
             {
                 'operation': 'perform_indexing',
@@ -46,5 +46,5 @@ if __name__ == '__main__':
     qp = DVAPQLProcess()
     qp.create_from_json(query_dict)
     qp.launch()
-    qp.wait(timeout=400)
+    qp.wait_query(timeout=400)
     print QueryResults.objects.count()

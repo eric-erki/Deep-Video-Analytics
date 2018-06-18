@@ -1,6 +1,7 @@
 import logging
 from .approximation import Approximators
 from .indexing import Indexers
+
 try:
     from dvalib import indexer, retriever
     import numpy as np
@@ -8,8 +9,7 @@ except ImportError:
     np = None
     logging.warning("Could not import indexer / clustering assuming running in front-end mode")
 
-
-from ..models import IndexEntries,QueryResults,Region,Retriever, QueryRegionResults
+from ..models import IndexEntries, QueryResults, Region, Retriever, Frame
 
 
 class Retrievers(object):
@@ -18,7 +18,7 @@ class Retrievers(object):
     _index_count = 0
 
     @classmethod
-    def get_retriever(cls,retriever_pk):
+    def get_retriever(cls, retriever_pk):
         if retriever_pk not in cls._visual_retriever:
             dr = Retriever.objects.get(pk=retriever_pk)
             cls._retriever_object[retriever_pk] = dr
@@ -26,13 +26,14 @@ class Retrievers(object):
                 approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
                 da.ensure()
                 approximator.load()
-                cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name,approximator=approximator)
+                cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name, approximator=approximator)
             elif dr.algorithm == Retriever.EXACT:
                 cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name)
             elif dr.algorithm == Retriever.FAISS and dr.approximator_shasum is None:
                 di = Indexers.get_indexer_by_shasum(dr.indexer_shasum)
                 cls._visual_retriever[retriever_pk] = retriever.FaissFlatRetriever(name=dr.name,
-                                                                                   components=di.arguments['components'])
+                                                                                   components=di.arguments[
+                                                                                       'components'])
             elif dr.algorithm == Retriever.FAISS:
                 approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
                 da.ensure()
@@ -47,15 +48,11 @@ class Retrievers(object):
                                                                               approximator=approximator)
 
             else:
-                raise ValueError,"{} not valid retriever algorithm".format(dr.algorithm)
+                raise ValueError("{} not valid retriever algorithm".format(dr.algorithm))
         return cls._visual_retriever[retriever_pk], cls._retriever_object[retriever_pk]
 
     @classmethod
     def refresh_index(cls, dr):
-        """
-        :param index_name:
-        :return:
-        """
         # This has a BUG where total count of index entries remains unchanged
         # TODO: Waiting for https://github.com/celery/celery/issues/3620 to be resolved to enabel ASYNC index updates
         # TODO improve this by either having a seperate broadcast queues or using last update timestampl
@@ -68,7 +65,7 @@ class Retrievers(object):
             cls.update_index(dr)
 
     @classmethod
-    def update_index(cls,dr):
+    def update_index(cls, dr):
         source_filters = dr.source_filters.copy()
         # Only select entries with completed events, otherwise indexes might not be synced or complete.
         source_filters['event__completed'] = True
@@ -77,7 +74,7 @@ class Retrievers(object):
         if dr.approximator_shasum:
             source_filters['approximator_shasum'] = dr.approximator_shasum
         else:
-            source_filters['approximator_shasum'] = None # Required otherwise approximate index entries are selected
+            source_filters['approximator_shasum'] = None  # Required otherwise approximate index entries are selected
         index_entries = IndexEntries.objects.filter(**source_filters)
         visual_index = cls._visual_retriever[dr.pk]
         for index_entry in index_entries:
@@ -88,14 +85,14 @@ class Retrievers(object):
                     start_index = len(visual_index.entries)
                     visual_index.load_index(entries=entries)
                     visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
-                                                                                     end=len(visual_index.entries)-1)
+                                                                                     end=len(visual_index.entries) - 1)
                 elif visual_index.algorithm == 'FAISS':
                     index_file_path, entries = index_entry.load_index()
                     logging.info("loading FAISS index {}".format(index_entry.pk))
                     start_index = visual_index.findex
-                    visual_index.load_index(index_file_path,entries)
+                    visual_index.load_index(index_file_path, entries)
                     visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
-                                                                                     end=visual_index.findex-1)
+                                                                                     end=visual_index.findex - 1)
                 else:
                     vectors, entries = index_entry.load_index()
                     logging.info("Starting {} in {} with shape {}".format(index_entry.video_id, visual_index.name,
@@ -104,36 +101,38 @@ class Retrievers(object):
                         start_index = visual_index.findex
                         visual_index.load_index(vectors, entries)
                         visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
-                                                                                         end=visual_index.findex-1)
+                                                                                         end=visual_index.findex - 1)
                     except:
                         logging.info("ERROR Failed to load {} vectors shape {} entries {}".format(
-                            index_entry.video_id,vectors.shape,len(entries)))
+                            index_entry.video_id, vectors.shape, len(entries)))
                     else:
-                        logging.info("finished {} in {}".format(index_entry.pk,visual_index.name))
+                        logging.info("finished {} in {}".format(index_entry.pk, visual_index.name))
 
     @classmethod
-    def retrieve(cls,event,retriever_pk,vector,count,region=None):
-        index_retriever,dr = cls.get_retriever(retriever_pk)
+    def retrieve(cls, event, retriever_pk, vector, count, region_pk=None):
+        index_retriever, dr = cls.get_retriever(retriever_pk)
         cls.refresh_index(dr)
         # TODO: figure out a better way to store numpy arrays
-        results = index_retriever.nearest(vector=vector,n=count)
+        results = index_retriever.nearest(vector=vector, n=count)
         # TODO: optimize this using batching
-        for rank,r in enumerate(results):
-            qr = QueryRegionResults() if region else QueryResults()
-            if region:
-                qr.query_region = region
+        for rank, r in enumerate(results):
+            qr = QueryResults()
+            if region_pk:
+                qr.query_region_id = region_pk
             qr.query = event.parent_process
             qr.retrieval_event_id = event.pk
             if 'detection_primary_key' in r:
                 dd = Region.objects.get(pk=r['detection_primary_key'])
                 qr.detection = dd
                 qr.frame_id = dd.frame_id
+                qr.video_id = dd.video_id
             else:
-                qr.frame_id = r['frame_primary_key']
-            qr.video_id = r['video_primary_key']
+                dd = Frame.objects.get(pk=r['frame_primary_key'])
+                qr.frame = dd
+                qr.video_id = dd.video_id
             qr.algorithm = dr.algorithm
-            qr.rank = r.get('rank',rank)
-            qr.distance = r.get('dist',rank)
+            qr.rank = r.get('rank', rank)
+            qr.distance = r.get('dist', rank)
             qr.save()
         event.parent_process.results_available = True
         event.parent_process.save()
