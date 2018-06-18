@@ -45,16 +45,19 @@ if 'DO_ACCESS_KEY_ID' in os.environ and 'DO_SECRET_ACCESS_KEY' and os.environ:
 
 
 def cacheable(path):
-    return path.startswith('/queries/') or '/segments/' in path \
+    return path.startswith('/queries/') or '/segments/' in path or '/regions/' in path \
            or ('/frames/' in path and (path.endswith('.jpg') or path.endswith('.png')))
 
 
-def cache_path(path, expire_in_seconds=600):
+def cache_path(path, payload=None, expire_in_seconds=600):
     if not path.startswith('/'):
         path = "/{}".format(path)
     if cacheable(path):
-        with open('{}{}'.format(settings.MEDIA_ROOT, path), 'rb') as body:
-            redis_client.set(path, body.read(), ex=expire_in_seconds, nx=True)
+        if payload is None:
+            with open('{}{}'.format(settings.MEDIA_ROOT, path), 'rb') as body:
+                redis_client.set(path, body.read(), ex=expire_in_seconds, nx=True)
+        else:
+            redis_client.set(path, payload, ex=expire_in_seconds, nx=True)
         return True
     else:
         return False

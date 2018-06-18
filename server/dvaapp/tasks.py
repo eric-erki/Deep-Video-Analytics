@@ -171,7 +171,6 @@ def perform_transformation(task_id):
     kwargs = args.get('filters', {})
     paths_to_regions = defaultdict(list)
     kwargs['video_id'] = dt.video_id
-    kwargs['materialized'] = False
     logging.info("executing crop with kwargs {}".format(kwargs))
     queryset = models.Region.objects.all().filter(**kwargs)
     for dr in queryset:
@@ -185,7 +184,6 @@ def perform_transformation(task_id):
                 resized.save(dr.path())
             else:
                 cropped.save(dr.path())
-    queryset.update(materialized=True)
     process_next(dt)
     mark_as_completed(dt)
 

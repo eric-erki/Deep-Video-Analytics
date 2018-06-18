@@ -197,7 +197,7 @@ def handle_perform_analysis(start):
                 a.frame_index = f.frame_index
                 a.segment_index = f.segment_index
                 source_regions.append(f)
-                path = task_shared.crop_and_get_region_path(f, image_data, temp_root)
+                path = f.crop_and_get_region_path(image_data, temp_root)
             elif target == 'frames':
                 a.full_frame = True
                 a.frame_index = f.frame_index

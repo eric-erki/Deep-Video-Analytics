@@ -10,6 +10,7 @@ from django.conf import settings
 from django.utils import timezone
 from dvaclient import constants
 from . import fs
+from PIL import Image
 
 try:
     import numpy as np
@@ -362,9 +363,9 @@ class Frame(models.Model):
             if self.name and not self.name.startswith('/'):
                 return self.name
             else:
-                return "{}/{}".format(self.video.url,self.name)
+                return "{}/{}".format(self.video.url, self.name)
         else:
-            return "{}::{}".format(self.video.url,self.frame_index)
+            return "{}::{}".format(self.video.url, self.frame_index)
 
 
 class Segment(models.Model):
@@ -431,7 +432,6 @@ class Region(models.Model):
     created = models.DateTimeField('date created', auto_now_add=True)
     object_name = models.CharField(max_length=100)
     confidence = models.FloatField(default=0.0)
-    materialized = models.BooleanField(default=False)
     png = models.BooleanField(default=False)
 
     def clean(self):
@@ -460,6 +460,23 @@ class Region(models.Model):
             return "{}/{}/frames/{}.jpg".format(media_root, self.video_id, self.frame_index)
         else:
             return "{}/{}/frames/{}.jpg".format(settings.MEDIA_ROOT, self.video_id, self.frame_index)
+
+    def crop_and_get_region_path(self, images, temp_root):
+        bare_path = self.path(media_root="")
+        cached_data = fs.get_from_cache(bare_path)
+        region_path = self.path(temp_root=temp_root)
+        if cached_data:
+            with open(region_path, 'wb') as out:
+                out.write(cached_data)
+        else:
+            frame_path = self.frame_path()
+            if frame_path not in images:
+                images[frame_path] = Image.open(frame_path)
+            img2 = images[frame_path].crop((self.x, self.y, self.x + self.w, self.y + self.h))
+            img2.save(region_path)
+            with open(region_path, 'rb') as fr:
+                fs.cache_path(bare_path, payload=fr.read())
+        return region_path
 
 
 class QueryRegion(models.Model):

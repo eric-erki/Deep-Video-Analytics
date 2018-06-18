@@ -88,19 +88,16 @@ class SegmentSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class RegionSerializer(serializers.HyperlinkedModelSerializer):
-    media_url = serializers.SerializerMethodField()
+    frame_media_url = serializers.SerializerMethodField()
 
-    def get_media_url(self, obj):
-        if obj.materialized:
-            return "{}{}/regions/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.pk)
-        else:
-            return None
+    def get_frame_media_url(self, obj):
+        return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.frame_index)
 
     class Meta:
         model = Region
-        fields = ('url', 'media_url', 'region_type', 'video', 'user', 'frame', 'event', 'frame_index',
+        fields = ('url', 'frame_media_url', 'region_type', 'video', 'user', 'frame', 'event', 'frame_index',
                   'segment_index', 'text', 'metadata', 'full_frame', 'x', 'y', 'h', 'w',
-                  'polygon_points', 'created', 'object_name', 'confidence', 'materialized', 'png', 'id')
+                  'polygon_points', 'created', 'object_name', 'confidence', 'png', 'id')
 
 
 class RegionRelationSerializer(serializers.HyperlinkedModelSerializer):
@@ -490,7 +487,7 @@ class VideoImporter(object):
             original = '{}/{}/{}.jpg'.format(self.root, 'regions', k)
             temp_file = "{}/regions/d_{}.jpg".format(self.root, v)
             converted = "{}/regions/{}.jpg".format(self.root, v)
-            if dd.materialized or os.path.isfile(original):
+            if os.path.isfile(original):
                 try:
                     os.rename(original, temp_file)
                     convert_list.append((temp_file, converted))
@@ -582,7 +579,6 @@ class VideoImporter(object):
             da.frame_id = self.frame_to_pk[a['frame']]
         da.text = a['text']
         da.metadata = a['metadata']
-        da.materialized = a.get('materialized', False)
         da.png = a.get('png', False)
         da.region_type = a['region_type']
         da.confidence = a['confidence']
