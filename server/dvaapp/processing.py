@@ -494,7 +494,9 @@ class DVAPQLProcess(object):
             if (type(v) is str or type(v) is unicode) and v.startswith('__created__'):
                 t['arguments'][k] = self.get_created_object_pk(v)
         dv = None
-        if 'video_id' in t:
+        if t['operation'] in settings.NON_PROCESSING_TASKS:
+            dv = None
+        elif 'video_id' in t:
             if t['video_id'].startswith('__created__'):
                 t['video_id'] = self.get_created_object_pk(t['video_id'])
             dv = Video.objects.get(pk=t['video_id'])
