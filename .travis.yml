@@ -93,5 +93,5 @@ script:
   - wget --quiet localhost:8000/api/queryresults/
   - wget --quiet localhost:8000/api/indexentries/
   - wget --quiet localhost:8000/api/events/
-  - ./server/secripts/kill_all.sh
+  - ./server/scripts/kill_all.sh
   - ./dvactl start && ./dvactl clean
