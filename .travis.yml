@@ -44,6 +44,7 @@ before_install:
   - pip install -q --no-cache-dir http://download.pytorch.org/whl/cpu/torch-0.3.1-cp27-cp27mu-linux_x86_64.whl
   - pip install -q torchvision
   - git clone https://github.com/DeepVideoAnalytics/faiss && cd faiss && mv example_makefiles/makefile.inc.Linux ./makefile.inc && make -j $(nproc) && make py && cd ..
+  - sudo curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
 
 install: "pip install -q -r requirements.txt > /dev/null"
 
@@ -61,6 +62,9 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
   - cd server && python manage.py runserver 8000 &
+  - cp tests/data/config.json config.json
+  - ./dvactl start && ./dvactl clean
+
 
 script:
   - cd server && ./init_fs.py && cd ..
