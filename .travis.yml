@@ -45,6 +45,7 @@ before_install:
   - pip install -q torchvision
   - git clone https://github.com/DeepVideoAnalytics/faiss && cd faiss && mv example_makefiles/makefile.inc.Linux ./makefile.inc && make -j $(nproc) && make py && cd ..
   - sudo curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+  - sudo chmod +x /usr/local/bin/docker-compose
 
 install: "pip install -q -r requirements.txt > /dev/null"
 
