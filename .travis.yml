@@ -93,5 +93,6 @@ script:
   - wget --quiet localhost:8000/api/queryresults/
   - wget --quiet localhost:8000/api/indexentries/
   - wget --quiet localhost:8000/api/events/
-  - ./server/scripts/kill_all.sh
+  - fuser -k 8000/tcp
   - ./dvactl start && ./dvactl clean
+  - docker logs webserver
