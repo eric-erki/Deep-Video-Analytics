@@ -77,7 +77,6 @@ class Indexers(object):
                 entry = {
                     'frame_index': df.frame_index,
                     'detection_primary_key': df.pk,
-                    'frame_primary_key': df.frame_id,
                     'index': i,
                     'type': df.region_type
                 }
