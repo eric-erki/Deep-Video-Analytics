@@ -84,7 +84,7 @@ class SegmentSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Segment
         fields = ('video', 'segment_index', 'start_time', 'end_time', 'metadata',
-                  'frame_count', 'start_index', 'start_frame', 'end_frame', 'url', 'media_url', 'id')
+                  'frame_count', 'start_index', 'url', 'media_url', 'id')
 
 
 class RegionSerializer(serializers.HyperlinkedModelSerializer):
@@ -105,14 +105,10 @@ class RegionRelationSerializer(serializers.HyperlinkedModelSerializer):
     target_frame_media_url = serializers.SerializerMethodField()
 
     def get_source_frame_media_url(self, obj):
-        if obj.source_region.frame_id:
-            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.source_region.frame_index)
-        else:
-            return None
+        return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.source_region.frame_index)
 
     def get_target_frame_media_url(self, obj):
-        if obj.target_region.frame_id:
-            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.target_region.frame_index)
+        return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.target_region.frame_index)
 
     class Meta:
         model = RegionRelation
@@ -124,10 +120,7 @@ class HyperRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
     frame_media_url = serializers.SerializerMethodField()
 
     def get_frame_media_url(self, obj):
-        if obj.region.frame_id:
-            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.region.frame_index)
-        else:
-            return None
+        return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.region.frame_index)
 
     class Meta:
         model = HyperRegionRelation
@@ -152,8 +145,7 @@ class TubeRegionRelationSerializer(serializers.HyperlinkedModelSerializer):
     region_frame_media_url = serializers.SerializerMethodField()
 
     def get_region_frame_media_url(self, obj):
-        if obj.region.frame_id:
-            return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.region.frame_index)
+        return "{}{}/frames/{}.jpg".format(settings.MEDIA_URL, obj.video_id, obj.region.frame_index)
 
     class Meta:
         model = TubeRegionRelation
@@ -351,7 +343,7 @@ def import_frame_json(f, frame_index, event_id, video_id, w, h):
     return df, regions
 
 
-def import_region_json(r, frame_index, video_id, event_id, segment_index=None, frame_id=None):
+def import_region_json(r, frame_index, video_id, event_id, segment_index=None):
     dr = Region()
     dr.frame_index = frame_index
     dr.video_id = video_id
@@ -361,8 +353,6 @@ def import_region_json(r, frame_index, video_id, event_id, segment_index=None, f
     dr.full_frame = r.get('full_frame', False)
     if segment_index:
         dr.segment_index = segment_index
-    if frame_id:
-        dr.frame_id = frame_id
     dr.x = r.get('x', 0)
     dr.y = r.get('y', 0)
     dr.w = r.get('w', 0)
@@ -575,8 +565,6 @@ class VideoImporter(object):
         da.y = a['y']
         da.h = a['h']
         da.w = a['w']
-        if 'frame' in a:
-            da.frame_id = self.frame_to_pk[a['frame']]
         da.text = a['text']
         da.metadata = a['metadata']
         da.png = a.get('png', False)

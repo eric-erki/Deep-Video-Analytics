@@ -289,15 +289,9 @@ def import_frame_regions_json(regions_json, video, event_id):
     """
     video_id = video.pk
     filename_to_pk = {}
-    frame_index_to_pk = {}
     if video.dataset:
-        # For dataset frames are identified by subdir/filename
-        filename_to_pk = {df.original_path(): (df.pk, df.frame_index)
-                          for df in Frame.objects.filter(video_id=video_id)}
-    else:
-        # For videos frames are identified by frame index
-        frame_index_to_pk = {df.frame_index: (df.pk, df.segment_index) for df in
-                             Frame.objects.filter(video_id=video_id)}
+        # For dataset frames are identified by original_path
+        filename_to_pk = {df.original_path(): (df.pk, df.frame_index) for df in Frame.objects.filter(video_id=video_id)}
     regions = []
     not_found = 0
     for k in regions_json:
@@ -307,15 +301,13 @@ def import_frame_regions_json(regions_json, video, event_id):
                 fname = '/{}'.format(fname)
             if fname in filename_to_pk:
                 pk, findx = filename_to_pk[fname]
-                regions.append(serializers.import_region_json(k, frame_index=findx, frame_id=pk, video_id=video_id,
-                                                              event_id=event_id))
+                regions.append(
+                    serializers.import_region_json(k, frame_index=findx, video_id=video_id, event_id=event_id))
             else:
                 not_found += 1
         elif k['target'] == 'index':
             findx = k['frame_index']
-            pk, sindx = frame_index_to_pk[findx]
-            regions.append(serializers.import_region_json(k, frame_index=findx, frame_id=pk, video_id=video_id,
-                                                          event_id=event_id))
+            regions.append(serializers.import_region_json(k, frame_index=findx, video_id=video_id, event_id=event_id))
         else:
             raise ValueError('invalid target: {}'.format(k['target']))
     logging.info("{} filenames not found in the dataset".format(not_found))

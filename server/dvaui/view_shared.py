@@ -401,33 +401,9 @@ def gather_results(r, rids_to_names, results):
 
 
 def get_url(r):
-    if r.detection_id:
-        dd = r.detection
-        frame_index = r.frame.frame_index
-        cached_region = fs.get_from_cache('/{}/regions/{}.jpg'.format(r.video_id, frame_index))
-        if cached_region:
-            if settings.DEBUG:
-                logging.info("Cache used for region!")
-            return "data:image/jpeg;base64, {}".format(base64.b64encode(cached_region))
-        if settings.ENABLE_CLOUDFS:
-            cached_frame = fs.get_from_cache('/{}/frames/{}.jpg'.format(r.video_id, frame_index))
-            if cached_frame:
-                if settings.DEBUG:
-                    logging.info("Cache used!")
-                content = cStringIO.StringIO(cached_frame)
-            else:
-                if settings.DEBUG:
-                    logging.info("Cache NOT used!")
-                frame_url = '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, frame_index)
-                response = requests.get(frame_url)
-                content = cStringIO.StringIO(response.content)
-            img = Image.open(content)
-        else:
-            img = Image.open('{}/{}/frames/{}.jpg'.format(settings.MEDIA_ROOT, r.video_id, frame_index))
-        cropped = img.crop((dd.x, dd.y, dd.x + dd.w, dd.y + dd.h))
-        ibuffer = cStringIO.StringIO()
-        cropped.save(ibuffer, format="JPEG")
-        return "data:image/jpeg;base64, {}".format(base64.b64encode(ibuffer.getvalue()))
+    if r.detection:
+        region_path = r.detection.crop_and_get_region_path({},settings.MEDIA_ROOT)
+        return "data:image/jpeg;base64, {}".format(base64.b64encode(file(region_path).read()))
     else:
         return '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.frame.frame_index)
 

@@ -381,8 +381,6 @@ class Segment(models.Model):
     frame_count = models.IntegerField(default=0)
     start_index = models.IntegerField(default=0)
     framelist = JSONField(blank=True, null=True)
-    start_frame = models.ForeignKey(Frame, null=True, related_name="segment_start")
-    end_frame = models.ForeignKey(Frame, null=True, related_name="segment_end")
 
     class Meta:
         unique_together = (("video", "segment_index"),)
@@ -417,7 +415,10 @@ class Region(models.Model):
     region_type = models.CharField(max_length=1, choices=REGION_TYPES, db_index=True)
     video = models.ForeignKey(Video)
     user = models.ForeignKey(User, null=True)
-    frame = models.ForeignKey(Frame, null=True, on_delete=models.SET_NULL)
+    # frame = models.ForeignKey(Frame, null=True, on_delete=models.SET_NULL)
+    # After significant deliberation I decided that having frame_index was sufficient and ensuring that this relation
+    # is updated when frames are decoded breaks the immutability. Instead frame_index allows "lazy" relation enabling
+    # cases such as user annotating a video frame which has not been decoded and stored explicitly as a Frame.
     event = models.ForeignKey(TEvent)  # TEvent that created this region
     frame_index = models.IntegerField(default=-1)
     segment_index = models.IntegerField(default=-1, null=True)
@@ -433,19 +434,6 @@ class Region(models.Model):
     object_name = models.CharField(max_length=100)
     confidence = models.FloatField(default=0.0)
     png = models.BooleanField(default=False)
-
-    def clean(self):
-        if self.frame_index == -1 or self.frame_index is None:
-            self.frame_index = self.frame.frame_index
-        if self.segment_index == -1 or self.segment_index is None:
-            self.segment_index = self.frame.segment_index
-
-    def save(self, *args, **kwargs):
-        if self.frame_index == -1 or self.frame_index is None:
-            self.frame_index = self.frame.frame_index
-        if self.segment_index == -1 or self.segment_index is None:
-            self.segment_index = self.frame.segment_index
-        super(Region, self).save(*args, **kwargs)
 
     def path(self, media_root=None, temp_root=None):
         if temp_root:
@@ -477,6 +465,16 @@ class Region(models.Model):
             with open(region_path, 'rb') as fr:
                 fs.cache_path(bare_path, payload=fr.read())
         return region_path
+
+    def global_frame_path(self):
+        if self.video.dataset:
+            df = Frame.objects.get(video=self.video,frame_index=self.frame_index)
+            if df.name and not df.name.startswith('/'):
+                return df.name
+            else:
+                return "{}/{}".format(self.video.url, df.name)
+        else:
+            return "{}::{}".format(self.video.url, self.frame_index)
 
 
 class QueryRegion(models.Model):
@@ -582,8 +580,6 @@ class Tube(models.Model):
     full_segment = models.BooleanField(default=False)
     start_frame_index = models.IntegerField()
     end_frame_index = models.IntegerField()
-    start_frame = models.ForeignKey(Frame, null=True, related_name="start_frame")
-    end_frame = models.ForeignKey(Frame, null=True, related_name="end_frame")
     start_region = models.ForeignKey(Region, null=True, related_name="start_region")
     end_region = models.ForeignKey(Region, null=True, related_name="end_region")
     text = models.TextField(default="")

@@ -119,7 +119,6 @@ def handle_perform_detection(start):
                 dd.query_id = start.parent_process_id
             else:
                 dd.video_id = dv.pk
-                dd.frame_id = df.pk
                 dd.frame_index = df.frame_index
                 dd.segment_index = df.segment_index
             if detector_name == 'textbox':
@@ -193,7 +192,6 @@ def handle_perform_analysis(start):
                 a.y = f.y
                 a.w = f.w
                 a.h = f.h
-                a.frame_id = f.frame.id
                 a.frame_index = f.frame_index
                 a.segment_index = f.segment_index
                 source_regions.append(f)
@@ -202,7 +200,6 @@ def handle_perform_analysis(start):
                 a.full_frame = True
                 a.frame_index = f.frame_index
                 a.segment_index = f.segment_index
-                a.frame_id = f.id
                 path = f.path()
             else:
                 raise NotImplementedError
@@ -302,7 +299,7 @@ def handle_perform_matching(dt):
                             dr.w = tdr.w
                             dr.h = tdr.h
                             dr.full_frame = tdr.full_frame
-                            dr.path = tdr.frame.global_path()
+                            dr.path = tdr.global_frame_path()
                             dr.metadata = tdr.metadata
                         else:
                             tdf = models.Frame.objects.get(pk=result['frame_primary_key'])
