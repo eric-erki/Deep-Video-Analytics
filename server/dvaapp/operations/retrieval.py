@@ -124,7 +124,6 @@ class Retrievers(object):
             if 'detection_primary_key' in r:
                 dd = Region.objects.get(pk=r['detection_primary_key'])
                 qr.detection = dd
-                qr.frame_id = dd.frame_id
                 qr.video_id = dd.video_id
             else:
                 dd = Frame.objects.get(pk=r['frame_primary_key'])
