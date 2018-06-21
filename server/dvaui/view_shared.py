@@ -405,7 +405,7 @@ def get_url(r):
         region_path = r.detection.crop_and_get_region_path({},settings.MEDIA_ROOT)
         return "data:image/jpeg;base64, {}".format(base64.b64encode(file(region_path).read()))
     else:
-        return '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.frame.frame_index)
+        return '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.frame_index)
 
 
 def get_sequence_name(i, r):
@@ -413,8 +413,8 @@ def get_sequence_name(i, r):
 
 
 def get_result_json(r):
-    return dict(url=get_url(r), result_type="Region" if r.detection_id else "Frame", rank=r.rank, frame_id=r.frame_id,
-                frame_index=r.frame.frame_index, distance=r.distance, video_id=r.video_id, video_name=r.video.name)
+    return dict(url=get_url(r), result_type="Region" if r.detection_id else "Frame", rank=r.rank,
+                frame_index=r.frame_index, distance=r.distance, video_id=r.video_id, video_name=r.video.name)
 
 
 def get_query_region_json(rd):

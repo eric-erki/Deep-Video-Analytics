@@ -515,7 +515,7 @@ class QueryResults(models.Model):
     retrieval_event = models.ForeignKey(TEvent)
     query_region = models.ForeignKey(QueryRegion, null=True)
     video = models.ForeignKey(Video)
-    frame = models.ForeignKey(Frame)
+    frame_index = models.IntegerField()
     detection = models.ForeignKey(Region, null=True)
     rank = models.IntegerField()
     algorithm = models.CharField(max_length=100)
