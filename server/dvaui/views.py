@@ -187,8 +187,12 @@ class FrameDetail(UserPassesTestMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(FrameDetail, self).get_context_data(**kwargs)
-        context['detection_list'] = Region.objects.all().filter(frame=self.object, region_type=Region.DETECTION)
-        context['annotation_list'] = Region.objects.all().filter(frame=self.object, region_type=Region.ANNOTATION)
+        context['detection_list'] = Region.objects.all().filter(frame_index=self.object.frame_index,
+                                                                video_id=self.object.video_id,
+                                                                region_type=Region.DETECTION)
+        context['annotation_list'] = Region.objects.all().filter(frame_index=self.object.frame_index,
+                                                                 video_id=self.object.video_id,
+                                                                 region_type=Region.ANNOTATION)
         context['video'] = self.object.video
         context['url'] = '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, self.object.video.pk, self.object.frame_index)
         context['previous_frame'] = Frame.objects.filter(video=self.object.video,
@@ -500,8 +504,9 @@ def annotate(request, frame_pk):
         '-frame_index')[0:1]
     context['next_frame'] = Frame.objects.filter(video=frame.video, frame_index__gt=frame.frame_index).order_by(
         'frame_index')[0:1]
-    context['detections'] = Region.objects.filter(frame=frame, region_type=Region.DETECTION)
-    for d in Region.objects.filter(frame=frame):
+    context['detections'] = Region.objects.filter(video=frame.video, frame_index=frame.frame_index,
+                                                  region_type=Region.DETECTION)
+    for d in Region.objects.filter(video=frame.video, frame_index=frame.frame_index):
         temp = {
             'x': d.x,
             'y': d.y,
