@@ -45,6 +45,7 @@ urlpatterns = [
     url(r'^retry/$', views.retry_task, name='restart_task'),
     url(r'^segments/by_index/(?P<pk>[0-9a-f-]+)/(?P<segment_index>\d+)$', views.segment_by_index,
         name='segment_by_index'),
+    url(r'^frames/by_index/(?P<pk>[0-9a-f-]+)/(?P<frame_index>\d+)$', views.frame_by_index, name='frame_by_index'),
     url(r'^requery/(?P<query_pk>\d+)/$', views.index, name='requery'),
     url(r'^query_frame/(?P<frame_pk>\d+)/$', views.index, name='query_frame'),
     url(r'^query_detection/(?P<detection_pk>\d+)/$', views.index, name='query_detection'),

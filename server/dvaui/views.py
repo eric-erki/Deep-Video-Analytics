@@ -588,6 +588,21 @@ def segment_by_index(request, pk, segment_index):
 
 
 @user_passes_test(user_check)
+def frame_by_index(request, pk, frame_index):
+    try:
+        df = Frame.objects.get(video_id=pk, frame_index=frame_index)
+    except:
+        df = None
+        pass
+    if df:
+        return redirect('frame_detail', pk=df.pk)
+    else:
+        # If the frame has not been decoded return the nearest segment
+        segment = Segment.objects.filter(video_id=pk, start_index__lte=frame_index).order_by('-start_index').first()
+        return redirect('segment_detail', pk=segment.pk)
+
+
+@user_passes_test(user_check)
 def export_video(request):
     if request.method == 'POST':
         pk = request.POST.get('video_id')

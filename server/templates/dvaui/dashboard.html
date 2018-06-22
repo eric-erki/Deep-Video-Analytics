@@ -314,7 +314,7 @@
                     </div>
                 </div>
                 <div class="box-body" style="height:220px">
-                    <a href="/frames/{[ item.frame_id ]}"><img class="img-responsive img-bordered-sm" style="max-height:200px;margin-left:auto;margin-right:auto"  ng-src="{[ item.url ]}">
+                    <a href="/frames/by_index/{[ item.video_id ]}/{[ item.frame_index ]}"><img class="img-responsive img-bordered-sm" style="max-height:200px;margin-left:auto;margin-right:auto"  ng-src="{[ item.url ]}">
                     </a>
                 </div>
             </div>
@@ -360,7 +360,7 @@
                             <p class=""> {[ ritem.rank ]} : {[ ritem.result_type ]} in <a href="/videos/{[ ritem.video_id ]}"> Video/Dataset {[ ritem.video_id]}</a> at {[ ritem.frame_index ]}</p>
                         </div>
                         <div class="box-body" style="height:220px">
-                            <a href="/frames/{[ ritem.frame_id ]}"><img class="img-responsive img-bordered-sm" style="max-height:200px;margin-left:auto;margin-right:auto"  ng-src="{[ ritem.url ]}">
+                            <a href="/frames/by_index/{[ item.video_id ]}/{[ item.frame_index ]}"><img class="img-responsive img-bordered-sm" style="max-height:200px;margin-left:auto;margin-right:auto"  ng-src="{[ ritem.url ]}">
                             </a>
                         </div>
                     </div>
