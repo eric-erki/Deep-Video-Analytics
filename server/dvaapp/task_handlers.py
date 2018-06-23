@@ -111,9 +111,15 @@ def handle_perform_detection(start):
             else:
                 raise NotImplementedError("Invalid target:{}".format(target))
             frame_detections_list.append((k, detector.detect(local_path)))
+    per_event_counter = 0
     for df, detections in frame_detections_list:
         for d in detections:
-            dd = models.QueryRegion() if query_flow else models.Region()
+            if query_flow:
+                dd = models.QueryRegion()
+            else:
+                dd = models.Region()
+                dd.per_event_index = per_event_counter
+                per_event_counter += 1
             dd.region_type = models.Region.DETECTION
             if query_flow:
                 dd.query_id = start.parent_process_id
@@ -165,6 +171,7 @@ def handle_perform_analysis(start):
     image_data = {}
     source_regions = []
     temp_root = tempfile.mkdtemp()
+    per_event_counter = 0
     for i, f in enumerate(queryset):
         if query_regions_paths:
             path = query_regions_paths[i]
@@ -186,6 +193,8 @@ def handle_perform_analysis(start):
             a.full_frame = True
         else:
             a = models.Region()
+            a.per_event_index = per_event_counter
+            per_event_counter += 1
             a.video_id = f.video_id
             if target == 'regions':
                 a.x = f.x

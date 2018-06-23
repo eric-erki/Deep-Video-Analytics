@@ -166,6 +166,7 @@ class TEvent(models.Model):
     parent_process = models.ForeignKey(DVAPQL, null=True)
     imported = models.BooleanField(default=False)
     task_group_id = models.IntegerField(default=-1)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
 
 class TrainedModel(models.Model):
@@ -422,6 +423,9 @@ class Region(models.Model):
     event = models.ForeignKey(TEvent)  # TEvent that created this region
     frame_index = models.IntegerField(default=-1)
     segment_index = models.IntegerField(default=-1, null=True)
+    # This ensures that for a specific event Regions are always ordered. (event_uuid, per_event_index) serves as
+    # a global unique identifier.
+    per_event_index = models.IntegerField()
     text = models.TextField(default="")
     metadata = JSONField(blank=True, null=True)
     full_frame = models.BooleanField(default=False)
@@ -475,6 +479,9 @@ class Region(models.Model):
                 return "{}/{}".format(self.video.url, df.name)
         else:
             return "{}::{}".format(self.video.url, self.frame_index)
+
+    class Meta:
+        unique_together = (("event","per_event_index"),)
 
 
 class QueryRegion(models.Model):
