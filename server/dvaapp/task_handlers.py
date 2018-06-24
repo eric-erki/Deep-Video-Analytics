@@ -273,6 +273,7 @@ def handle_perform_matching(dt):
                     retriever = retrieval.retriever.FaissFlatRetriever("matcher", components=components)
             retriever.load_index(mat,entries)
     frame_to_region_id = {}
+    per_event_region_index = 0
     for di in models.IndexEntries.objects.filter(**source_filters):
         mat, entries = di.load_index()
         if entries:
@@ -290,10 +291,12 @@ def handle_perform_matching(dt):
                         frame_id = entry['frame_primary_key']
                         if frame_id not in frame_to_region_id:
                             df = models.Frame.objects.get(pk=frame_id)
-                            frame_to_region_id[frame_id] = models.Region.objects.create(frame_id=frame_id,
+                            frame_to_region_id[frame_id] = models.Region.objects.create(per_event_index=
+                                                                                        per_event_region_index,
                                                                                         video_id=video_id, x=0, y=0,
                                                                                         event=dt, w=df.w, h=df.h,
                                                                                         full_frame=True).pk
+                            per_event_region_index += 1
                         region_id = frame_to_region_id[frame_id]
 
                     for result in results:
