@@ -37,3 +37,4 @@ hiredis
 streamlink
 psutil
 jsonschema
+opencv-python
