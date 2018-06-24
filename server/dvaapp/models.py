@@ -169,29 +169,61 @@ class TEvent(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     def finalize(self,bulk_create):
-        for k, v in bulk_create.iteritems():
+        created_regions = []
+        created_tubes = []
+        if 'Region' in bulk_create:
             temp = []
-            for i, d in enumerate(v):
+            for i, d in enumerate(bulk_create['Region']):
                 d.per_event_index = i
                 temp.append(d)
-            if k == 'Region':
-                Region.objects.bulk_create(temp, batch_size=1000)
-            elif k == 'Tube':
-                Tube.objects.bulk_create(temp, batch_size=1000)
-            elif k == 'RegionRelation':
-                RegionRelation.objects.bulk_create(temp, batch_size=1000)
-            elif k == 'TubeRelation':
-                TubeRelation.objects.bulk_create(temp, batch_size=1000)
-            elif k == 'HyperTubeRegionRelation':
-                HyperTubeRegionRelation.objects.bulk_create(temp, batch_size=1000)
-            elif k == 'TubeRegionRelation':
-                TubeRegionRelation.objects.bulk_create(temp, batch_size=1000)
-            elif k == 'RegionRelation':
-                RegionRelation.objects.bulk_create(temp, batch_size=1000)
-            elif k == 'HyperRegionRelation':
-                HyperRegionRelation.objects.bulk_create(temp, batch_size=1000)
-            else:
-                raise ValueError("Model: {} not supported by bulk create".format(k))
+            created_regions = Region.objects.bulk_create(temp, batch_size=1000)
+        if 'Tube' in bulk_create:
+            temp = []
+            for i, d in enumerate(bulk_create['Tube']):
+                d.per_event_index = i
+                temp.append(d)
+            created_tubes = Tube.objects.bulk_create(temp, batch_size=1000)
+        if 'RegionRelation' in bulk_create:
+            temp = []
+            for i, d_value_map in enumerate(bulk_create['RegionRelation']):
+                d,value_map = d_value_map
+                if 'source_region_id' in d_value_map:
+                    d.source_region_id = created_regions[d_value_map['source_region_id']].id
+                if 'target_region_id' in d_value_map:
+                    d.target_region_id = created_regions[d_value_map['target_region_id']].id
+                d.per_event_index = i
+                temp.append(d)
+            RegionRelation.objects.bulk_create(temp, batch_size=1000)
+        if 'TubeRelation' in bulk_create:
+            temp = []
+            for i, d_value_map in enumerate(bulk_create['TubeRelation']):
+                d, value_map = d_value_map
+                d.per_event_index = i
+                temp.append(d)
+            TubeRelation.objects.bulk_create(temp, batch_size=1000)
+        if 'TubeRegionRelation' in bulk_create:
+            temp = []
+            for i, d_value_map in enumerate(bulk_create['TubeRegionRelation']):
+                d, value_map = d_value_map
+                d.per_event_index = i
+                temp.append(d)
+            TubeRegionRelation.objects.bulk_create(temp, batch_size=1000)
+        if 'HyperRegionRelation' in bulk_create:
+            temp = []
+            for i, d_value_map in enumerate(bulk_create['HyperRegionRelation']):
+                d, value_map = d_value_map
+                if 'region_id' in d_value_map:
+                    d.region_id = created_regions[d_value_map['region_id']].id
+                d.per_event_index = i
+                temp.append(d)
+            HyperRegionRelation.objects.bulk_create(temp, batch_size=1000)
+        if 'HyperTubeRegionRelation' in bulk_create:
+            temp = []
+            for i, d_value_map in enumerate(bulk_create['HyperTubeRegionRelation']):
+                d, value_map = d_value_map
+                d.per_event_index = i
+                temp.append(d)
+            HyperTubeRegionRelation.objects.bulk_create(temp, batch_size=1000)
 
 
 class TrainedModel(models.Model):

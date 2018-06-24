@@ -159,6 +159,7 @@ def handle_perform_analysis(start):
         analysis.Analyzers.load_analyzer(da)
     analyzer = analysis.Analyzers._analyzers[analyzer_name]
     regions_batch = []
+    relations_batch = []
     queryset, target = task_shared.build_queryset(args, video_id, start.parent_process_id)
     query_path = None
     query_regions_paths = None
@@ -171,7 +172,6 @@ def handle_perform_analysis(start):
     image_data = {}
     source_regions = []
     temp_root = tempfile.mkdtemp()
-    per_event_counter = 0
     for i, f in enumerate(queryset):
         if query_regions_paths:
             path = query_regions_paths[i]
@@ -193,8 +193,6 @@ def handle_perform_analysis(start):
             a.full_frame = True
         else:
             a = models.Region()
-            a.per_event_index = per_event_counter
-            per_event_counter += 1
             a.video_id = f.video_id
             if target == 'regions':
                 a.x = f.x
@@ -222,16 +220,12 @@ def handle_perform_analysis(start):
     if query_regions_paths or query_path:
         models.QueryRegion.objects.bulk_create(regions_batch, 1000)
     else:
-        region_list = models.Region.objects.bulk_create(regions_batch, 1000)
-        relations = []
-        per_event_relation_index = 0
         if target == 'regions':
-            for i,k in enumerate(region_list):
-                relations.append(models.RegionRelation(source_region_id=source_regions[i].id,target_region_id=k.id,
-                                                       per_event_index=per_event_relation_index,
-                                                       name='analysis', event_id=start.pk, video_id=start.video_id))
-                per_event_relation_index += 1
-            models.RegionRelation.objects.bulk_create(relations, 1000)
+            for i,k in enumerate(regions_batch):
+                dr = models.RegionRelation(source_region_id=source_regions[i].id, name='analysis', event_id=start.pk,
+                                           video_id=start.video_id)
+                relations_batch.append((dr,{'target_region_id':i}))
+        start.finalize({"Region":regions_batch,"RegionRelation":relations_batch})
 
 
 def handle_perform_matching(dt):
