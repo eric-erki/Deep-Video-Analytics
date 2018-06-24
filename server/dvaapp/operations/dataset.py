@@ -81,4 +81,4 @@ class DatasetCreator(object):
                 a.object_name = 'directory_labels'
                 a.event_id = event.pk
                 regions.append(a)
-        Region.objects.bulk_create(regions, batch_size=1000)
+        event.finalize({"Region":regions})

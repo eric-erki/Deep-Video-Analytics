@@ -145,7 +145,7 @@ def handle_perform_detection(start):
     if query_flow:
         _ = models.QueryRegion.objects.bulk_create(dd_list, 1000)
     else:
-        _ = models.Region.objects.bulk_create(dd_list, 1000)
+        start.finalize({"Region":dd_list})
     return query_flow
 
 
@@ -224,10 +224,13 @@ def handle_perform_analysis(start):
     else:
         region_list = models.Region.objects.bulk_create(regions_batch, 1000)
         relations = []
+        per_event_relation_index = 0
         if target == 'regions':
             for i,k in enumerate(region_list):
                 relations.append(models.RegionRelation(source_region_id=source_regions[i].id,target_region_id=k.id,
+                                                       per_event_index=per_event_relation_index,
                                                        name='analysis', event_id=start.pk, video_id=start.video_id))
+                per_event_relation_index += 1
             models.RegionRelation.objects.bulk_create(relations, 1000)
 
 

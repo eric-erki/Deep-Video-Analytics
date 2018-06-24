@@ -338,10 +338,12 @@ def import_frame_json(f, frame_index, event_id, video_id, w, h):
     df.h = h
     df.frame_index = frame_index
     df.name = f['path']
+    for r in f.get('regions', []):
+        regions.append(import_region_json(r, frame_index, video_id, event_id))
     return df, regions
 
 
-def import_region_json(r, frame_index, video_id, event_id, per_event_region_index, segment_index=None):
+def import_region_json(r, frame_index, video_id, event_id,  segment_index=None):
     dr = Region()
     dr.frame_index = frame_index
     dr.video_id = video_id
@@ -355,7 +357,6 @@ def import_region_json(r, frame_index, video_id, event_id, per_event_region_inde
     dr.y = r.get('y', 0)
     dr.w = r.get('w', 0)
     dr.h = r.get('h', 0)
-    dr.per_event_index = per_event_region_index
     dr.confidence = r.get('confidence', 0.0)
     if r.get('text', None):
         dr.text = r['text']

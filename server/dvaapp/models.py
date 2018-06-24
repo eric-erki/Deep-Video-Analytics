@@ -168,6 +168,31 @@ class TEvent(models.Model):
     task_group_id = models.IntegerField(default=-1)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
+    def finalize(self,bulk_create):
+        for k, v in bulk_create.iteritems():
+            temp = []
+            for i, d in enumerate(v):
+                d.per_event_index = i
+                temp.append(d)
+            if k == 'Region':
+                Region.objects.bulk_create(temp, batch_size=1000)
+            elif k == 'Tube':
+                Tube.objects.bulk_create(temp, batch_size=1000)
+            elif k == 'RegionRelation':
+                RegionRelation.objects.bulk_create(temp, batch_size=1000)
+            elif k == 'TubeRelation':
+                TubeRelation.objects.bulk_create(temp, batch_size=1000)
+            elif k == 'HyperTubeRegionRelation':
+                HyperTubeRegionRelation.objects.bulk_create(temp, batch_size=1000)
+            elif k == 'TubeRegionRelation':
+                TubeRegionRelation.objects.bulk_create(temp, batch_size=1000)
+            elif k == 'RegionRelation':
+                RegionRelation.objects.bulk_create(temp, batch_size=1000)
+            elif k == 'HyperRegionRelation':
+                HyperRegionRelation.objects.bulk_create(temp, batch_size=1000)
+            else:
+                raise ValueError("Model: {} not supported by bulk create".format(k))
+
 
 class TrainedModel(models.Model):
     """
@@ -592,6 +617,10 @@ class Tube(models.Model):
     text = models.TextField(default="")
     metadata = JSONField(blank=True, null=True)
     event = models.ForeignKey(TEvent)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event","per_event_index"),)
 
 
 class RegionRelation(models.Model):
@@ -605,6 +634,10 @@ class RegionRelation(models.Model):
     name = models.CharField(max_length=400)
     weight = models.FloatField(null=True)
     metadata = JSONField(blank=True, null=True)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class HyperRegionRelation(models.Model):
@@ -628,6 +661,10 @@ class HyperRegionRelation(models.Model):
     # Unlike region frame_index is only required if the path points to a video or a .gif
     frame_index = models.IntegerField(null=True)
     segment_index = models.IntegerField(null=True)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class HyperTubeRegionRelation(models.Model):
@@ -651,6 +688,10 @@ class HyperTubeRegionRelation(models.Model):
     # Unlike region frame_index is only required if the path points to a video or a .gif
     frame_index = models.IntegerField(null=True)
     segment_index = models.IntegerField(null=True)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class TubeRelation(models.Model):
@@ -664,6 +705,10 @@ class TubeRelation(models.Model):
     name = models.CharField(max_length=400)
     weight = models.FloatField(null=True)
     metadata = JSONField(blank=True, null=True)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class TubeRegionRelation(models.Model):
@@ -677,6 +722,10 @@ class TubeRegionRelation(models.Model):
     name = models.CharField(max_length=400)
     weight = models.FloatField(null=True)
     metadata = JSONField(blank=True, null=True)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class DeletedVideo(models.Model):
