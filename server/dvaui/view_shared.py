@@ -268,7 +268,9 @@ def create_annotation(form, object_name, labels, frame, user=None):
         annotation['metadata'] = json.loads(annotation['metadata'])
     else:
         annotation['metadata'] = None
-    annotation['frame_id'] = frame.pk
+    annotation['frame_index'] = frame.frame_index
+    annotation['segment_index'] = frame.segment_index
+    annotation['per_event_index'] = 0
     annotation['video_id'] = frame.video_id
     annotation['region_type'] = dvaapp.models.Region.ANNOTATION
     for lname in labels:
