@@ -65,12 +65,15 @@ class DatasetCreator(object):
         self.dvideo.save()
         df_ids = Frame.objects.bulk_create(df_list,batch_size=1000)
         regions = []
+        per_event_region_index = 0
         for i,f in enumerate(df_list):
             if f.name:
                 a = Region()
                 a.video_id = self.dvideo.pk
                 a.frame_id = df_ids[i].id
                 a.frame_index = f.frame_index
+                a.per_event_index = per_event_region_index
+                per_event_region_index += 1
                 if '/' in f.name:
                     a.metadata = {'labels':list({ l.strip() for l in f.name.split('/')[1:] if l.strip() })}
                     a.text = f.name.split('/')
