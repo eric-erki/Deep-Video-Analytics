@@ -37,4 +37,4 @@ hiredis
 streamlink
 psutil
 jsonschema
-opencv-python
+opencv-python==3.4.1.15
