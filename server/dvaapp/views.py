@@ -146,7 +146,7 @@ class IndexEntriesViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
     queryset = IndexEntries.objects.all()
     serializer_class = serializers.IndexEntriesSerializer
-    filter_fields = ('video', 'algorithm', 'detection_name')
+    filter_fields = ('video', 'algorithm', 'target', 'indexer_shasum', 'approximator_shasum', 'approximate')
 
 
 class TubeViewSet(viewsets.ReadOnlyModelViewSet):

@@ -291,13 +291,18 @@ def handle_perform_matching(dt):
                                                          full_frame=True))
                             frame_to_region_index[frame_id] = region_count
                             region_count += 1
+                        region_id = None
+                        value_map = {'region_id': frame_to_region_index[entry['frame_primary_key']]}
+                    else:
+
+                        region_id = entry['detection_primary_key']
+                        value_map = {}
                     for result in results:
                         dr = models.HyperRegionRelation()
                         dr.video_id = video_id
                         dr.metadata = result
+                        dr.region_id = region_id
                         if 'detection_primary_key' in result:
-                            dr.region_id = entry['detection_primary_key']
-                            value_map = {}
                             tdr = models.Region.objects.get(pk=result['detection_primary_key'])
                             dr.x = tdr.x
                             dr.y = tdr.y
@@ -308,7 +313,6 @@ def handle_perform_matching(dt):
                             dr.metadata = tdr.metadata
                         else:
                             tdf = models.Frame.objects.get(pk=result['frame_primary_key'])
-                            value_map = {'region_id': frame_to_region_index[entry['frame_primary_key']]}
                             dr.x = 0
                             dr.y = 0
                             dr.w = tdf.w
