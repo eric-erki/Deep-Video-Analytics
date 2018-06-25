@@ -187,10 +187,10 @@ class TEvent(models.Model):
             temp = []
             for i, d_value_map in enumerate(bulk_create['RegionRelation']):
                 d,value_map = d_value_map
-                if 'source_region_id' in d_value_map:
-                    d.source_region_id = created_regions[d_value_map['source_region_id']].id
-                if 'target_region_id' in d_value_map:
-                    d.target_region_id = created_regions[d_value_map['target_region_id']].id
+                if 'source_region_id' in value_map:
+                    d.source_region_id = created_regions[value_map['source_region_id']].id
+                if 'target_region_id' in value_map:
+                    d.target_region_id = created_regions[value_map['target_region_id']].id
                 d.per_event_index = i
                 temp.append(d)
             RegionRelation.objects.bulk_create(temp, batch_size=1000)
@@ -213,7 +213,7 @@ class TEvent(models.Model):
             for i, d_value_map in enumerate(bulk_create['HyperRegionRelation']):
                 d, value_map = d_value_map
                 if 'region_id' in d_value_map:
-                    d.region_id = created_regions[d_value_map['region_id']].id
+                    d.region_id = created_regions[value_map['region_id']].id
                 d.per_event_index = i
                 temp.append(d)
             HyperRegionRelation.objects.bulk_create(temp, batch_size=1000)

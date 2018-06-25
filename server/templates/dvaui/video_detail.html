@@ -284,7 +284,7 @@
                         <td class="text-right">{{ d.h }}</td>
                         {% if not object.dataset %}<td class="text-right"><a href="/segments/by_index/{{ object.pk }}/{{ d.segment_index }}">{{ d.segment_index }}</a></td>{% endif %}
                         <td class="text-right">{{ d.frame_index }} </td>
-                        <td class="text-center"><a href="/frames/{{ d.frame_id }}">view</a></td>
+                        <td class="text-center"><a href="/frames/by_index/{{ object.pk }}/{{ d.frame_index }}">view</a></td>
                     </tr>
                 {% endfor %}
                 {% for d in annotation_list %}
@@ -299,7 +299,7 @@
                         <td class="text-right">{{ d.h }}</td>
                         {% if not object.dataset %}<td class="text-right"><a href="/segments/by_index/{{ object.pk }}/{{ d.segment_index }}">{{ d.segment_index }}</a></td>{% endif %}
                         <td class="text-right">{{ d.frame_index }} </td>
-                        <td class="text-center"><a href="/frames/{{ d.frame_id }}">view</a></td>
+                        <td class="text-center"><a href="/frames/by_index/{{ object.pk }}/{{ d.frame_index }}">view</a></td>
                     </tr>
                 {% endfor %}
                 </tbody>
