@@ -95,7 +95,7 @@ class RegionSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Region
-        fields = ('url', 'frame_media_url', 'region_type', 'video', 'user', 'frame', 'event', 'frame_index',
+        fields = ('url', 'frame_media_url', 'region_type', 'video', 'user', 'event', 'frame_index',
                   'segment_index', 'text', 'metadata', 'full_frame', 'x', 'y', 'h', 'w',
                   'polygon_points', 'created', 'object_name', 'confidence', 'png', 'id')
 
