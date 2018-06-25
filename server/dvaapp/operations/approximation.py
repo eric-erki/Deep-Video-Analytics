@@ -88,9 +88,7 @@ class Approximators(object):
             approx_ind.approximator_shasum = da.shasum
             approx_ind.count = index_entry.count
             approx_ind.approximate = True
-            approx_ind.detection_name = index_entry.detection_name
-            approx_ind.contains_detections = index_entry.contains_detections
-            approx_ind.contains_frames = index_entry.contains_frames
+            approx_ind.target = index_entry.target
             approx_ind.video_id = index_entry.video_id
             approx_ind.algorithm = da.name
             approx_ind.event_id = event_id

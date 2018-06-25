@@ -145,7 +145,7 @@ def handle_perform_detection(start):
     if query_flow:
         _ = models.QueryRegion.objects.bulk_create(dd_list, 1000)
     else:
-        start.finalize({"Region":dd_list})
+        start.finalize({"Region": dd_list})
     return query_flow
 
 
@@ -221,11 +221,11 @@ def handle_perform_analysis(start):
         models.QueryRegion.objects.bulk_create(regions_batch, 1000)
     else:
         if target == 'regions':
-            for i,k in enumerate(regions_batch):
+            for i, k in enumerate(regions_batch):
                 dr = models.RegionRelation(source_region_id=source_regions[i].id, name='analysis', event_id=start.pk,
                                            video_id=start.video_id)
-                relations_batch.append((dr,{'target_region_id':i}))
-        start.finalize({"Region":regions_batch,"RegionRelation":relations_batch})
+                relations_batch.append((dr, {'target_region_id': i}))
+        start.finalize({"Region": regions_batch, "RegionRelation": relations_batch})
 
 
 def handle_perform_matching(dt):
@@ -235,9 +235,9 @@ def handle_perform_matching(dt):
     indexer_shasum = args['indexer_shasum']
     approximator_shasum = args.get('approximator_shasum', None)
     match_self = args.get('match_self', False)
-    source_filters = args.get('source_filters', {'event__completed':True})
-    target_filters = args.get('target_filters', {'event__completed':True})
-    source_filters.update({'video_id':dt.video_id})
+    source_filters = args.get('source_filters', {'event__completed': True})
+    target_filters = args.get('target_filters', {'event__completed': True})
+    source_filters.update({'video_id': dt.video_id})
     source_filters.update({'indexer_shasum': indexer_shasum})
     target_filters.update({'indexer_shasum': indexer_shasum})
     if approximator_shasum:
@@ -248,6 +248,8 @@ def handle_perform_matching(dt):
         target_filters.update({'approximator_shasum': None})
     retriever = None
     relations = []
+    regions = []
+    region_count = 0
     if match_self:
         query_set = models.IndexEntries.objects.filter(**target_filters)
     else:
@@ -268,40 +270,34 @@ def handle_perform_matching(dt):
                 else:
                     components = mat.shape[1]
                     retriever = retrieval.retriever.FaissFlatRetriever("matcher", components=components)
-            retriever.load_index(mat,entries)
-    frame_to_region_id = {}
-    per_event_region_index = 0
+            retriever.load_index(mat, entries)
+    frame_to_region_index = {}
     for di in models.IndexEntries.objects.filter(**source_filters):
         mat, entries = di.load_index()
         if entries:
             mat = np.atleast_2d(mat.squeeze())
             print mat.shape
-            results_batch = retriever.nearest_batch(mat,k)
-            for i,entry in enumerate(entries):
+            results_batch = retriever.nearest_batch(mat, k)
+            for i, entry in enumerate(entries):
                 results = results_batch[i]
                 if match_self:
                     pass
                 else:
-                    if 'detection_primary_key' in entry:
-                        region_id = entry['detection_primary_key']
-                    else:
+                    if 'frame_primary_key' in entry:
                         frame_id = entry['frame_primary_key']
-                        if frame_id not in frame_to_region_id:
+                        if frame_id not in frame_to_region_index:
                             df = models.Frame.objects.get(pk=frame_id)
-                            frame_to_region_id[frame_id] = models.Region.objects.create(per_event_index=
-                                                                                        per_event_region_index,
-                                                                                        video_id=video_id, x=0, y=0,
-                                                                                        event=dt, w=df.w, h=df.h,
-                                                                                        full_frame=True).pk
-                            per_event_region_index += 1
-                        region_id = frame_to_region_id[frame_id]
-
+                            regions.append(models.Region(video_id=video_id, x=0, y=0, event=dt, w=df.w, h=df.h,
+                                                         full_frame=True))
+                            frame_to_region_index[frame_id] = region_count
+                            region_count += 1
                     for result in results:
                         dr = models.HyperRegionRelation()
                         dr.video_id = video_id
                         dr.metadata = result
-                        dr.region_id = region_id
                         if 'detection_primary_key' in result:
+                            dr.region_id = entry['detection_primary_key']
+                            value_map = {}
                             tdr = models.Region.objects.get(pk=result['detection_primary_key'])
                             dr.x = tdr.x
                             dr.y = tdr.y
@@ -312,6 +308,7 @@ def handle_perform_matching(dt):
                             dr.metadata = tdr.metadata
                         else:
                             tdf = models.Frame.objects.get(pk=result['frame_primary_key'])
+                            value_map = {'region_id': frame_to_region_index[entry['frame_primary_key']]}
                             dr.x = 0
                             dr.y = 0
                             dr.w = tdf.w
@@ -320,8 +317,8 @@ def handle_perform_matching(dt):
                             dr.path = tdf.global_path()
                         dr.weight = result['dist']
                         dr.event_id = dt.pk
-                        relations.append(dr)
+                        relations.append((dr, value_map))
     if match_self:
         pass
     else:
-        models.HyperRegionRelation.objects.bulk_create(relations,1000)
+        dt.finalize({'Region': regions, 'HyperRegionRelation': relations})

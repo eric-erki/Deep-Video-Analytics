@@ -502,8 +502,6 @@ class VideoImporter(object):
             if 'approximator_shasum' in i:
                 di.approximator_shasum = i['approximator_shasum']
             di.count = i['count']
-            di.contains_detections = i['contains_detections']
-            di.contains_frames = i['contains_frames']
             di.approximate = i['approximate']
             di.created = i['created']
             di.event_id = self.event_to_pk[i['event']]
@@ -512,7 +510,7 @@ class VideoImporter(object):
                 entries = json.load(file('{}/indexes/{}'.format(self.root, i['entries_file_name'])))
             else:
                 entries = i['entries']
-            di.detection_name = i['detection_name']
+            di.target = i['target']
             di.metadata = i.get('metadata', {})
             transformed = []
             for entry in entries:

@@ -592,19 +592,16 @@ class IndexEntries(models.Model):
     entries = JSONField(blank=True, null=True)
     metadata = JSONField(blank=True, null=True)
     algorithm = models.CharField(max_length=100)
-    indexer = models.ForeignKey(TrainedModel, null=True)
     indexer_shasum = models.CharField(max_length=40)
     approximator_shasum = models.CharField(max_length=40, null=True)
-    detection_name = models.CharField(max_length=100)
+    target = models.CharField(max_length=100)
     count = models.IntegerField()
     approximate = models.BooleanField(default=False)
-    contains_frames = models.BooleanField(default=False)
-    contains_detections = models.BooleanField(default=False)
     created = models.DateTimeField('date created', auto_now_add=True)
     event = models.ForeignKey(TEvent)
 
     def __unicode__(self):
-        return "{} in {} index by {}".format(self.detection_name, self.algorithm, self.video.name)
+        return "{} in {} index by {}".format(self.target, self.algorithm, self.video.name)
 
     def npy_path(self, media_root=None):
         if not (media_root is None):

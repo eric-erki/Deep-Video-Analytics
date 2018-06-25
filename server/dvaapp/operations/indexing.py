@@ -107,11 +107,8 @@ class Indexers(object):
             i = IndexEntries()
             i.video_id = event.video_id
             i.count = len(entries)
-            i.contains_detections = target == "regions"
-            i.contains_frames = target == "frames"
-            i.detection_name = '{}_subset_by_{}'.format(target,event.pk)
+            i.target = target
             i.algorithm = di.name
-            i.indexer = di
             i.indexer_shasum = di.shasum
             i.entries = entries
             i.features_file_name = feat_fname.split('/')[-1]
