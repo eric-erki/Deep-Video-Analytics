@@ -209,7 +209,7 @@ class TaskExportSerializer(serializers.ModelSerializer):
         model = TEvent
         fields = ('started', 'completed', 'errored', 'worker', 'error_message', 'video', 'operation', 'queue',
                   'created', 'start_ts', 'duration', 'arguments', 'task_id', 'parent', 'parent_process',
-                  'training_set', 'imported', 'query_results', 'query_regions', 'id', 'uuid')
+                  'training_set', 'imported', 'query_results', 'query_regions', 'id')
 
 
 class TEventSerializer(serializers.HyperlinkedModelSerializer):
@@ -566,13 +566,13 @@ class VideoImporter(object):
         da.text = a['text']
         da.metadata = a['metadata']
         da.png = a.get('png', False)
-        da.id = a['id']
         da.per_event_index = a['per_event_index']
         da.region_type = a['region_type']
         da.confidence = a['confidence']
         da.object_name = a['object_name']
         da.full_frame = a['full_frame']
         da.event_id = self.event_to_pk[a['event']]
+        da.id = '{}_{}'.format(da.event_id,da.per_event_index)
         da.frame_index = a['frame_index']
         da.segment_index = a.get('segment_index', -1)
         return da

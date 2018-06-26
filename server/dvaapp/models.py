@@ -148,6 +148,7 @@ class Video(models.Model):
 
 
 class TEvent(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     started = models.BooleanField(default=False)
     completed = models.BooleanField(default=False)
     errored = models.BooleanField(default=False)
@@ -166,7 +167,6 @@ class TEvent(models.Model):
     parent_process = models.ForeignKey(DVAPQL, null=True)
     imported = models.BooleanField(default=False)
     task_group_id = models.IntegerField(default=-1)
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     def finalize(self,bulk_create):
         created_regions = []
@@ -175,14 +175,14 @@ class TEvent(models.Model):
             temp = []
             for i, d in enumerate(bulk_create['Region']):
                 d.per_event_index = i
-                d.id = '{}_{}'.format(self.uuid.hex, i)
+                d.id = '{}_{}'.format(self.id.hex, i)
                 temp.append(d)
             created_regions = Region.objects.bulk_create(temp, batch_size=1000)
         if 'Tube' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['Tube']):
                 d.per_event_index = i
-                d.id = '{}_{}'.format(self.uuid.hex, i)
+                d.id = '{}_{}'.format(self.id.hex, i)
                 temp.append(d)
             created_tubes = Tube.objects.bulk_create(temp, batch_size=1000)
         if 'RegionRelation' in bulk_create:
@@ -214,7 +214,7 @@ class TEvent(models.Model):
             temp = []
             for i, d_value_map in enumerate(bulk_create['HyperRegionRelation']):
                 d, value_map = d_value_map
-                if 'region_id' in d_value_map:
+                if 'region_id' in value_map:
                     d.region_id = created_regions[value_map['region_id']].id
                 else:
                     if d.region_id is None:
@@ -812,8 +812,8 @@ class Export(models.Model):
 
 
 class TaskRestart(models.Model):
-    original_event_pk = models.IntegerField(null=False)
-    launched_event_pk = models.IntegerField()
+    original_event_pk = models.UUIDField(default=uuid.uuid4, null=False)
+    launched_event_pk = models.UUIDField(default=uuid.uuid4, null=False)
     attempts = models.IntegerField(default=0)
     arguments = JSONField(blank=True, null=True)
     operation = models.CharField(max_length=100, default="")
