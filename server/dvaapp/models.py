@@ -175,14 +175,14 @@ class TEvent(models.Model):
             temp = []
             for i, d in enumerate(bulk_create['Region']):
                 d.per_event_index = i
-                d.id = '{}_{}'.format(uuid.UUID(self.uuid).hex, i)
+                d.id = '{}_{}'.format(self.uuid.hex, i)
                 temp.append(d)
             created_regions = Region.objects.bulk_create(temp, batch_size=1000)
         if 'Tube' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['Tube']):
                 d.per_event_index = i
-                d.id = '{}_{}'.format(uuid.UUID(self.uuid).hex, i)
+                d.id = '{}_{}'.format(self.uuid.hex, i)
                 temp.append(d)
             created_tubes = Tube.objects.bulk_create(temp, batch_size=1000)
         if 'RegionRelation' in bulk_create:
