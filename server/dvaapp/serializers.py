@@ -566,6 +566,7 @@ class VideoImporter(object):
         da.text = a['text']
         da.metadata = a['metadata']
         da.png = a.get('png', False)
+        da.id = a['id']
         da.per_event_index = a['per_event_index']
         da.region_type = a['region_type']
         da.confidence = a['confidence']

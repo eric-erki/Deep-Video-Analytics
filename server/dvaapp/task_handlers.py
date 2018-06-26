@@ -294,7 +294,6 @@ def handle_perform_matching(dt):
                         region_id = None
                         value_map = {'region_id': frame_to_region_index[entry['frame_primary_key']]}
                     else:
-
                         region_id = entry['detection_primary_key']
                         value_map = {}
                     for result in results:

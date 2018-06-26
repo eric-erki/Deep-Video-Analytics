@@ -175,12 +175,14 @@ class TEvent(models.Model):
             temp = []
             for i, d in enumerate(bulk_create['Region']):
                 d.per_event_index = i
+                d.id = '{}_{}'.format(uuid.UUID(self.uuid).hex, i)
                 temp.append(d)
             created_regions = Region.objects.bulk_create(temp, batch_size=1000)
         if 'Tube' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['Tube']):
                 d.per_event_index = i
+                d.id = '{}_{}'.format(uuid.UUID(self.uuid).hex, i)
                 temp.append(d)
             created_tubes = Tube.objects.bulk_create(temp, batch_size=1000)
         if 'RegionRelation' in bulk_create:
@@ -214,6 +216,9 @@ class TEvent(models.Model):
                 d, value_map = d_value_map
                 if 'region_id' in d_value_map:
                     d.region_id = created_regions[value_map['region_id']].id
+                else:
+                    if d.region_id is None:
+                        raise ValueError(d_value_map)
                 d.per_event_index = i
                 temp.append(d)
             HyperRegionRelation.objects.bulk_create(temp, batch_size=1000)
@@ -458,6 +463,7 @@ class Region(models.Model):
     Any 2D region over an image.
     Detections & Transforms have an associated image data.
     """
+    id = models.CharField(max_length=100, primary_key=True)
     ANNOTATION = constants.ANNOTATION
     DETECTION = constants.DETECTION
     SEGMENTATION = constants.SEGMENTATION
@@ -635,6 +641,7 @@ class Tube(models.Model):
     A tube is a collection of sequential frames / regions that track a certain object
     or describe a specific scene
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video, null=True)
     frame_level = models.BooleanField(default=False)
     full_video = models.BooleanField(default=False)
