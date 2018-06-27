@@ -15,14 +15,14 @@ def generate_multi_gpu_compose(fname, config):
     for gpu_id, fraction, env_key, worker_name, in worker_specs:
         if fraction > 0:
             blocks.append(
-                file('compose/gpu_block.yaml').read().format(worker_name=worker_name, gpu_id=gpu_id,
+                file('deploy/compose/gpu_block.yaml').read().format(worker_name=worker_name, gpu_id=gpu_id,
                                                                  memory_fraction=fraction, env_key=env_key,
                                                                  env_value=1))
         else:
             blocks.append(
-                file('compose/gpu_cpu_block.yaml').read().format(worker_name=worker_name, env_key=env_key, env_value=1))
+                file('deploy/compose/gpu_cpu_block.yaml').read().format(worker_name=worker_name, env_key=env_key, env_value=1))
     with open(fname, 'w') as out:
-        out.write(file('compose/gpu_skeleton.yaml').read().format(gpu_workers="\n".join(blocks),
+        out.write(file('deploy/compose/gpu_skeleton.yaml').read().format(gpu_workers="\n".join(blocks),
                                                                   global_model_gpu_id=config['global_model_gpu_id'],
                                                                   global_model_memory_fraction=config[
                                                                       'global_model_memory_fraction']))
