@@ -1,8 +1,6 @@
 import numpy as np
-from .config import cfg
 pure_python_nms = False
 try:
-    from lib.utils.gpu_nms import gpu_nms
     from ..utils.cython_nms import nms as cython_nms
 except ImportError:
     pure_python_nms = True
@@ -14,10 +12,7 @@ def nms(dets, thresh):
     if pure_python_nms:
         # print("Fall back to pure python nms")
         return py_cpu_nms(dets, thresh)
-    if cfg.USE_GPU_NMS:
-        return gpu_nms(dets, thresh, device_id=cfg.GPU_ID)
-    else:
-        return cython_nms(dets, thresh)
+    return cython_nms(dets, thresh)
 
 
 def py_cpu_nms(dets, thresh):
