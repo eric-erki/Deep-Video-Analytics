@@ -172,9 +172,10 @@ class TEvent(models.Model):
     def finalize(self,bulk_create):
         created_regions = []
         ancestor_events = set()
-        self.results = {'created_objects':{}}
         if self.results:
             raise ValueError("Finalize should be only called once")
+        else:
+            self.results = {'created_objects': {}}
         if 'IndexEntries' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['IndexEntries']):

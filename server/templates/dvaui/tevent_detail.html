@@ -60,10 +60,8 @@
                                           contenteditable="false">{{ object.error_message }}</textarea>
                             </div>
                             {% if celery_task %}
-                                <div class="box-header with-border">
-                                    <h3>Exception</h3>
-                                </div>
-                                <div class="box-body">
+                                <div class="col-lg-12">
+                                <h4>Exception</h4>
                                 <textarea style="width: 90%;margin: auto;height: 100px;"
                                           class="textarea form-control disabled">{{ celery_task.traceback }}</textarea>
                                 </div>
