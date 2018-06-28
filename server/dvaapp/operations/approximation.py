@@ -58,7 +58,7 @@ class Approximators(object):
         return Approximators._index_approximator[di.pk]
 
     @classmethod
-    def approximate_queryset(cls,approx,da,queryset,event_id):
+    def approximate_queryset(cls,approx,da,queryset,event):
         new_approx_indexes = []
         for index_entry in queryset:
             uid = str(uuid.uuid1()).replace('-', '_')
@@ -91,6 +91,6 @@ class Approximators(object):
             approx_ind.target = index_entry.target
             approx_ind.video_id = index_entry.video_id
             approx_ind.algorithm = da.name
-            approx_ind.event_id = event_id
+            approx_ind.event_id = event.pk
             new_approx_indexes.append(approx_ind)
-        IndexEntries.objects.bulk_create(new_approx_indexes, batch_size=100)
+        event.finalize({'IndexEntries':new_approx_indexes})

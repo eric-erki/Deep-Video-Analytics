@@ -167,10 +167,22 @@ class TEvent(models.Model):
     parent_process = models.ForeignKey(DVAPQL, null=True)
     imported = models.BooleanField(default=False)
     task_group_id = models.IntegerField(default=-1)
+    results = JSONField(blank=True, null=True)
 
     def finalize(self,bulk_create):
         created_regions = []
-        created_tubes = []
+        ancestor_events = set()
+        self.results = {'created_objects':{}}
+        if self.results:
+            raise ValueError("Finalize should be only called once")
+        if 'IndexEntries' in bulk_create:
+            temp = []
+            for i, d in enumerate(bulk_create['IndexEntries']):
+                d.per_event_index = i
+                d.id = '{}_{}'.format(self.id.hex, i)
+                temp.append(d)
+            created_index_entries = IndexEntries.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['IndexEntries'] = len(created_index_entries)
         if 'Region' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['Region']):
@@ -178,6 +190,7 @@ class TEvent(models.Model):
                 d.id = '{}_{}'.format(self.id.hex, i)
                 temp.append(d)
             created_regions = Region.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['Region'] = len(created_regions)
         if 'Tube' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['Tube']):
@@ -185,6 +198,7 @@ class TEvent(models.Model):
                 d.id = '{}_{}'.format(self.id.hex, i)
                 temp.append(d)
             created_tubes = Tube.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['Tube'] = len(created_tubes)
         if 'RegionRelation' in bulk_create:
             temp = []
             for i, d_value_map in enumerate(bulk_create['RegionRelation']):
@@ -193,23 +207,32 @@ class TEvent(models.Model):
                     d.source_region_id = created_regions[value_map['source_region_id']].id
                 if 'target_region_id' in value_map:
                     d.target_region_id = created_regions[value_map['target_region_id']].id
+                ancestor_events.add(d.source_region_id.split('_')[0])
+                ancestor_events.add(d.target_region_id.split('_')[0])
                 d.per_event_index = i
                 temp.append(d)
             RegionRelation.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['RegionRelation'] = len(temp)
         if 'TubeRelation' in bulk_create:
             temp = []
             for i, d_value_map in enumerate(bulk_create['TubeRelation']):
                 d, value_map = d_value_map
                 d.per_event_index = i
                 temp.append(d)
+                ancestor_events.add(d.source_tube_id.split('_')[0])
+                ancestor_events.add(d.target_tube_id.split('_')[0])
             TubeRelation.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['TubeRelation'] = len(temp)
         if 'TubeRegionRelation' in bulk_create:
             temp = []
             for i, d_value_map in enumerate(bulk_create['TubeRegionRelation']):
                 d, value_map = d_value_map
                 d.per_event_index = i
                 temp.append(d)
+                ancestor_events.add(d.tube_id.split('_')[0])
+                ancestor_events.add(d.region_id.split('_')[0])
             TubeRegionRelation.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['TubeRegionRelation'] = len(temp)
         if 'HyperRegionRelation' in bulk_create:
             temp = []
             for i, d_value_map in enumerate(bulk_create['HyperRegionRelation']):
@@ -221,14 +244,21 @@ class TEvent(models.Model):
                         raise ValueError(d_value_map)
                 d.per_event_index = i
                 temp.append(d)
+                ancestor_events.add(d.region_id.split('_')[0])
             HyperRegionRelation.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['HyperRegionRelation'] = len(temp)
         if 'HyperTubeRegionRelation' in bulk_create:
             temp = []
             for i, d_value_map in enumerate(bulk_create['HyperTubeRegionRelation']):
                 d, value_map = d_value_map
                 d.per_event_index = i
                 temp.append(d)
+                ancestor_events.add(d.tube_id.split('_')[0])
+                ancestor_events.add(d.region_id.split('_')[0])
             HyperTubeRegionRelation.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['HyperTubeRegionRelation'] = len(temp)
+        ancestor_events.discard(self.pk) # Remove self from ancestors.
+        self.results['ancestors'] = list(ancestor_events)
 
 
 class TrainedModel(models.Model):
@@ -279,9 +309,6 @@ class TrainedModel(models.Model):
     training_set = models.ForeignKey(TrainingSet, null=True)
     url = models.CharField(max_length=200, default="")
     files = JSONField(null=True, blank=True)
-    produces_labels = models.BooleanField(default=False)
-    produces_json = models.BooleanField(default=False)
-    produces_text = models.BooleanField(default=False)
     # Following allows us to have a hierarchy of models (E.g. inception pretrained -> inception fine tuned)
     parent = models.ForeignKey('self', null=True)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -593,6 +620,7 @@ class QueryResults(models.Model):
 
 
 class IndexEntries(models.Model):
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     features_file_name = models.CharField(max_length=100)
     entries = JSONField(blank=True, null=True)
@@ -604,6 +632,7 @@ class IndexEntries(models.Model):
     count = models.IntegerField()
     approximate = models.BooleanField(default=False)
     created = models.DateTimeField('date created', auto_now_add=True)
+    per_event_index = models.IntegerField()
     event = models.ForeignKey(TEvent)
 
     def __unicode__(self):
@@ -663,6 +692,7 @@ class RegionRelation(models.Model):
     """
     Captures relations between Regions within a video/dataset.
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     source_region = models.ForeignKey(Region, related_name='source_region')
     target_region = models.ForeignKey(Region, related_name='target_region')
@@ -682,6 +712,7 @@ class HyperRegionRelation(models.Model):
     HyperRegionRelation is an equivalent of anchor tags / hyperlinks.
     e.g. Region -> http://http://akshaybhat.com/static/img/akshay.jpg
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     region = models.ForeignKey(Region)
     event = models.ForeignKey(TEvent)
@@ -709,6 +740,7 @@ class HyperTubeRegionRelation(models.Model):
     HyperTubeRegionRelation is an equivalent of anchor tags / hyperlinks.
     e.g. Tube -> http://http://akshaybhat.com/static/img/akshay.jpg
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     tube = models.ForeignKey(Tube)
     event = models.ForeignKey(TEvent)
@@ -734,6 +766,7 @@ class TubeRelation(models.Model):
     """
     Captures relations between Tubes within a video/dataset.
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     source_tube = models.ForeignKey(Tube, related_name='source_tube')
     target_tube = models.ForeignKey(Tube, related_name='target_tube')
@@ -751,6 +784,7 @@ class TubeRegionRelation(models.Model):
     """
     Captures relations between Tube and Region within a video/dataset.
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     tube = models.ForeignKey(Tube)
     region = models.ForeignKey(Region)

@@ -59,8 +59,9 @@ class Indexers(object):
         return Indexers._visual_indexer[di.pk]
 
     @classmethod
-    def index_queryset(cls,di,visual_index,event,target,queryset, cloud_paths=False):
+    def index_queryset(cls,di,visual_index,event,target, queryset, cloud_paths=False):
         visual_index.load()
+        index_entries = []
         temp_root = tempfile.mkdtemp()
         entries, paths, images = [], [], {}
         for i, df in enumerate(queryset):
@@ -114,4 +115,5 @@ class Indexers(object):
             i.features_file_name = feat_fname.split('/')[-1]
             i.event_id = event.pk
             i.source_filter_json = event.arguments
-            i.save()
+            index_entries.append(i)
+        event.finalize({'IndexEntries':index_entries})

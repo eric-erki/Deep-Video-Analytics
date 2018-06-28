@@ -69,7 +69,7 @@ def handle_perform_index_approximation(start):
         raise ValueError("Could not find approximator {}".format(args))
     if args['target'] == 'index_entries':
         queryset, target = task_shared.build_queryset(args, start.video_id, start.parent_process_id)
-        approximation.Approximators.approximate_queryset(approx, da, queryset, start.pk)
+        approximation.Approximators.approximate_queryset(approx, da, queryset, start)
     else:
         raise ValueError("Target {} not allowed, only index_entries are allowed".format(args['target']))
     return True
