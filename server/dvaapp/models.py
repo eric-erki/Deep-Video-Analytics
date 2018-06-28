@@ -210,6 +210,7 @@ class TEvent(models.Model):
                     d.target_region_id = created_regions[value_map['target_region_id']].id
                 ancestor_events.add(d.source_region_id.split('_')[0])
                 ancestor_events.add(d.target_region_id.split('_')[0])
+                d.id = '{}_{}'.format(self.id.hex, i)
                 d.per_event_index = i
                 temp.append(d)
             RegionRelation.objects.bulk_create(temp, batch_size=1000)
