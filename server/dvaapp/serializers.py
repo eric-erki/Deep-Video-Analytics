@@ -369,6 +369,7 @@ def import_region_json(r, frame_index, video_id, event_id,  segment_index=None):
 def create_event(e, v):
     de = TEvent()
     de.imported = True
+    de.results = e.get('results', None)
     de.started = e.get('started', False)
     de.start_ts = e.get('start_ts', None)
     de.completed = e.get('completed', False)
@@ -491,6 +492,8 @@ class VideoImporter(object):
         for i in self.json['index_entries_list']:
             di = IndexEntries()
             di.video = self.video
+            di.id = i['id']
+            di.per_event_index = i.per_event_index
             di.algorithm = i['algorithm']
             # defaults only for backward compatibility
             if 'indexer_shasum' in i:
