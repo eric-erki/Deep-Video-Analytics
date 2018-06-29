@@ -493,7 +493,7 @@ class VideoImporter(object):
             di = IndexEntries()
             di.video = self.video
             di.id = i['id']
-            di.per_event_index = i.per_event_index
+            di.per_event_index = i['per_event_index']
             di.algorithm = i['algorithm']
             # defaults only for backward compatibility
             if 'indexer_shasum' in i:
