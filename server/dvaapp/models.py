@@ -169,7 +169,7 @@ class TEvent(models.Model):
     task_group_id = models.IntegerField(default=-1)
     results = JSONField(blank=True, null=True)
 
-    def finalize(self,bulk_create,results):
+    def finalize(self,bulk_create,results=None):
         created_regions = []
         ancestor_events = set()
         if self.results:
@@ -264,7 +264,8 @@ class TEvent(models.Model):
             self.results['created_objects']['HyperTubeRegionRelation'] = len(temp)
         ancestor_events.discard(self.pk) # Remove self from ancestors.
         self.results['ancestors'] = list(ancestor_events)
-        self.results.update(results)
+        if results:
+            self.results.update(results)
 
 
 class TrainedModel(models.Model):
