@@ -371,7 +371,7 @@ def import_region_json(r, frame_index, video_id, event_id, segment_index=None):
 def create_event(e, v):
     de = TEvent()
     de.imported = True
-    e.id = e['id']  # id is a uuid
+    de.id = e['id']  # id is a uuid
     de.results = e.get('results', None)
     de.started = e.get('started', False)
     de.start_ts = e.get('start_ts', None)
@@ -395,12 +395,7 @@ class VideoImporter(object):
         self.video = video
         self.json = video_json
         self.root = root_dir
-        self.region_to_pk = {}
-        self.region_relation_to_pk = {}
         self.frame_to_pk = {}
-        self.segment_to_pk = {}
-        self.label_to_pk = {}
-        self.tube_to_pk = {}
         self.name_to_shasum = {'inception': '48b026cf77dfbd5d9841cca3ee550ef0ee5a0751',
                                'facenet': '9f99caccbc75dcee8cb0a55a0551d7c5cb8a6836',
                                'vgg': '52723231e796dd06fafd190957c8a3b5a69e009c'}
@@ -425,7 +420,6 @@ class VideoImporter(object):
         self.import_events(self.json.get('event_list', []))
         self.import_segments()
         self.bulk_import_frames()
-        self.convert_regions_files()
 
     def import_segments(self):
         old_ids = []
@@ -433,9 +427,7 @@ class VideoImporter(object):
         for s in self.json.get('segment_list', []):
             old_ids.append(s['id'])
             segments.append(self.create_segment(s))
-        segment_ids = Segment.objects.bulk_create(segments, 1000)
-        for i, k in enumerate(segment_ids):
-            self.segment_to_pk[old_ids[i]] = k.id
+        Segment.objects.bulk_create(segments, 1000)
 
     def create_segment(self, s):
         ds = Segment()
@@ -473,22 +465,6 @@ class VideoImporter(object):
                 ce.parent_id = parent_id
                 ce.save()
 
-    def convert_regions_files(self):
-        convert_list = []
-        for k, v in self.region_to_pk.iteritems():
-            dd = Region.objects.get(pk=v)
-            original = '{}/{}/{}.jpg'.format(self.root, 'regions', k)
-            temp_file = "{}/regions/d_{}.jpg".format(self.root, v)
-            converted = "{}/regions/{}.jpg".format(self.root, v)
-            if os.path.isfile(original):
-                try:
-                    os.rename(original, temp_file)
-                    convert_list.append((temp_file, converted))
-                except:
-                    raise ValueError("could not copy {} to {}".format(original, temp_file))
-        for temp_file, converted in convert_list:
-            os.rename(temp_file, converted)
-
     def bulk_import_index_entries(self, index_entries_list_json):
         for i in index_entries_list_json:
             di = IndexEntries()
@@ -512,7 +488,7 @@ class VideoImporter(object):
             transformed = []
             for entry in entries:
                 if 'detection_primary_key' in entry:
-                    entry['detection_primary_key'] = self.region_to_pk[entry['detection_primary_key']]
+                    entry['detection_primary_key'] = entry['detection_primary_key']
                 if 'frame_primary_key' in entry:
                     entry['frame_primary_key'] = self.frame_to_pk[entry['frame_primary_key']]
                 transformed.append(entry)
@@ -536,9 +512,7 @@ class VideoImporter(object):
             ra = self.create_region(a)
             regions.append(ra)
             region_index_to_fid[i] = a['id']
-        bulk_regions = Region.objects.bulk_create(regions)
-        for i, k in enumerate(bulk_regions):
-            self.region_to_pk[region_index_to_fid[i]] = k.id
+        Region.objects.bulk_create(regions)
 
     def bulk_import_region_relations(self, region_relation_list_json):
         region_relations = []
@@ -546,9 +520,7 @@ class VideoImporter(object):
         for i, f in enumerate(region_relation_list_json):
             region_relations.append(self.create_region_relation(f))
             region_relations_index_to_fid[i] = f['id']
-        bulk_rr = RegionRelation.objects.bulk_create(region_relations)
-        for i, k in enumerate(bulk_rr):
-            self.region_relation_to_pk[region_relations_index_to_fid[i]] = k.id
+        RegionRelation.objects.bulk_create(region_relations)
 
     def create_region(self, a):
         da = Region()
