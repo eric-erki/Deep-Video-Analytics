@@ -181,7 +181,10 @@ class FaissFlatRetriever(BaseRetriever):
         dist, ids = self.faiss_index.search(vector, n)
         for i, k in enumerate(ids[0]):
             temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
-            temp.update(self.files[k])
+            if k in self.files:
+                temp.update(self.files[k])
+            else:
+                raise ValueError("Retrieval error {}".format((i,k,self.files)))
             results.append(temp)
         return results
 
