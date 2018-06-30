@@ -212,14 +212,6 @@ class TaskExportSerializer(serializers.ModelSerializer):
                   'training_set', 'imported', 'query_results', 'query_regions', 'id')
 
 
-class TEventSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
-    class Meta:
-        model = TEvent
-        fields = '__all__'
-
-
 class IndexEntriesSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
 
@@ -310,23 +302,33 @@ class DVAPQLSerializer(serializers.HyperlinkedModelSerializer):
                   'results_metadata', 'results_available', 'completed', 'id')
 
 
-class VideoExportSerializer(serializers.ModelSerializer):
-    frame_list = FrameExportSerializer(source='frame_set', read_only=True, many=True)
+class TEventSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.ReadOnlyField()
     region_list = RegionExportSerializer(source='region_set', read_only=True, many=True)
     hyper_region_relation_list = HyperRegionRelationExportSerializer(source='hyperregionrelation_set',
                                                                      read_only=True, many=True)
-    segment_list = SegmentExportSerializer(source='segment_set', read_only=True, many=True)
     index_entries_list = IndexEntryExportSerializer(source='indexentries_set', read_only=True, many=True)
-    event_list = TEventExportSerializer(source='tevent_set', read_only=True, many=True)
     tube_list = TubeExportSerializer(source='tube_set', read_only=True, many=True)
     region_relation_list = RegionRelationExportSerializer(source='regionrelation_set', read_only=True, many=True)
+
+    class Meta:
+        model = TEvent
+        fields = ('id', 'started', 'completed', 'errored', 'error_message', 'operation', 'queue', 'created',
+                  'start_ts', 'duration', 'arguments', 'task_id', 'parent', 'parent_process', 'task_group_id',
+                  'results', 'region_list', 'hyper_region_relation_list', 'index_entries_list',
+                  'tube_list', 'region_relation_list')
+
+
+class VideoExportSerializer(serializers.ModelSerializer):
+    frame_list = FrameExportSerializer(source='frame_set', read_only=True, many=True)
+    segment_list = SegmentExportSerializer(source='segment_set', read_only=True, many=True)
+    event_list = TEventExportSerializer(source='tevent_set', read_only=True, many=True)
 
     class Meta:
         model = Video
         fields = ('name', 'length_in_seconds', 'height', 'width', 'metadata', 'frames', 'created', 'description',
                   'uploaded', 'dataset', 'uploader', 'segments', 'url', 'frame_list', 'segment_list',
-                  'event_list', 'tube_list', 'index_entries_list', 'region_relation_list', "stream", 'region_list',
-                  'hyper_region_relation_list')
+                  'event_list', "stream")
 
 
 def import_frame_json(f, frame_index, event_id, video_id, w, h):
@@ -343,7 +345,7 @@ def import_frame_json(f, frame_index, event_id, video_id, w, h):
     return df, regions
 
 
-def import_region_json(r, frame_index, video_id, event_id,  segment_index=None):
+def import_region_json(r, frame_index, video_id, event_id, segment_index=None):
     dr = Region()
     dr.frame_index = frame_index
     dr.video_id = video_id
@@ -369,6 +371,7 @@ def import_region_json(r, frame_index, video_id, event_id,  segment_index=None):
 def create_event(e, v):
     de = TEvent()
     de.imported = True
+    e.id = e['id']  # id is a uuid
     de.results = e.get('results', None)
     de.started = e.get('started', False)
     de.start_ts = e.get('start_ts', None)
@@ -395,7 +398,6 @@ class VideoImporter(object):
         self.region_to_pk = {}
         self.region_relation_to_pk = {}
         self.frame_to_pk = {}
-        self.event_to_pk = {}
         self.segment_to_pk = {}
         self.label_to_pk = {}
         self.tube_to_pk = {}
@@ -420,13 +422,10 @@ class VideoImporter(object):
             old_video_path = [fname for fname in glob.glob("{}/video/*.mp4".format(self.root))][0]
             new_video_path = "{}/video/{}.mp4".format(self.root, self.video.pk)
             os.rename(old_video_path, new_video_path)
-        self.import_events()
+        self.import_events(self.json.get('event_list', []))
         self.import_segments()
         self.bulk_import_frames()
-        self.bulk_import_regions()
         self.convert_regions_files()
-        self.import_index_entries()
-        self.bulk_import_region_relations()
 
     def import_segments(self):
         old_ids = []
@@ -446,28 +445,31 @@ class VideoImporter(object):
         ds.framelist = s.get('framelist', {})
         ds.end_time = s.get('end_time', 0)
         ds.metadata = s.get('metadata', "")
-        if s.get('event', None):
-            ds.event_id = self.event_to_pk[s['event']]
+        ds.event_id = s['event']
         ds.frame_count = s.get('frame_count', 0)
         ds.start_index = s.get('start_index', 0)
         return ds
 
-    def import_events(self):
+    def import_events(self, event_list_json):
         old_ids = []
         children_ids = defaultdict(list)
         events = []
-        for e in self.json.get('event_list', []):
+        for e in event_list_json:
             old_ids.append(e['id'])
             if 'parent' in e:
                 children_ids[e['parent']].append(e['id'])
             events.append(create_event(e, self.video))
         event_ids = TEvent.objects.bulk_create(events, 1000)
-        for i, k in enumerate(event_ids):
-            self.event_to_pk[old_ids[i]] = k.id
+        for ej in event_list_json:
+            self.bulk_import_regions(ej.get('region_list', []))
+        for ej in event_list_json:
+            self.bulk_import_region_relations(ej.get('region_relation_list', []))
+        for ej in event_list_json:
+            self.bulk_import_index_entries(ej.get('index_entries_list', []))
         for old_id in old_ids:
-            parent_id = self.event_to_pk[old_id]
+            parent_id = old_id
             for child_old_id in children_ids[old_id]:
-                ce = TEvent.objects.get(pk=self.event_to_pk[child_old_id])
+                ce = TEvent.objects.get(pk=child_old_id)
                 ce.parent_id = parent_id
                 ce.save()
 
@@ -487,9 +489,8 @@ class VideoImporter(object):
         for temp_file, converted in convert_list:
             os.rename(temp_file, converted)
 
-    def import_index_entries(self):
-        # previous_transformed = set()
-        for i in self.json['index_entries_list']:
+    def bulk_import_index_entries(self, index_entries_list_json):
+        for i in index_entries_list_json:
             di = IndexEntries()
             di.video = self.video
             di.id = i['id']
@@ -500,7 +501,7 @@ class VideoImporter(object):
             di.count = i['count']
             di.approximate = i['approximate']
             di.created = i['created']
-            di.event_id = self.event_to_pk[i['event']]
+            di.event_id = i['event']
             di.features_file_name = i['features_file_name']
             if 'entries_file_name' in i:
                 entries = json.load(file('{}/indexes/{}'.format(self.root, i['entries_file_name'])))
@@ -524,16 +525,14 @@ class VideoImporter(object):
         for i, f in enumerate(self.json['frame_list']):
             frames.append(self.create_frame(f))
             frame_index_to_fid[i] = f['id']
-            if 'region_list' in f:
-                raise NotImplementedError, "Older format with nested region list no longer supported"
         bulk_frames = Frame.objects.bulk_create(frames)
         for i, k in enumerate(bulk_frames):
             self.frame_to_pk[frame_index_to_fid[i]] = k.id
 
-    def bulk_import_regions(self):
+    def bulk_import_regions(self, region_list_json):
         regions = []
         region_index_to_fid = {}
-        for i, a in enumerate(self.json['region_list']):
+        for i, a in enumerate(region_list_json):
             ra = self.create_region(a)
             regions.append(ra)
             region_index_to_fid[i] = a['id']
@@ -541,16 +540,15 @@ class VideoImporter(object):
         for i, k in enumerate(bulk_regions):
             self.region_to_pk[region_index_to_fid[i]] = k.id
 
-    def bulk_import_region_relations(self):
+    def bulk_import_region_relations(self, region_relation_list_json):
         region_relations = []
         region_relations_index_to_fid = {}
-        if 'region_relation_list' in self.json:
-            for i, f in enumerate(self.json['region_relation_list']):
-                region_relations.append(self.create_region_relation(f))
-                region_relations_index_to_fid[i] = f['id']
-            bulk_rr = RegionRelation.objects.bulk_create(region_relations)
-            for i, k in enumerate(bulk_rr):
-                self.region_relation_to_pk[region_relations_index_to_fid[i]] = k.id
+        for i, f in enumerate(region_relation_list_json):
+            region_relations.append(self.create_region_relation(f))
+            region_relations_index_to_fid[i] = f['id']
+        bulk_rr = RegionRelation.objects.bulk_create(region_relations)
+        for i, k in enumerate(bulk_rr):
+            self.region_relation_to_pk[region_relations_index_to_fid[i]] = k.id
 
     def create_region(self, a):
         da = Region()
@@ -567,8 +565,8 @@ class VideoImporter(object):
         da.confidence = a['confidence']
         da.object_name = a['object_name']
         da.full_frame = a['full_frame']
-        da.event_id = self.event_to_pk[a['event']]
-        da.id = '{}_{}'.format(da.event_id,da.per_event_index)
+        da.event_id = a['event']
+        da.id = '{}_{}'.format(da.event_id, da.per_event_index)
         da.frame_index = a['frame_index']
         da.segment_index = a.get('segment_index', -1)
         return da
@@ -583,7 +581,7 @@ class VideoImporter(object):
         if 'name' in a:
             da.name = a['name']
         if a.get('event', None):
-            da.event_id = self.event_to_pk[a['event']]
+            da.event_id = a['event']
         da.source_region_id = self.region_to_pk[a['source_region']]
         da.target_region_id = self.region_to_pk[a['target_region']]
         return da
@@ -596,11 +594,7 @@ class VideoImporter(object):
         df.h = f.get('h', 0)
         df.w = f.get('w', 0)
         df.t = f.get('t', 0)
-        df.event_id = self.event_to_pk[f['event']]
+        df.event_id = f['event']
         df.segment_index = f.get('segment_index', 0)
         df.keyframe = f.get('keyframe', False)
         return df
-
-    def import_tubes(self, tubes, video_obj):
-        # TODO: Implement this
-        raise NotImplementedError
