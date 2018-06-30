@@ -495,15 +495,8 @@ class VideoImporter(object):
             di.id = i['id']
             di.per_event_index = i['per_event_index']
             di.algorithm = i['algorithm']
-            # defaults only for backward compatibility
-            if 'indexer_shasum' in i:
-                di.indexer_shasum = i['indexer_shasum']
-            elif i['algorithm'] in self.name_to_shasum:
-                di.indexer_shasum = self.name_to_shasum[i['algorithm']]
-            else:
-                di.indexer_shasum = 'UNKNOWN'
-            if 'approximator_shasum' in i:
-                di.approximator_shasum = i['approximator_shasum']
+            di.indexer_shasum = i['indexer_shasum']
+            di.approximator_shasum = i['approximator_shasum']
             di.count = i['count']
             di.approximate = i['approximate']
             di.created = i['created']

@@ -125,10 +125,12 @@ class Retrievers(object):
                 qr.detection = dd
                 qr.frame_index = dd.frame_index
                 qr.video_id = dd.video_id
-            else:
+            elif 'frame_primary_key' in r:
                 dd = Frame.objects.get(pk=r['frame_primary_key'])
                 qr.frame_index = dd.frame_index
                 qr.video_id = dd.video_id
+            else:
+                raise ValueError("No key found {}".format(r))
             qr.algorithm = dr.algorithm
             qr.rank = r.get('rank', rank)
             qr.distance = r.get('dist', rank)
