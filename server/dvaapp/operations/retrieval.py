@@ -9,7 +9,7 @@ except ImportError:
     np = None
     logging.warning("Could not import indexer / clustering assuming running in front-end mode")
 
-from ..models import IndexEntries, QueryResults, Region, Retriever, Frame
+from ..models import IndexEntries, QueryResult, Region, Retriever, Frame
 
 
 class Retrievers(object):
@@ -112,11 +112,10 @@ class Retrievers(object):
     def retrieve(cls, event, retriever_pk, vector, count, region_pk=None):
         index_retriever, dr = cls.get_retriever(retriever_pk)
         cls.refresh_index(dr)
-        # TODO: figure out a better way to store numpy arrays
         results = index_retriever.nearest(vector=vector, n=count)
-        # TODO: optimize this using batching
+        qr_batch = []
         for rank, r in enumerate(results):
-            qr = QueryResults()
+            qr = QueryResult()
             if region_pk:
                 qr.query_region_id = region_pk
             qr.query = event.parent_process
@@ -133,7 +132,8 @@ class Retrievers(object):
             qr.algorithm = dr.algorithm
             qr.rank = r.get('rank', rank)
             qr.distance = r.get('dist', rank)
-            qr.save()
+            qr_batch.append(qr)
+        event.finalize({"QueryResult":qr_batch},results={"retriever_state":{"entries":len(index_retriever.entries)}})
         event.parent_process.results_available = True
         event.parent_process.save()
         return 0

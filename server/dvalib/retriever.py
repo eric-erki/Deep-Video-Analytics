@@ -134,9 +134,10 @@ class FaissApproximateRetriever(BaseRetriever):
         results = []
         dist, ids = self.faiss_index.search(vector, n)
         for i, k in enumerate(ids[0]):
-            temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
-            temp.update(self.files[k])
-            results.append(temp)
+            if k >= 0:
+                temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
+                temp.update(self.files[k])
+                results.append(temp)
         return results
 
     def nearest_batch(self, vectors=None, n=12, nprobe=16):
@@ -148,9 +149,10 @@ class FaissApproximateRetriever(BaseRetriever):
         results = defaultdict(list)
         for vindex in range(ids.shape[0]):
             for i, k in enumerate(ids[vindex]):
-                temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[vindex, i])}
-                temp.update(self.files[k])
-                results[vindex].append(temp)
+                if k >= 0:
+                    temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[vindex, i])}
+                    temp.update(self.files[k])
+                    results[vindex].append(temp)
         return results
 
 
@@ -181,10 +183,8 @@ class FaissFlatRetriever(BaseRetriever):
         dist, ids = self.faiss_index.search(vector, n)
         for i, k in enumerate(ids[0]):
             temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
-            if k in self.files:
+            if k >= 0:
                 temp.update(self.files[k])
-            else:
-                raise ValueError("Retrieval error {}".format((i,k,list(enumerate(ids[0])),self.files)))
             results.append(temp)
         return results
 
@@ -196,7 +196,8 @@ class FaissFlatRetriever(BaseRetriever):
         results = defaultdict(list)
         for vindex in range(ids.shape[0]):
             for i, k in enumerate(ids[vindex]):
-                temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[vindex, i])}
-                temp.update(self.files[k])
-                results[vindex].append(temp)
+                if k >= 0:
+                    temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[vindex, i])}
+                    temp.update(self.files[k])
+                    results[vindex].append(temp)
         return results

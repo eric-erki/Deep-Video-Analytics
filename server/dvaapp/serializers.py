@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from models import Video, Frame, Region, DVAPQL, QueryResults, TEvent, IndexEntries, Tube, Segment, TrainedModel, \
+from models import Video, Frame, Region, DVAPQL, QueryResult, TEvent, IndexEntries, Tube, Segment, TrainedModel, \
     Retriever, SystemState, QueryRegion, Worker, TrainingSet, RegionRelation, TubeRegionRelation, TubeRelation, \
     Export, HyperRegionRelation, HyperTubeRegionRelation
 import os, json, glob
@@ -179,7 +179,7 @@ class QueryResultsSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
 
     class Meta:
-        model = QueryResults
+        model = QueryResult
         fields = '__all__'
 
 
@@ -187,7 +187,7 @@ class QueryResultsExportSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
 
     class Meta:
-        model = QueryResults
+        model = QueryResult
         fields = '__all__'
 
 

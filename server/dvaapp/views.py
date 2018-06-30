@@ -1,6 +1,6 @@
 from django.conf import settings
 import json
-from .models import Video, Frame, DVAPQL, QueryResults, TEvent, IndexEntries, Region, Tube, Segment, \
+from .models import Video, Frame, DVAPQL, QueryResult, TEvent, IndexEntries, Region, Tube, Segment, \
     TubeRegionRelation, TubeRelation, Retriever, SystemState, QueryRegion, \
     TrainedModel, Worker, TrainingSet, RegionRelation, Export, HyperRegionRelation, HyperTubeRegionRelation
 import serializers
@@ -124,7 +124,7 @@ class DVAPQLViewSet(viewsets.ModelViewSet):
 
 class QueryResultsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
-    queryset = QueryResults.objects.all()
+    queryset = QueryResult.objects.all()
     serializer_class = serializers.QueryResultsSerializer
     filter_fields = ('query',)
 

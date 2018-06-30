@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Video, Frame, TEvent, IndexEntries, QueryResults, DVAPQL, Region, Tube, Segment, DeletedVideo, \
+from .models import Video, Frame, TEvent, IndexEntries, QueryResult, DVAPQL, Region, Tube, Segment, DeletedVideo, \
     ManagementAction, TrainedModel, Retriever, SystemState, Worker, QueryRegion, TrainingSet, Export, TaskRestart, \
     RegionRelation, TubeRelation, TubeRegionRelation, HyperRegionRelation, HyperTubeRegionRelation
 
@@ -69,7 +69,7 @@ class DeletedVideoAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(QueryResults)
+@admin.register(QueryResult)
 class QueryResultsAdmin(admin.ModelAdmin):
     pass
 
