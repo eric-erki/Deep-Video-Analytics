@@ -51,19 +51,16 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <h4>Arguments</h4>
-                                <textarea rows="5" style="width:90%;margin: auto"
-                                          contenteditable="false">{{ object.arguments }}</textarea>
+                                <textarea rows="5" style="width:90%;margin: auto" contenteditable="false">{{ object.arguments }}</textarea>
                             </div>
                             <div class="col-lg-12">
                                 <h4>Error message</h4>
-                                <textarea rows="5" style="width:90%;margin: auto"
-                                          contenteditable="false">{{ object.error_message }}</textarea>
+                                <textarea rows="5" style="width:90%;margin: auto" contenteditable="false">{{ object.error_message }}</textarea>
                             </div>
                             {% if celery_task %}
                                 <div class="col-lg-12">
                                 <h4>Exception</h4>
-                                <textarea style="width: 90%;margin: auto;height: 100px;"
-                                          class="textarea form-control disabled">{{ celery_task.traceback }}</textarea>
+                                <textarea  style="width: 90%;margin: auto;height: 400px;" contenteditable="false">{{ celery_task.traceback }}</textarea>
                                 </div>
                             {% endif %}
                         </div>
