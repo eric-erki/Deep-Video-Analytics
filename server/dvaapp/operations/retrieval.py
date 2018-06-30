@@ -135,7 +135,7 @@ class Retrievers(object):
             qr.rank = r.get('rank', rank)
             qr.distance = r.get('dist', rank)
             qr_batch.append(qr)
-        event.finalize({"QueryResult":qr_batch},results={"retriever_state":{"entries":len(index_retriever.entries)}})
+        event.finalize({"QueryResult":qr_batch},results={"retriever_state":{"entries":len(index_retriever.findex)}})
         event.parent_process.results_available = True
         event.parent_process.save()
         return 0
