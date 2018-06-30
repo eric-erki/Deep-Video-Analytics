@@ -184,7 +184,7 @@ class FaissFlatRetriever(BaseRetriever):
             if k in self.files:
                 temp.update(self.files[k])
             else:
-                raise ValueError("Retrieval error {}".format((i,k,self.files)))
+                raise ValueError("Retrieval error {}".format((i,k,list(enumerate(ids[0])),self.files)))
             results.append(temp)
         return results
 
