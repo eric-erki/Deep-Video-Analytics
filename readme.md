@@ -16,31 +16,14 @@ locally (even without a GPU) using a single command.
 ### Experiments
 
 - **OCR example has been moved to [/docs/experiments/ocr](/docs/experiments/ocr) directory**.
-- More experiments coming soon!
-
-
-### Deployment
-
-We provide instructions for developing, testing and deploying DVA.
-
-0. [deploy/compose/dev](/deploy/compose/dev) contains docker-compose files for interactively developing DVA by using  host server directory mapped as a volume.
-
-1. [deploy/compose/test](/deploy/compose/test) contains docker-compose files for testing cloud filesystem (s3, gcs) support.
-
-2. [deploy/compose/cpu](/deploy/compose/cpu) contains docker-compose files for non-GPU single machine deployments on Linode, AWS, GCP etc.
-
-3. [deploy/compose/gpu](/deploy/compose/gpu) contains docker-compose files for GPU single machine deployments on GCP, AWS etc.
-
-4. [deploy/kube](/deploy/kube) contains files used for launching DVA in a scalable GKE + GCS setup, with and without GPUs.
-
 
 ### Code organization
 
 - /client : Python client using DVA REST API
-- /configs : ngnix config + defaults.py defining models + processing pipelines (can be replaced by mounting a volume)
+- /configs : ngnix config + default models + processing pipelines
 - /deploy : Dockerfiles + Instructions for development, single machine deployment and scalable deployment with Kubernetes
 - /docs : Documentation, tutorial and experiments
-- /tests : Files required for testing
+- /tests : Tests, Notebooks for interactive debugging andtest data
 - /repos : Code copied from third party repos, e.g. Yahoo LOPQ, TF-CTPN etc.
 - /server : dvalib + django server contains contains bulk of the code for UI, App and models.
 - /logs : Empty dir for storing logs
@@ -91,7 +74,6 @@ We provide instructions for developing, testing and deploying DVA.
 * Docker-compose
 * All packages in [requirements.txt](/requirements.txt)
 * All dependancies installed in [CPU Dockerfile](/deploy/dockerfiles/Dockerfile) & [GPU Dockerfile](/deploy/dockerfiles/Dockerfile.gpu)
-
 
 
 # License & Copyright

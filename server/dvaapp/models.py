@@ -171,6 +171,7 @@ class TEvent(models.Model):
 
     def finalize(self,bulk_create,results=None):
         created_regions = []
+        created_tubes = []
         ancestor_events = set()
         if self.results:
             raise ValueError("Finalize should be only called once")
@@ -233,6 +234,7 @@ class TEvent(models.Model):
             for i, d_value_map in enumerate(bulk_create['TubeRegionRelation']):
                 d, value_map = d_value_map
                 d.per_event_index = i
+                d.id = '{}_{}'.format(self.id.hex, i)
                 temp.append(d)
                 ancestor_events.add(d.tube_id.split('_')[0])
                 ancestor_events.add(d.region_id.split('_')[0])
@@ -248,6 +250,7 @@ class TEvent(models.Model):
                     if d.region_id is None:
                         raise ValueError(d_value_map)
                 d.per_event_index = i
+                d.id = '{}_{}'.format(self.id.hex, i)
                 temp.append(d)
                 ancestor_events.add(d.region_id.split('_')[0])
             HyperRegionRelation.objects.bulk_create(temp, batch_size=1000)
@@ -257,6 +260,12 @@ class TEvent(models.Model):
             for i, d_value_map in enumerate(bulk_create['HyperTubeRegionRelation']):
                 d, value_map = d_value_map
                 d.per_event_index = i
+                if 'tube_id' in value_map:
+                    d.tube_id = created_tubes[value_map['tube_id']].id
+                else:
+                    if d.tube_id is None:
+                        raise ValueError(d_value_map)
+                d.id = '{}_{}'.format(self.id.hex, i)
                 temp.append(d)
                 ancestor_events.add(d.tube_id.split('_')[0])
                 ancestor_events.add(d.region_id.split('_')[0])
