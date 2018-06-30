@@ -185,7 +185,7 @@ class FaissFlatRetriever(BaseRetriever):
             temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
             if k >= 0:
                 temp.update(self.files[k])
-            results.append(temp)
+                results.append(temp)
         return results
 
     def nearest_batch(self, vectors=None, n=12):
