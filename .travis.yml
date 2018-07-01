@@ -44,6 +44,8 @@ before_install:
   - pip install -q --no-cache-dir http://download.pytorch.org/whl/cpu/torch-0.3.1-cp27-cp27mu-linux_x86_64.whl
   - pip install -q torchvision
   - git clone https://github.com/DeepVideoAnalytics/faiss && cd faiss && mv example_makefiles/makefile.inc.Linux ./makefile.inc && make -j $(nproc) && make py && cd ..
+  - sudo curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+  - sudo chmod +x /usr/local/bin/docker-compose
 
 install: "pip install -q -r requirements.txt > /dev/null"
 
@@ -55,12 +57,14 @@ before_script:
   - export PYTHONPATH="${PYTHONPATH}:repos/tf_ctpn_cpu/"
   - cd repos/lopq/python && python setup.py install && cd ../../..
   - cd repos/tf_ctpn_cpu/lib/utils && ./make.sh && cd ../../../..
-  - cd server && python manage.py migrate && cd ..
+  - cd server && ./migrate.sh && cd ..
   - cd tests/data && wget --quiet https://www.dropbox.com/s/t4bgkh2w2ow8o10/WorldIsNotEnough.mp4 && cd ../..
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
   - cd server && python manage.py runserver 8000 &
+  - cp tests/data/test_config.json config.json
+
 
 script:
   - cd server && ./init_fs.py && cd ..
@@ -89,3 +93,7 @@ script:
   - wget --quiet localhost:8000/api/queryresults/
   - wget --quiet localhost:8000/api/indexentries/
   - wget --quiet localhost:8000/api/events/
+  - fuser -k 8000/tcp
+#  - ./dvactl start &
+#  - sleep 420 && docker logs webserver
+#  - ./dvactl clean

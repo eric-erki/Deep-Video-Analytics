@@ -2,10 +2,10 @@ from __future__ import print_function
 import numpy as np
 import os
 import tensorflow as tf
-from ..roi_data_layer.layer import RoIDataLayer
-from ..utils.timer import Timer
-from ..roi_data_layer import roidb as rdl_roidb
-from ..fast_rcnn.config import cfg
+from lib.roi_data_layer.layer import RoIDataLayer
+from lib.utils.timer import Timer
+from lib.roi_data_layer import roidb as rdl_roidb
+from lib.fast_rcnn.config import cfg
 
 _DEBUG = False
 
@@ -79,10 +79,11 @@ class SolverWrapper(object):
     def train_model(self, sess, max_iters, restore=False):
         """Network training loop."""
         data_layer = get_data_layer(self.roidb, self.imdb.num_classes)
-        total_loss, rpn_cross_entropy, rpn_loss_box=self.net.build_loss(ohem=cfg.TRAIN.OHEM)
+        total_loss,model_loss, rpn_cross_entropy, rpn_loss_box=self.net.build_loss(ohem=cfg.TRAIN.OHEM)
         # scalar summary
         tf.summary.scalar('rpn_reg_loss', rpn_loss_box)
         tf.summary.scalar('rpn_cls_loss', rpn_cross_entropy)
+        tf.summary.scalar('model_loss', model_loss)
         tf.summary.scalar('total_loss',total_loss)
         summary_op = tf.summary.merge_all()
 
@@ -120,7 +121,7 @@ class SolverWrapper(object):
                    'weights from {:s}').format(self.pretrained_model))
                 self.net.load(self.pretrained_model, sess, True)
             except:
-                raise 'Check your pretrained model {:s}'.format(self.pretrained_model)
+                raise Exception('Check your pretrained model {:s}'.format(self.pretrained_model))
 
         # resuming a trainer
         if restore:
@@ -137,7 +138,6 @@ class SolverWrapper(object):
 
         last_snapshot_iter = -1
         timer = Timer()
-        #tf.Graph.finalize(tf.get_default_graph())
         for iter in range(restore_iter, max_iters):
             timer.tic()
             # learning rate
@@ -157,11 +157,11 @@ class SolverWrapper(object):
                 self.net.dontcare_areas: blobs['dontcare_areas']
             }
             res_fetches=[]
-            fetch_list = [total_loss, rpn_cross_entropy, rpn_loss_box,
+            fetch_list = [total_loss,model_loss, rpn_cross_entropy, rpn_loss_box,
                           summary_op,
                           train_op] + res_fetches
 
-            total_loss_val, rpn_loss_cls_val, rpn_loss_box_val, \
+            total_loss_val,model_loss_val, rpn_loss_cls_val, rpn_loss_box_val, \
                 summary_str, _ = sess.run(fetches=fetch_list, feed_dict=feed_dict)
 
             self.writer.add_summary(summary=summary_str, global_step=global_step.eval())
@@ -170,8 +170,8 @@ class SolverWrapper(object):
 
 
             if (iter) % (cfg.TRAIN.DISPLAY) == 0:
-                print('iter: %d / %d, total loss: %.4f, rpn_loss_cls: %.4f, rpn_loss_box: %.4f, lr: %f'%\
-                        (iter, max_iters, total_loss_val,rpn_loss_cls_val,rpn_loss_box_val,lr.eval()))
+                print('iter: %d / %d, total loss: %.4f, model loss: %.4f, rpn_loss_cls: %.4f, rpn_loss_box: %.4f, lr: %f'%\
+                        (iter, max_iters, total_loss_val,model_loss_val,rpn_loss_cls_val,rpn_loss_box_val,lr.eval()))
                 print('speed: {:.3f}s / iter'.format(_diff_time))
 
             if (iter+1) % cfg.TRAIN.SNAPSHOT_ITERS == 0:

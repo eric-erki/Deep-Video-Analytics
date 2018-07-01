@@ -268,7 +268,9 @@ def create_annotation(form, object_name, labels, frame, user=None):
         annotation['metadata'] = json.loads(annotation['metadata'])
     else:
         annotation['metadata'] = None
-    annotation['frame_id'] = frame.pk
+    annotation['frame_index'] = frame.frame_index
+    annotation['segment_index'] = frame.segment_index
+    annotation['per_event_index'] = 0
     annotation['video_id'] = frame.video_id
     annotation['region_type'] = dvaapp.models.Region.ANNOTATION
     for lname in labels:
@@ -378,10 +380,10 @@ def collect(p):
     rids_to_names = {}
     for rd in dvaapp.models.QueryRegion.objects.filter(query=p.process):
         rd_json = get_query_region_json(rd)
-        for r in dvaapp.models.QueryResults.objects.filter(query=p.process, query_region=rd):
+        for r in dvaapp.models.QueryResult.objects.filter(query=p.process, query_region=rd):
             gather_results(r, rids_to_names, rd_json['results'])
         context['regions'].append(rd_json)
-    for r in dvaapp.models.QueryResults.objects.filter(query=p.process, query_region__isnull=True):
+    for r in dvaapp.models.QueryResult.objects.filter(query=p.process, query_region__isnull=True):
         gather_results(r, rids_to_names, context['results'])
     for k, v in context['results'].iteritems():
         if v:
@@ -401,35 +403,11 @@ def gather_results(r, rids_to_names, results):
 
 
 def get_url(r):
-    if r.detection_id:
-        dd = r.detection
-        frame_index = r.frame.frame_index
-        cached_region = fs.get_from_cache('/{}/regions/{}.jpg'.format(r.video_id, frame_index))
-        if cached_region:
-            if settings.DEBUG:
-                logging.info("Cache used for region!")
-            return "data:image/jpeg;base64, {}".format(base64.b64encode(cached_region))
-        if settings.ENABLE_CLOUDFS:
-            cached_frame = fs.get_from_cache('/{}/frames/{}.jpg'.format(r.video_id, frame_index))
-            if cached_frame:
-                if settings.DEBUG:
-                    logging.info("Cache used!")
-                content = cStringIO.StringIO(cached_frame)
-            else:
-                if settings.DEBUG:
-                    logging.info("Cache NOT used!")
-                frame_url = '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, frame_index)
-                response = requests.get(frame_url)
-                content = cStringIO.StringIO(response.content)
-            img = Image.open(content)
-        else:
-            img = Image.open('{}/{}/frames/{}.jpg'.format(settings.MEDIA_ROOT, r.video_id, frame_index))
-        cropped = img.crop((dd.x, dd.y, dd.x + dd.w, dd.y + dd.h))
-        ibuffer = cStringIO.StringIO()
-        cropped.save(ibuffer, format="JPEG")
-        return "data:image/jpeg;base64, {}".format(base64.b64encode(ibuffer.getvalue()))
+    if r.region:
+        region_path = r.region.crop_and_get_region_path({},settings.MEDIA_ROOT)
+        return "data:image/jpeg;base64, {}".format(base64.b64encode(file(region_path).read()))
     else:
-        return '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.frame.frame_index)
+        return '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.frame_index)
 
 
 def get_sequence_name(i, r):
@@ -437,8 +415,8 @@ def get_sequence_name(i, r):
 
 
 def get_result_json(r):
-    return dict(url=get_url(r), result_type="Region" if r.detection_id else "Frame", rank=r.rank, frame_id=r.frame_id,
-                frame_index=r.frame.frame_index, distance=r.distance, video_id=r.video_id, video_name=r.video.name)
+    return dict(url=get_url(r), result_type="Region" if r.region_id else "Frame", rank=r.rank,
+                frame_index=r.frame_index, distance=r.distance, video_id=r.video_id, video_name=r.video.name)
 
 
 def get_query_region_json(rd):

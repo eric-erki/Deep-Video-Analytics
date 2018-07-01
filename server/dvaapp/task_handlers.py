@@ -69,7 +69,7 @@ def handle_perform_index_approximation(start):
         raise ValueError("Could not find approximator {}".format(args))
     if args['target'] == 'index_entries':
         queryset, target = task_shared.build_queryset(args, start.video_id, start.parent_process_id)
-        approximation.Approximators.approximate_queryset(approx, da, queryset, start.pk)
+        approximation.Approximators.approximate_queryset(approx, da, queryset, start)
     else:
         raise ValueError("Target {} not allowed, only index_entries are allowed".format(args['target']))
     return True
@@ -111,15 +111,20 @@ def handle_perform_detection(start):
             else:
                 raise NotImplementedError("Invalid target:{}".format(target))
             frame_detections_list.append((k, detector.detect(local_path)))
+    per_event_counter = 0
     for df, detections in frame_detections_list:
         for d in detections:
-            dd = models.QueryRegion() if query_flow else models.Region()
+            if query_flow:
+                dd = models.QueryRegion()
+            else:
+                dd = models.Region()
+                dd.per_event_index = per_event_counter
+                per_event_counter += 1
             dd.region_type = models.Region.DETECTION
             if query_flow:
                 dd.query_id = start.parent_process_id
             else:
                 dd.video_id = dv.pk
-                dd.frame_id = df.pk
                 dd.frame_index = df.frame_index
                 dd.segment_index = df.segment_index
             if detector_name == 'textbox':
@@ -140,7 +145,7 @@ def handle_perform_detection(start):
     if query_flow:
         _ = models.QueryRegion.objects.bulk_create(dd_list, 1000)
     else:
-        _ = models.Region.objects.bulk_create(dd_list, 1000)
+        start.finalize({"Region": dd_list})
     return query_flow
 
 
@@ -154,6 +159,7 @@ def handle_perform_analysis(start):
         analysis.Analyzers.load_analyzer(da)
     analyzer = analysis.Analyzers._analyzers[analyzer_name]
     regions_batch = []
+    relations_batch = []
     queryset, target = task_shared.build_queryset(args, video_id, start.parent_process_id)
     query_path = None
     query_regions_paths = None
@@ -193,7 +199,6 @@ def handle_perform_analysis(start):
                 a.y = f.y
                 a.w = f.w
                 a.h = f.h
-                a.frame_id = f.frame.id
                 a.frame_index = f.frame_index
                 a.segment_index = f.segment_index
                 source_regions.append(f)
@@ -202,7 +207,6 @@ def handle_perform_analysis(start):
                 a.full_frame = True
                 a.frame_index = f.frame_index
                 a.segment_index = f.segment_index
-                a.frame_id = f.id
                 path = f.path()
             else:
                 raise NotImplementedError
@@ -216,13 +220,12 @@ def handle_perform_analysis(start):
     if query_regions_paths or query_path:
         models.QueryRegion.objects.bulk_create(regions_batch, 1000)
     else:
-        region_list = models.Region.objects.bulk_create(regions_batch, 1000)
-        relations = []
         if target == 'regions':
-            for i,k in enumerate(region_list):
-                relations.append(models.RegionRelation(source_region_id=source_regions[i].id,target_region_id=k.id,
-                                                       name='analysis', event_id=start.pk, video_id=start.video_id))
-            models.RegionRelation.objects.bulk_create(relations, 1000)
+            for i, k in enumerate(regions_batch):
+                dr = models.RegionRelation(source_region_id=source_regions[i].id, name='analysis', event_id=start.pk,
+                                           video_id=start.video_id)
+                relations_batch.append((dr, {'target_region_id': i}))
+        start.finalize({"Region": regions_batch, "RegionRelation": relations_batch})
 
 
 def handle_perform_matching(dt):
@@ -232,9 +235,9 @@ def handle_perform_matching(dt):
     indexer_shasum = args['indexer_shasum']
     approximator_shasum = args.get('approximator_shasum', None)
     match_self = args.get('match_self', False)
-    source_filters = args.get('source_filters', {'event__completed':True})
-    target_filters = args.get('target_filters', {'event__completed':True})
-    source_filters.update({'video_id':dt.video_id})
+    source_filters = args.get('source_filters', {'event__completed': True})
+    target_filters = args.get('target_filters', {'event__completed': True})
+    source_filters.update({'video_id': dt.video_id})
     source_filters.update({'indexer_shasum': indexer_shasum})
     target_filters.update({'indexer_shasum': indexer_shasum})
     if approximator_shasum:
@@ -245,6 +248,8 @@ def handle_perform_matching(dt):
         target_filters.update({'approximator_shasum': None})
     retriever = None
     relations = []
+    regions = []
+    region_count = 0
     if match_self:
         query_set = models.IndexEntries.objects.filter(**target_filters)
     else:
@@ -265,57 +270,64 @@ def handle_perform_matching(dt):
                 else:
                     components = mat.shape[1]
                     retriever = retrieval.retriever.FaissFlatRetriever("matcher", components=components)
-            retriever.load_index(mat,entries)
-    frame_to_region_id = {}
+            retriever.load_index(mat, entries, di.video_id, di.target)
+    frame_to_region_index = {}
     for di in models.IndexEntries.objects.filter(**source_filters):
         mat, entries = di.load_index()
         if entries:
             mat = np.atleast_2d(mat.squeeze())
             print mat.shape
-            results_batch = retriever.nearest_batch(mat,k)
-            for i,entry in enumerate(entries):
+            results_batch = retriever.nearest_batch(mat, k)
+            for i, entry in enumerate(entries):
                 results = results_batch[i]
                 if match_self:
                     pass
                 else:
-                    if 'detection_primary_key' in entry:
-                        region_id = entry['detection_primary_key']
-                    else:
-                        frame_id = entry['frame_primary_key']
-                        if frame_id not in frame_to_region_id:
+                    if entry['type'] == 'Frame':
+                        frame_id = entry['id']
+                        if frame_id not in frame_to_region_index:
                             df = models.Frame.objects.get(pk=frame_id)
-                            frame_to_region_id[frame_id] = models.Region.objects.create(frame_id=frame_id,
-                                                                                        video_id=video_id, x=0, y=0,
-                                                                                        event=dt, w=df.w, h=df.h,
-                                                                                        full_frame=True).pk
-                        region_id = frame_to_region_id[frame_id]
-
+                            regions.append(models.Region(video_id=video_id, x=0, y=0, event=dt, w=df.w, h=df.h,
+                                                         full_frame=True))
+                            frame_to_region_index[frame_id] = region_count
+                            region_count += 1
+                        region_id = None
+                        value_map = {'region_id': frame_to_region_index[entry['id']]}
+                    else:
+                        region_id = entry['id']
+                        value_map = {}
                     for result in results:
                         dr = models.HyperRegionRelation()
                         dr.video_id = video_id
                         dr.metadata = result
                         dr.region_id = region_id
-                        if 'detection_primary_key' in result:
-                            tdr = models.Region.objects.get(pk=result['detection_primary_key'])
+                        if result['type'] == 'Region':
+                            tdr = models.Region.objects.get(pk=result['id'])
                             dr.x = tdr.x
                             dr.y = tdr.y
                             dr.w = tdr.w
                             dr.h = tdr.h
                             dr.full_frame = tdr.full_frame
-                            dr.path = tdr.frame.global_path()
+                            dr.path = tdr.global_frame_path()
                             dr.metadata = tdr.metadata
                         else:
-                            tdf = models.Frame.objects.get(pk=result['frame_primary_key'])
+                            target_video = models.Video.objects.get(pk=result['video'])
                             dr.x = 0
                             dr.y = 0
-                            dr.w = tdf.w
-                            dr.h = tdf.h
                             dr.full_frame = True
-                            dr.path = tdf.global_path()
+                            if target_video.dataset:
+                                tdf = models.Frame.objects.get(video=target_video,frame_index=result['id'])
+                                dr.w = tdf.w
+                                dr.h = tdf.h
+                                dr.path = tdf.global_path()
+                            else:
+                                dr.w = target_video.width
+                                dr.h = target_video.height
+                                dr.path = "{}::{}".format(target_video.video.url, target_video.frame_index)
                         dr.weight = result['dist']
                         dr.event_id = dt.pk
-                        relations.append(dr)
+                        relations.append((dr, value_map))
     if match_self:
         pass
     else:
-        models.HyperRegionRelation.objects.bulk_create(relations,1000)
+        dt.finalize({'Region': regions, 'HyperRegionRelation': relations})

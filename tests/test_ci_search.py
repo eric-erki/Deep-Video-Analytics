@@ -4,7 +4,7 @@ sys.path.append('../server/')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dva.settings")
 django.setup()
 import base64
-from dvaapp.models import DVAPQL, Retriever, QueryResults
+from dvaapp.models import DVAPQL, Retriever, QueryResult
 from dvaapp.processing import DVAPQLProcess
 from django.conf import settings
 
@@ -47,4 +47,4 @@ if __name__ == '__main__':
     qp.create_from_json(query_dict)
     qp.launch()
     qp.wait_query(timeout=400)
-    print QueryResults.objects.count()
+    print QueryResult.objects.count()

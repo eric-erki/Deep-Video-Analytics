@@ -148,6 +148,7 @@ class Video(models.Model):
 
 
 class TEvent(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     started = models.BooleanField(default=False)
     completed = models.BooleanField(default=False)
     errored = models.BooleanField(default=False)
@@ -162,10 +163,124 @@ class TEvent(models.Model):
     duration = models.FloatField(default=-1)
     arguments = JSONField(blank=True, null=True)
     task_id = models.TextField(null=True)
-    parent = models.ForeignKey('self', null=True)
+    parent = models.ForeignKey('self', null=True, related_name="parent_task")
+    imported = models.ForeignKey('self', null=True, related_name="importer_task")
     parent_process = models.ForeignKey(DVAPQL, null=True)
-    imported = models.BooleanField(default=False)
     task_group_id = models.IntegerField(default=-1)
+    results = JSONField(blank=True, null=True)
+
+    def finalize(self, bulk_create, results=None):
+        created_regions = []
+        created_tubes = []
+        ancestor_events = set()
+        if self.results:
+            raise ValueError("Finalize should be only called once")
+        else:
+            self.results = {'created_objects': {}}
+        if 'IndexEntries' in bulk_create:
+            temp = []
+            for i, d in enumerate(bulk_create['IndexEntries']):
+                d.per_event_index = i
+                d.id = '{}_{}'.format(self.id, i)
+                temp.append(d)
+            created_index_entries = IndexEntries.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['IndexEntries'] = len(created_index_entries)
+        if 'Region' in bulk_create:
+            temp = []
+            for i, d in enumerate(bulk_create['Region']):
+                d.per_event_index = i
+                d.id = '{}_{}'.format(self.id, i)
+                temp.append(d)
+            created_regions = Region.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['Region'] = len(created_regions)
+        if 'Tube' in bulk_create:
+            temp = []
+            for i, d in enumerate(bulk_create['Tube']):
+                d.per_event_index = i
+                d.id = '{}_{}'.format(self.id, i)
+                temp.append(d)
+            created_tubes = Tube.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['Tube'] = len(created_tubes)
+        if 'RegionRelation' in bulk_create:
+            temp = []
+            for i, d_value_map in enumerate(bulk_create['RegionRelation']):
+                d, value_map = d_value_map
+                if 'source_region_id' in value_map:
+                    d.source_region_id = created_regions[value_map['source_region_id']].id
+                if 'target_region_id' in value_map:
+                    d.target_region_id = created_regions[value_map['target_region_id']].id
+                ancestor_events.add(d.source_region_id.split('_')[0])
+                ancestor_events.add(d.target_region_id.split('_')[0])
+                d.id = '{}_{}'.format(self.id, i)
+                d.per_event_index = i
+                temp.append(d)
+            RegionRelation.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['RegionRelation'] = len(temp)
+        if 'TubeRelation' in bulk_create:
+            temp = []
+            for i, d_value_map in enumerate(bulk_create['TubeRelation']):
+                d, value_map = d_value_map
+                d.per_event_index = i
+                temp.append(d)
+                ancestor_events.add(d.source_tube_id.split('_')[0])
+                ancestor_events.add(d.target_tube_id.split('_')[0])
+            TubeRelation.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['TubeRelation'] = len(temp)
+        if 'TubeRegionRelation' in bulk_create:
+            temp = []
+            for i, d_value_map in enumerate(bulk_create['TubeRegionRelation']):
+                d, value_map = d_value_map
+                d.per_event_index = i
+                d.id = '{}_{}'.format(self.id, i)
+                temp.append(d)
+                ancestor_events.add(d.tube_id.split('_')[0])
+                ancestor_events.add(d.region_id.split('_')[0])
+            TubeRegionRelation.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['TubeRegionRelation'] = len(temp)
+        if 'HyperRegionRelation' in bulk_create:
+            temp = []
+            for i, d_value_map in enumerate(bulk_create['HyperRegionRelation']):
+                d, value_map = d_value_map
+                if 'region_id' in value_map:
+                    d.region_id = created_regions[value_map['region_id']].id
+                else:
+                    if d.region_id is None:
+                        raise ValueError(d_value_map)
+                d.per_event_index = i
+                d.id = '{}_{}'.format(self.id, i)
+                temp.append(d)
+                ancestor_events.add(d.region_id.split('_')[0])
+            HyperRegionRelation.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['HyperRegionRelation'] = len(temp)
+        if 'HyperTubeRegionRelation' in bulk_create:
+            temp = []
+            for i, d_value_map in enumerate(bulk_create['HyperTubeRegionRelation']):
+                d, value_map = d_value_map
+                d.per_event_index = i
+                if 'tube_id' in value_map:
+                    d.tube_id = created_tubes[value_map['tube_id']].id
+                else:
+                    if d.tube_id is None:
+                        raise ValueError(d_value_map)
+                d.id = '{}_{}'.format(self.id, i)
+                temp.append(d)
+                ancestor_events.add(d.tube_id.split('_')[0])
+                ancestor_events.add(d.region_id.split('_')[0])
+            HyperTubeRegionRelation.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['HyperTubeRegionRelation'] = len(temp)
+        ancestor_events.discard(self.pk)  # Remove self from ancestors.
+        self.results['ancestors'] = list(ancestor_events)
+        if results:
+            self.results.update(results)
+
+    def finalize_query(self, bulk_create, results=None):
+        if self.results is None:
+            self.results = {'created_objects': {'QueryResult': 0}}
+        if 'QueryResult' in bulk_create:
+            created_query_results = QueryResult.objects.bulk_create(bulk_create['QueryResult'], batch_size=1000)
+            self.results['created_objects']['QueryResult'] += len(created_query_results)
+        if results:
+            self.results.update(results)
 
 
 class TrainedModel(models.Model):
@@ -216,9 +331,6 @@ class TrainedModel(models.Model):
     training_set = models.ForeignKey(TrainingSet, null=True)
     url = models.CharField(max_length=200, default="")
     files = JSONField(null=True, blank=True)
-    produces_labels = models.BooleanField(default=False)
-    produces_json = models.BooleanField(default=False)
-    produces_text = models.BooleanField(default=False)
     # Following allows us to have a hierarchy of models (E.g. inception pretrained -> inception fine tuned)
     parent = models.ForeignKey('self', null=True)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -381,8 +493,6 @@ class Segment(models.Model):
     frame_count = models.IntegerField(default=0)
     start_index = models.IntegerField(default=0)
     framelist = JSONField(blank=True, null=True)
-    start_frame = models.ForeignKey(Frame, null=True, related_name="segment_start")
-    end_frame = models.ForeignKey(Frame, null=True, related_name="segment_end")
 
     class Meta:
         unique_together = (("video", "segment_index"),)
@@ -402,6 +512,7 @@ class Region(models.Model):
     Any 2D region over an image.
     Detections & Transforms have an associated image data.
     """
+    id = models.CharField(max_length=100, primary_key=True)
     ANNOTATION = constants.ANNOTATION
     DETECTION = constants.DETECTION
     SEGMENTATION = constants.SEGMENTATION
@@ -417,10 +528,16 @@ class Region(models.Model):
     region_type = models.CharField(max_length=1, choices=REGION_TYPES, db_index=True)
     video = models.ForeignKey(Video)
     user = models.ForeignKey(User, null=True)
-    frame = models.ForeignKey(Frame, null=True, on_delete=models.SET_NULL)
+    # frame = models.ForeignKey(Frame, null=True, on_delete=models.SET_NULL)
+    # After significant deliberation I decided that having frame_index was sufficient and ensuring that this relation
+    # is updated when frames are decoded breaks the immutability. Instead frame_index allows "lazy" relation enabling
+    # cases such as user annotating a video frame which has not been decoded and stored explicitly as a Frame.
     event = models.ForeignKey(TEvent)  # TEvent that created this region
     frame_index = models.IntegerField(default=-1)
     segment_index = models.IntegerField(default=-1, null=True)
+    # This ensures that for a specific event Regions are always ordered. (event_uuid, per_event_index) serves as
+    # a global unique identifier.
+    per_event_index = models.IntegerField()
     text = models.TextField(default="")
     metadata = JSONField(blank=True, null=True)
     full_frame = models.BooleanField(default=False)
@@ -433,19 +550,6 @@ class Region(models.Model):
     object_name = models.CharField(max_length=100)
     confidence = models.FloatField(default=0.0)
     png = models.BooleanField(default=False)
-
-    def clean(self):
-        if self.frame_index == -1 or self.frame_index is None:
-            self.frame_index = self.frame.frame_index
-        if self.segment_index == -1 or self.segment_index is None:
-            self.segment_index = self.frame.segment_index
-
-    def save(self, *args, **kwargs):
-        if self.frame_index == -1 or self.frame_index is None:
-            self.frame_index = self.frame.frame_index
-        if self.segment_index == -1 or self.segment_index is None:
-            self.segment_index = self.frame.segment_index
-        super(Region, self).save(*args, **kwargs)
 
     def path(self, media_root=None, temp_root=None):
         if temp_root:
@@ -477,6 +581,19 @@ class Region(models.Model):
             with open(region_path, 'rb') as fr:
                 fs.cache_path(bare_path, payload=fr.read())
         return region_path
+
+    def global_frame_path(self):
+        if self.video.dataset:
+            df = Frame.objects.get(video=self.video, frame_index=self.frame_index)
+            if df.name and not df.name.startswith('/'):
+                return df.name
+            else:
+                return "{}/{}".format(self.video.url, df.name)
+        else:
+            return "{}::{}".format(self.video.url, self.frame_index)
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class QueryRegion(models.Model):
@@ -512,37 +629,24 @@ class QueryRegion(models.Model):
     png = models.BooleanField(default=False)
 
 
-class QueryResults(models.Model):
-    query = models.ForeignKey(DVAPQL)
-    retrieval_event = models.ForeignKey(TEvent)
-    query_region = models.ForeignKey(QueryRegion, null=True)
-    video = models.ForeignKey(Video)
-    frame = models.ForeignKey(Frame)
-    detection = models.ForeignKey(Region, null=True)
-    rank = models.IntegerField()
-    algorithm = models.CharField(max_length=100)
-    distance = models.FloatField(default=0.0)
-
-
 class IndexEntries(models.Model):
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     features_file_name = models.CharField(max_length=100)
     entries = JSONField(blank=True, null=True)
     metadata = JSONField(blank=True, null=True)
     algorithm = models.CharField(max_length=100)
-    indexer = models.ForeignKey(TrainedModel, null=True)
     indexer_shasum = models.CharField(max_length=40)
     approximator_shasum = models.CharField(max_length=40, null=True)
-    detection_name = models.CharField(max_length=100)
+    target = models.CharField(max_length=100)
     count = models.IntegerField()
     approximate = models.BooleanField(default=False)
-    contains_frames = models.BooleanField(default=False)
-    contains_detections = models.BooleanField(default=False)
     created = models.DateTimeField('date created', auto_now_add=True)
+    per_event_index = models.IntegerField()
     event = models.ForeignKey(TEvent)
 
     def __unicode__(self):
-        return "{} in {} index by {}".format(self.detection_name, self.algorithm, self.video.name)
+        return "{} in {} index by {}".format(self.target, self.algorithm, self.video.name)
 
     def npy_path(self, media_root=None):
         if not (media_root is None):
@@ -576,25 +680,29 @@ class Tube(models.Model):
     A tube is a collection of sequential frames / regions that track a certain object
     or describe a specific scene
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video, null=True)
     frame_level = models.BooleanField(default=False)
     full_video = models.BooleanField(default=False)
     full_segment = models.BooleanField(default=False)
     start_frame_index = models.IntegerField()
     end_frame_index = models.IntegerField()
-    start_frame = models.ForeignKey(Frame, null=True, related_name="start_frame")
-    end_frame = models.ForeignKey(Frame, null=True, related_name="end_frame")
     start_region = models.ForeignKey(Region, null=True, related_name="start_region")
     end_region = models.ForeignKey(Region, null=True, related_name="end_region")
     text = models.TextField(default="")
     metadata = JSONField(blank=True, null=True)
     event = models.ForeignKey(TEvent)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class RegionRelation(models.Model):
     """
     Captures relations between Regions within a video/dataset.
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     source_region = models.ForeignKey(Region, related_name='source_region')
     target_region = models.ForeignKey(Region, related_name='target_region')
@@ -602,6 +710,10 @@ class RegionRelation(models.Model):
     name = models.CharField(max_length=400)
     weight = models.FloatField(null=True)
     metadata = JSONField(blank=True, null=True)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class HyperRegionRelation(models.Model):
@@ -610,6 +722,7 @@ class HyperRegionRelation(models.Model):
     HyperRegionRelation is an equivalent of anchor tags / hyperlinks.
     e.g. Region -> http://http://akshaybhat.com/static/img/akshay.jpg
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     region = models.ForeignKey(Region)
     event = models.ForeignKey(TEvent)
@@ -625,6 +738,10 @@ class HyperRegionRelation(models.Model):
     # Unlike region frame_index is only required if the path points to a video or a .gif
     frame_index = models.IntegerField(null=True)
     segment_index = models.IntegerField(null=True)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class HyperTubeRegionRelation(models.Model):
@@ -633,6 +750,7 @@ class HyperTubeRegionRelation(models.Model):
     HyperTubeRegionRelation is an equivalent of anchor tags / hyperlinks.
     e.g. Tube -> http://http://akshaybhat.com/static/img/akshay.jpg
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     tube = models.ForeignKey(Tube)
     event = models.ForeignKey(TEvent)
@@ -648,12 +766,17 @@ class HyperTubeRegionRelation(models.Model):
     # Unlike region frame_index is only required if the path points to a video or a .gif
     frame_index = models.IntegerField(null=True)
     segment_index = models.IntegerField(null=True)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class TubeRelation(models.Model):
     """
     Captures relations between Tubes within a video/dataset.
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     source_tube = models.ForeignKey(Tube, related_name='source_tube')
     target_tube = models.ForeignKey(Tube, related_name='target_tube')
@@ -661,12 +784,17 @@ class TubeRelation(models.Model):
     name = models.CharField(max_length=400)
     weight = models.FloatField(null=True)
     metadata = JSONField(blank=True, null=True)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class TubeRegionRelation(models.Model):
     """
     Captures relations between Tube and Region within a video/dataset.
     """
+    id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
     tube = models.ForeignKey(Tube)
     region = models.ForeignKey(Region)
@@ -674,6 +802,10 @@ class TubeRegionRelation(models.Model):
     name = models.CharField(max_length=400)
     weight = models.FloatField(null=True)
     metadata = JSONField(blank=True, null=True)
+    per_event_index = models.IntegerField()
+
+    class Meta:
+        unique_together = (("event", "per_event_index"),)
 
 
 class DeletedVideo(models.Model):
@@ -703,11 +835,17 @@ class SystemState(models.Model):
     hosts = JSONField(blank=True, null=True)
 
 
-class QueryRegionIndexVector(models.Model):
-    event = models.ForeignKey(TEvent)
-    query_region = models.ForeignKey(QueryRegion)
-    vector = models.BinaryField()
-    created = models.DateTimeField('date created', auto_now_add=True)
+class QueryResult(models.Model):
+    query = models.ForeignKey(DVAPQL)
+    retrieval_event = models.ForeignKey(TEvent)
+    query_region = models.ForeignKey(QueryRegion, null=True)
+    video = models.ForeignKey(Video)
+    frame_index = models.IntegerField()
+    region = models.ForeignKey(Region, null=True)
+    tube = models.ForeignKey(Tube, null=True)
+    rank = models.IntegerField()
+    algorithm = models.CharField(max_length=100)
+    distance = models.FloatField(default=0.0)
 
 
 class Export(models.Model):
@@ -724,8 +862,8 @@ class Export(models.Model):
 
 
 class TaskRestart(models.Model):
-    original_event_pk = models.IntegerField(null=False)
-    launched_event_pk = models.IntegerField()
+    original_event_pk = models.UUIDField(default=uuid.uuid4, null=False)
+    launched_event_pk = models.UUIDField(default=uuid.uuid4, null=False)
     attempts = models.IntegerField(default=0)
     arguments = JSONField(blank=True, null=True)
     operation = models.CharField(max_length=100, default="")

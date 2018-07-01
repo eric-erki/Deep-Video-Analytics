@@ -9,7 +9,7 @@ except ImportError:
     np = None
     logging.warning("Could not import indexer / clustering assuming running in front-end mode")
 
-from ..models import IndexEntries, QueryResults, Region, Retriever, Frame
+from ..models import IndexEntries, QueryResult, Region, Retriever, Frame
 
 
 class Retrievers(object):
@@ -83,14 +83,14 @@ class Retrievers(object):
                     vectors, entries = index_entry.load_index()
                     logging.info("loading approximate index {}".format(index_entry.pk))
                     start_index = len(visual_index.entries)
-                    visual_index.load_index(entries=entries)
+                    visual_index.load_index(None,entries,index_entry.video_id,index_entry.target)
                     visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
                                                                                      end=len(visual_index.entries) - 1)
                 elif visual_index.algorithm == 'FAISS':
                     index_file_path, entries = index_entry.load_index()
                     logging.info("loading FAISS index {}".format(index_entry.pk))
                     start_index = visual_index.findex
-                    visual_index.load_index(index_file_path, entries)
+                    visual_index.load_index(index_file_path, entries, index_entry.video_id, index_entry.target)
                     visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
                                                                                      end=visual_index.findex - 1)
                 else:
@@ -99,7 +99,7 @@ class Retrievers(object):
                                                                           vectors.shape))
                     try:
                         start_index = visual_index.findex
-                        visual_index.load_index(vectors, entries)
+                        visual_index.load_index(vectors, entries, index_entry.video_id, index_entry.target)
                         visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
                                                                                          end=visual_index.findex - 1)
                     except:
@@ -112,28 +112,32 @@ class Retrievers(object):
     def retrieve(cls, event, retriever_pk, vector, count, region_pk=None):
         index_retriever, dr = cls.get_retriever(retriever_pk)
         cls.refresh_index(dr)
-        # TODO: figure out a better way to store numpy arrays
         results = index_retriever.nearest(vector=vector, n=count)
-        # TODO: optimize this using batching
+        qr_batch = []
         for rank, r in enumerate(results):
-            qr = QueryResults()
+            qr = QueryResult()
             if region_pk:
                 qr.query_region_id = region_pk
             qr.query = event.parent_process
             qr.retrieval_event_id = event.pk
-            if 'detection_primary_key' in r:
-                dd = Region.objects.get(pk=r['detection_primary_key'])
-                qr.detection = dd
-                qr.frame_id = dd.frame_id
+            if r['type'] == 'regions':
+                dd = Region.objects.get(pk=r['id'])
+                qr.region = dd
+                qr.frame_index = dd.frame_index
                 qr.video_id = dd.video_id
+            elif r['type'] == 'frames':
+                qr.frame_index = r['id']
+                qr.video_id = r['video']
             else:
-                dd = Frame.objects.get(pk=r['frame_primary_key'])
-                qr.frame = dd
-                qr.video_id = dd.video_id
+                raise ValueError("No key found {}".format(r))
             qr.algorithm = dr.algorithm
             qr.rank = r.get('rank', rank)
             qr.distance = r.get('dist', rank)
-            qr.save()
+            qr_batch.append(qr)
+        if region_pk:
+            event.finalize_query({"QueryResult":qr_batch},results={region_pk:{"retriever_state":index_retriever.findex}})
+        else:
+            event.finalize_query({"QueryResult":qr_batch},results={"retriever_state":index_retriever.findex})
         event.parent_process.results_available = True
         event.parent_process.save()
         return 0

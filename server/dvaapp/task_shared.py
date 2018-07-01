@@ -101,7 +101,7 @@ def count_framelist(dv):
     return len(frame_list['frames'])
 
 
-def load_dva_export_file(dv):
+def load_dva_export_file(dv, dt):
     video_id = dv.pk
     if settings.ENABLE_CLOUDFS:
         fname = "/{}/{}.zip".format(video_id, video_id)
@@ -120,7 +120,7 @@ def load_dva_export_file(dv):
             break
     with open("{}/{}/table_data.json".format(settings.MEDIA_ROOT, video_id)) as input_json:
         video_json = json.load(input_json)
-    importer = serializers.VideoImporter(video=dv, video_json=video_json, root_dir=video_root_dir)
+    importer = serializers.VideoImporter(video=dv, video_json=video_json, root_dir=video_root_dir, import_event=dt)
     importer.import_video()
     source_zip = "{}/{}.zip".format(video_root_dir, video_id)
     os.remove(source_zip)
@@ -191,7 +191,7 @@ def build_queryset(args, video_id=None, query_id=None, target=None, filters=None
     return queryset, target
 
 
-def load_frame_list(dv, event_id, frame_index__gte=0, frame_index__lt=-1):
+def load_frame_list(dv, event, frame_index__gte=0, frame_index__lt=-1):
     """
     Add ability load frames & regions specified in a JSON file and then automatically
     retrieve them in a distributed manner them through CPU workers.
@@ -201,6 +201,7 @@ def load_frame_list(dv, event_id, frame_index__gte=0, frame_index__lt=-1):
     video_id = dv.pk
     frame_index_to_regions = {}
     frames = []
+    regions = []
     for i, f in enumerate(frame_list['frames']):
         if i == frame_index__lt:
             break
@@ -214,18 +215,12 @@ def load_frame_list(dv, event_id, frame_index__gte=0, frame_index__lt=-1):
                 logging.exception("Failed to get {}".format(f['path']))
                 pass
             else:
-                df, drs = serializers.import_frame_json(f, i, event_id, video_id, w, h)
-                frame_index_to_regions[i] = drs
+                df, drs = serializers.import_frame_json(f, i, event.pk, video_id, w, h)
+                regions.extend(drs)
                 frames.append(df)
                 shutil.move(temp_path, df.path())
-    fids = Frame.objects.bulk_create(frames, 1000)
-    regions = []
-    for f in fids:
-        region_list = frame_index_to_regions[f.frame_index]
-        for dr in region_list:
-            dr.frame_id = f.id
-            regions.append(dr)
-    Region.objects.bulk_create(regions, 1000)
+    _ = Frame.objects.bulk_create(frames, 1000)
+    event.finalize({'Region':regions})
 
 
 def download_and_get_query_path(start):
@@ -279,7 +274,7 @@ def ensure_files(queryset, target):
         raise NotImplementedError
 
 
-def import_frame_regions_json(regions_json, video, event_id):
+def import_frame_regions_json(regions_json, video, event):
     """
     Import regions from a JSON with frames identified by immutable identifiers such as filename/path
     :param regions_json:
@@ -289,15 +284,10 @@ def import_frame_regions_json(regions_json, video, event_id):
     """
     video_id = video.pk
     filename_to_pk = {}
-    frame_index_to_pk = {}
+    event_id = event.pk
     if video.dataset:
-        # For dataset frames are identified by subdir/filename
-        filename_to_pk = {df.original_path(): (df.pk, df.frame_index)
-                          for df in Frame.objects.filter(video_id=video_id)}
-    else:
-        # For videos frames are identified by frame index
-        frame_index_to_pk = {df.frame_index: (df.pk, df.segment_index) for df in
-                             Frame.objects.filter(video_id=video_id)}
+        # For dataset frames are identified by original_path
+        filename_to_pk = {df.original_path(): (df.pk, df.frame_index) for df in Frame.objects.filter(video_id=video_id)}
     regions = []
     not_found = 0
     for k in regions_json:
@@ -307,19 +297,18 @@ def import_frame_regions_json(regions_json, video, event_id):
                 fname = '/{}'.format(fname)
             if fname in filename_to_pk:
                 pk, findx = filename_to_pk[fname]
-                regions.append(serializers.import_region_json(k, frame_index=findx, frame_id=pk, video_id=video_id,
-                                                              event_id=event_id))
+                regions.append(
+                    serializers.import_region_json(k, frame_index=findx, video_id=video_id, event_id=event_id,
+                                                   ))
             else:
                 not_found += 1
         elif k['target'] == 'index':
             findx = k['frame_index']
-            pk, sindx = frame_index_to_pk[findx]
-            regions.append(serializers.import_region_json(k, frame_index=findx, frame_id=pk, video_id=video_id,
-                                                          event_id=event_id))
+            regions.append(serializers.import_region_json(k, frame_index=findx, video_id=video_id, event_id=event_id))
         else:
             raise ValueError('invalid target: {}'.format(k['target']))
     logging.info("{} filenames not found in the dataset".format(not_found))
-    Region.objects.bulk_create(regions, 1000)
+    event.finalize({"Region":regions})
 
 
 def get_sync_paths(dirname, task_id):

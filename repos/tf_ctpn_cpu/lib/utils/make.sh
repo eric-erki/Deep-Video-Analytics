@@ -5,4 +5,3 @@ python setup.py build_ext --inplace
 mv lib/utils/* ./
 rm -rf build
 rm -rf lib
-

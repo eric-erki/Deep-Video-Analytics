@@ -58,16 +58,17 @@ class Approximators(object):
         return Approximators._index_approximator[di.pk]
 
     @classmethod
-    def approximate_queryset(cls,approx,da,queryset,event_id):
+    def approximate_queryset(cls,approx,da,queryset,event):
         new_approx_indexes = []
         for index_entry in queryset:
             uid = str(uuid.uuid1()).replace('-', '_')
             approx_ind = IndexEntries()
             vectors, entries = index_entry.load_index()
             if da.algorithm == 'LOPQ':
+                new_entries = []
                 for i, e in enumerate(entries):
-                    e['codes'] = approx.approximate(vectors[i, :])
-                approx_ind.entries = entries
+                    new_entries.append((e,approx.approximate(vectors[i, :])))
+                approx_ind.entries = new_entries
                 approx_ind.features_file_name = ""
             elif da.algorithm == 'PCA':
                 # TODO optimize this by doing matmul rather than calling for each entry
@@ -88,11 +89,9 @@ class Approximators(object):
             approx_ind.approximator_shasum = da.shasum
             approx_ind.count = index_entry.count
             approx_ind.approximate = True
-            approx_ind.detection_name = index_entry.detection_name
-            approx_ind.contains_detections = index_entry.contains_detections
-            approx_ind.contains_frames = index_entry.contains_frames
+            approx_ind.target = index_entry.target
             approx_ind.video_id = index_entry.video_id
             approx_ind.algorithm = da.name
-            approx_ind.event_id = event_id
+            approx_ind.event_id = event.pk
             new_approx_indexes.append(approx_ind)
-        IndexEntries.objects.bulk_create(new_approx_indexes, batch_size=100)
+        event.finalize({'IndexEntries':new_approx_indexes})

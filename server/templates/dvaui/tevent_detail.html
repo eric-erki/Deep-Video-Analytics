@@ -5,191 +5,225 @@
 
 
 {% block page_content %}
-<section class="content-header" style="padding-top:0px" xmlns="http://www.w3.org/1999/html">
-<div class="row">
-    <div class="box box-info">
-        <div class="box-header">
-            <h3>Task {{ object.pk }} running {{ object.operation }} on {{ object.queue }} under <a href="/process/{{ object.parent_process_id }}"> process {{ object.parent_process_id }}</a></h3>
-            <h4>Video: {% if object.video %}<a href="/videos/{{ object.video_id }}">{{ object.video.name }}</a>{% endif %}</h4>
-        </div>
-    </div>
-</div>
-</section>
-<section class="content">
-<div class="row">
-    <div class="col-lg-6">
-        <div class="box">
-            <div class="box-header with-border"><h3>Details</h3></div>
-            <div class="box-body">
-            <div class="row">
-                <div class="col-lg-8">
-                    <h4>Task id: {{ object.task_id }} in Task group {{ object.task_group_id }}</h4>
-                    <h4>Submitted: {{ object.created|timesince }}</h4>
-                    <h4>Execution time: {{  object.duration|floatformat}}</h4>
+    <section class="content-header" style="padding-top:0px" xmlns="http://www.w3.org/1999/html">
+        <div class="row">
+            <div class="box box-info">
+                <div class="box-header">
+                    <h3>Task {{ object.pk }} running {{ object.operation }} on {{ object.queue }} under <a
+                            href="/process/{{ object.parent_process_id }}"> process {{ object.parent_process_id }}</a>
+                    </h3>
+                    <h4>Video: {% if object.video %}
+                        <a href="/videos/{{ object.video_id }}">{{ object.video.name }}</a>{% endif %}</h4>
                 </div>
-                <div class="col-lg-4">
-                {% if object.errored %}
-                    <a href="#" class="btn btn-danger btn-block">{% if e.imported %}Imported{% endif %} Failed</a>
-                {% elif object.duration < 0 and not object.started %}
-                    <a href="#" class="btn btn-warning btn-block">{% if e.imported %}Imported{% endif %} Pending</a>
-                {% elif object.duration < 0 and object.started and not object.completed%}
-                    <a href="#" class="btn btn-primary btn-block">{% if e.imported %}Imported{% endif %} Running</a>
-                {% elif object.completed%}
-                    <a href="#" class="btn btn-success btn-block">{% if e.imported %}Imported{% endif %} Completed</a>
-                {% else %}
-                    <a href="#" class="btn btn-disabled btn-block">Unknown</a>
-                {% endif %}
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-12">
-                    <h4>Arguments</h4>
-                    <textarea rows="5" style="width:90%;margin: auto" contenteditable="false">{{ object.arguments }}</textarea>
-                </div>
-                <div class="col-lg-12">
-                    <h4>Error message</h4>
-                    <textarea rows="5" style="width:90%;margin: auto" contenteditable="false">{{ object.error_message }}</textarea>
-                </div>
-            </div>
             </div>
         </div>
-    </div>
-    {% if celery_task %}
-    <div class="col-lg-6">
-        <div class="box">
-            <div class="box-header with-border">
-                <h3>Exception</h3>
-            </div>
-            <div class="box-body">
-                    <textarea style="width: 90%;margin: auto;height: 400px;" class="textarea form-control disabled">{{ celery_task.traceback }}</textarea>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
-<div class="row">
-    {% if object.parent_id %}
-    <div class="col-lg-12">
-        <div class="box">
-            <div class="box-header with-border">
-                <h3>Parent task</h3>
-            </div>
-            <div class="box-body">
-                <table class="table dataTables">
-                    <thead>
-                    <tr>
-                        <th>Process</th>
-                        <th>Group</th>
-                        <th>Video</th>
-                        <th>Operation</th>
-                        <th>Queue</th>
-                        <th>created</th>
-                        <th>started</th>
-                        <th>created ts</th>
-                        <th>started ts</th>
-                        <th>duration</th>
-                        <th class="text-center">status</th>
-                        <th class="text-center">view details</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><a href="/process/{{ object.parent.parent_process_id }}">{{ object.parent.parent_process_id }}</a></td>
-                            <td>{{ object.parent.task_group_id }}</td>
-                            <td>{% if object.parent.video %}<a href="/videos/{{ object.parent.video_id }}">{{ object.parent.video.name }}</a>{% endif %}</td>
-                            <td>{{ object.parent.operation }}</td>
-                            <td>{{ object.parent.queue }}</td>
-                            <td class="text-center">{{ object.parent.created|timesince}}</td>
-                            <td class="text-center">{{ object.parent.start_ts|timesince}}</td>
-                            <td class="text-center">{{ object.parent.created|date:"U" }}</td>
-                            <td class="text-center">{{ object.parent.start_ts|date:"U" }}</td>
-                            <td class="text-right">{{ object.parent.duration|floatformat }}</td>
-                            <td>
-                                {% if object.parent.errored %}
-                                    <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-danger btn-block">{% if object.parent.imported %}Imported{% endif %} Failed</a>
-                                {% elif object.parent.duration < 0 and not object.parent.started %}
-                                    <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-warning btn-block">{% if object.parent.imported %}Imported{% endif %} Pending</a>
-                                {% elif object.parent.duration < 0 and object.parent.started and not object.parent.completed%}
-                                    <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-primary btn-block">{% if object.parent.imported %}Imported{% endif %} Running</a>
-                                {% elif object.parent.completed%}
-                                    <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-success btn-block">{% if object.parent.imported %}Imported{% endif %} Completed</a>
+    </section>
+    <section class="content">
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="box">
+                    <div class="box-header with-border"><h3>Details</h3></div>
+                    <div class="box-body">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <h4>Task id: {{ object.task_id }} in Task group {{ object.task_group_id }}</h4>
+                                <h4>Submitted: {{ object.created|timesince }}</h4>
+                                <h4>Execution time: {{ object.duration|floatformat }}</h4>
+                            </div>
+                            <div class="col-lg-4">
+                                {% if object.errored %}
+                                    <a href="#" class="btn btn-danger btn-block">{% if e.imported %}Imported{% endif %}
+                                        Failed</a>
+                                {% elif object.duration < 0 and not object.started %}
+                                    <a href="#" class="btn btn-warning btn-block">{% if e.imported %}Imported{% endif %}
+                                        Pending</a>
+                                {% elif object.duration < 0 and object.started and not object.completed %}
+                                    <a href="#" class="btn btn-primary btn-block">{% if e.imported %}Imported{% endif %}
+                                        Running</a>
+                                {% elif object.completed %}
+                                    <a href="#" class="btn btn-success btn-block">{% if e.imported %}Imported{% endif %}
+                                        Completed</a>
                                 {% else %}
-                                    <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-info btn-block">Unknown</a>
+                                    <a href="#" class="btn btn-disabled btn-block">Unknown</a>
                                 {% endif %}
-                            </td>
-                            <td> <a href="/task_detail/{{ object.parent.pk }}" class="btn btn-info btn-block">View details</a></td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <h4>Arguments</h4>
+                                <textarea rows="5" style="width:90%;margin: auto" contenteditable="false">{{ object.arguments }}</textarea>
+                            </div>
+                            <div class="col-lg-12">
+                                <h4>Error message</h4>
+                                <textarea rows="5" style="width:90%;margin: auto" contenteditable="false">{{ object.error_message }}</textarea>
+                            </div>
+                            {% if celery_task %}
+                                <div class="col-lg-12">
+                                <h4>Exception</h4>
+                                <textarea  style="width: 90%;margin: auto;height: 400px;" contenteditable="false">{{ celery_task.traceback }}</textarea>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="box">
+                    <div class="box-header with-border">
+                        <h3>Results</h3>
+                    </div>
+                    <div class="box-body">
+                <textarea style="width: 90%;margin: auto;height: 400px;"
+                          class="textarea form-control disabled">{{ object.results }}</textarea>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    {% endif %}
-    <div class="col-lg-12">
-        <div class="box">
-            <div class="box-header with-border">
-                <h3>Child tasks</h3>
-            </div>
-            <div class="box-body">
-                <table class="table dataTables">
-                    <thead>
-                    <tr>
-                        <th>Process</th>
-                        <th>Group</th>
-                        <th>Video</th>
-                        <th>Operation</th>
-                        <th>Queue</th>
-                        <th>created</th>
-                        <th>started</th>
-                        <th>created ts</th>
-                        <th>started ts</th>
-                        <th>duration</th>
-                        <th class="text-center">status</th>
-                        <th class="text-center">view details</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for e in child_tasks %}
-                        <tr>
-                            <td><a href="/process/{{ e.parent_process_id }}">{{ e.parent_process_id }}</a></td>
-                            <td>{{ e.task_group_id }}</td>
-                            <td>{% if e.video %}<a href="/videos/{{ e.video_id }}">{{ e.video.name }}</a>{% endif %}</td>
-                            <td>{{ e.operation }}</td>
-                            <td>{{ e.queue }}</td>
-                            <td class="text-center">{{ e.created|timesince}}</td>
-                            <td class="text-center">{{ e.start_ts|timesince}}</td>
-                            <td class="text-center">{{ e.created|date:"U" }}</td>
-                            <td class="text-center">{{ e.start_ts|date:"U" }}</td>
-                            <td class="text-right">{{ e.duration|floatformat }}</td>
-                            <td>
-                                {% if e.errored %}
-                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-danger btn-block">{% if e.imported %}Imported{% endif %} Failed</a>
-                                {% elif e.duration < 0 and not e.started %}
-                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-warning btn-block">{% if e.imported %}Imported{% endif %} Pending</a>
-                                {% elif e.duration < 0 and e.started and not e.completed%}
-                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-primary btn-block">{% if e.imported %}Imported{% endif %} Running</a>
-                                {% elif e.completed%}
-                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-success btn-block">{% if e.imported %}Imported{% endif %} Completed</a>
-                                {% else %}
-                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-info btn-block">Unknown</a>
-                                {% endif %}
-                            </td>
-                            <td> <a href="/task_detail/{{ e.pk }}" class="btn btn-info btn-block">View details</a></td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+        <div class="row">
+            {% if object.parent_id %}
+                <div class="col-lg-12">
+                    <div class="box">
+                        <div class="box-header with-border">
+                            <h3>Parent task</h3>
+                        </div>
+                        <div class="box-body">
+                            <table class="table dataTables">
+                                <thead>
+                                <tr>
+                                    <th>Process</th>
+                                    <th>Group</th>
+                                    <th>Video</th>
+                                    <th>Operation</th>
+                                    <th>Queue</th>
+                                    <th>created</th>
+                                    <th>started</th>
+                                    <th>created ts</th>
+                                    <th>started ts</th>
+                                    <th>duration</th>
+                                    <th class="text-center">status</th>
+                                    <th class="text-center">view details</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td>
+                                        <a href="/process/{{ object.parent.parent_process_id }}">{{ object.parent.parent_process_id }}</a>
+                                    </td>
+                                    <td>{{ object.parent.task_group_id }}</td>
+                                    <td>{% if object.parent.video %}
+                                        <a href="/videos/{{ object.parent.video_id }}">{{ object.parent.video.name }}</a>{% endif %}
+                                    </td>
+                                    <td>{{ object.parent.operation }}</td>
+                                    <td>{{ object.parent.queue }}</td>
+                                    <td class="text-center">{{ object.parent.created|timesince }}</td>
+                                    <td class="text-center">{{ object.parent.start_ts|timesince }}</td>
+                                    <td class="text-center">{{ object.parent.created|date:"U" }}</td>
+                                    <td class="text-center">{{ object.parent.start_ts|date:"U" }}</td>
+                                    <td class="text-right">{{ object.parent.duration|floatformat }}</td>
+                                    <td>
+                                        {% if object.parent.errored %}
+                                            <a href="/task_detail/{{ object.parent.pk }}"
+                                               class="btn btn-danger btn-block">
+                                                {% if object.parent.imported %}Imported{% endif %} Failed</a>
+                                        {% elif object.parent.duration < 0 and not object.parent.started %}
+                                            <a href="/task_detail/{{ object.parent.pk }}"
+                                               class="btn btn-warning btn-block">
+                                                {% if object.parent.imported %}Imported{% endif %} Pending</a>
+                                        {% elif object.parent.duration < 0 and object.parent.started and not object.parent.completed %}
+                                            <a href="/task_detail/{{ object.parent.pk }}"
+                                               class="btn btn-primary btn-block">
+                                                {% if object.parent.imported %}Imported{% endif %} Running</a>
+                                        {% elif object.parent.completed %}
+                                            <a href="/task_detail/{{ object.parent.pk }}"
+                                               class="btn btn-success btn-block">
+                                                {% if object.parent.imported %}Imported{% endif %} Completed</a>
+                                        {% else %}
+                                            <a href="/task_detail/{{ object.parent.pk }}"
+                                               class="btn btn-info btn-block">Unknown</a>
+                                        {% endif %}
+                                    </td>
+                                    <td><a href="/task_detail/{{ object.parent.pk }}" class="btn btn-info btn-block">View
+                                        details</a></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="col-lg-12">
+                <div class="box">
+                    <div class="box-header with-border">
+                        <h3>Child tasks</h3>
+                    </div>
+                    <div class="box-body">
+                        <table class="table dataTables">
+                            <thead>
+                            <tr>
+                                <th>Process</th>
+                                <th>Group</th>
+                                <th>Video</th>
+                                <th>Operation</th>
+                                <th>Queue</th>
+                                <th>created</th>
+                                <th>started</th>
+                                <th>created ts</th>
+                                <th>started ts</th>
+                                <th>duration</th>
+                                <th class="text-center">status</th>
+                                <th class="text-center">view details</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for e in child_tasks %}
+                                <tr>
+                                    <td><a href="/process/{{ e.parent_process_id }}">{{ e.parent_process_id }}</a></td>
+                                    <td>{{ e.task_group_id }}</td>
+                                    <td>{% if e.video %}
+                                        <a href="/videos/{{ e.video_id }}">{{ e.video.name }}</a>{% endif %}
+                                    </td>
+                                    <td>{{ e.operation }}</td>
+                                    <td>{{ e.queue }}</td>
+                                    <td class="text-center">{{ e.created|timesince }}</td>
+                                    <td class="text-center">{{ e.start_ts|timesince }}</td>
+                                    <td class="text-center">{{ e.created|date:"U" }}</td>
+                                    <td class="text-center">{{ e.start_ts|date:"U" }}</td>
+                                    <td class="text-right">{{ e.duration|floatformat }}</td>
+                                    <td>
+                                        {% if e.errored %}
+                                            <a href="/task_detail/{{ e.pk }}" class="btn btn-danger btn-block">
+                                                {% if e.imported %}Imported{% endif %} Failed</a>
+                                        {% elif e.duration < 0 and not e.started %}
+                                            <a href="/task_detail/{{ e.pk }}" class="btn btn-warning btn-block">
+                                                {% if e.imported %}Imported{% endif %} Pending</a>
+                                        {% elif e.duration < 0 and e.started and not e.completed %}
+                                            <a href="/task_detail/{{ e.pk }}" class="btn btn-primary btn-block">
+                                                {% if e.imported %}Imported{% endif %} Running</a>
+                                        {% elif e.completed %}
+                                            <a href="/task_detail/{{ e.pk }}" class="btn btn-success btn-block">
+                                                {% if e.imported %}Imported{% endif %} Completed</a>
+                                        {% else %}
+                                            <a href="/task_detail/{{ e.pk }}" class="btn btn-info btn-block">Unknown</a>
+                                        {% endif %}
+                                    </td>
+                                    <td><a href="/task_detail/{{ e.pk }}" class="btn btn-info btn-block">View
+                                        details</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-</section>
+    </section>
 {% endblock %}
-{% block page_js%}
-<script>
-    $(document).ready(function() {
-        InitializeTables();
-    })
-</script>
+{% block page_js %}
+    <script>
+        $(document).ready(function () {
+            InitializeTables();
+        })
+    </script>
 {% endblock %}

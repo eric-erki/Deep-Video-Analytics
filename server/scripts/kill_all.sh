@@ -1,2 +1,3 @@
 #!/usr/bin/env sh
-ps auxww | grep 'celery -A dva * ' | awk '{print $2}' | xargs kill -9
+set -xe
+ps auxww | grep 'manage.py' | awk '{print $2}' | xargs kill -9

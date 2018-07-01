@@ -1,0 +1,9 @@
+{
+    "init_process": "/root/DVA/configs/custom_defaults/init_empty.json",
+    "init_models": "/root/DVA/configs/custom_defaults/trained_models.json",
+    "gpu_config": null,
+    "gpu_compose_filename": null,
+    "credentials": {},
+    "gpus": 0,
+    "mode": "dev"
+}

@@ -405,7 +405,7 @@ def perform_import(task_id):
         logging.info("importing exported file {}".format(path))
         task_shared.import_path(dv, path, export=True)
         logging.info("loading exported file {}".format(path))
-        task_shared.load_dva_export_file(dv)
+        task_shared.load_dva_export_file(dv,dt)
     # Download and import .mp4 and .zip files which contain raw video / images.
     elif path.startswith('/') and settings.ENABLE_CLOUDFS and not (export_file or framelist_file):
         # TODO handle case when going from s3 ---> gs and gs ---> s3
@@ -437,7 +437,7 @@ def perform_region_import(task_id):
             j = json.load(gzip.GzipFile(temp_filename))
     except:
         raise ValueError("{}".format(temp_filename))
-    task_shared.import_frame_regions_json(j, dv, task_id)
+    task_shared.import_frame_regions_json(j, dv, dt)
     dv.save()
     process_next(dt)
     os.remove(temp_filename)
@@ -456,7 +456,7 @@ def perform_frame_download(task_id):
         fs.ensure('/{}/framelist.json'.format(dv.pk), safe=True, event_id=task_id)
     filters = dt.arguments['filters']
     dv.create_directory(create_subdirs=True)
-    task_shared.load_frame_list(dv, dt.pk, frame_index__gte=filters['frame_index__gte'],
+    task_shared.load_frame_list(dv, dt, frame_index__gte=filters['frame_index__gte'],
                                 frame_index__lt=filters.get('frame_index__lt', -1))
     process_next(dt)
     mark_as_completed(dt)

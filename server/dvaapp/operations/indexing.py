@@ -59,34 +59,30 @@ class Indexers(object):
         return Indexers._visual_indexer[di.pk]
 
     @classmethod
-    def index_queryset(cls,di,visual_index,event,target,queryset, cloud_paths=False):
+    def index_queryset(cls,di,visual_index,event,target, queryset, cloud_paths=False):
         visual_index.load()
+        index_entries = []
         temp_root = tempfile.mkdtemp()
         entries, paths, images = [], [], {}
         for i, df in enumerate(queryset):
             if target == 'frames':
-                entry = {'frame_index': df.frame_index,
-                         'frame_primary_key': df.pk,
-                         'index': i,
-                         'type': 'frame'}
+                entry = df.frame_index
                 if cloud_paths:
                     paths.append(df.path('{}://{}'.format(settings.CLOUD_FS_PREFIX,settings.MEDIA_BUCKET)))
                 else:
                     paths.append(df.path())
-            elif target == 'regions':
-                entry = {
-                    'frame_index': df.frame_index,
-                    'detection_primary_key': df.pk,
-                    'frame_primary_key': df.frame_id,
-                    'index': i,
-                    'type': df.region_type
-                }
+            elif target == 'segments':
+                entry = df.segment_index
+                if cloud_paths:
+                    paths.append(df.path('{}://{}'.format(settings.CLOUD_FS_PREFIX,settings.MEDIA_BUCKET)))
+                else:
+                    paths.append(df.path())
+            else:
+                entry = df.pk
                 if df.full_frame:
                     paths.append(df.frame_path())
                 else:
                     paths.append(df.crop_and_get_region_path(images,temp_root))
-            else:
-                raise ValueError,"{} target not configured".format(target)
             entries.append(entry)
         if entries:
             logging.info(paths)  # adding temporary logging to check whether s3:// paths are being correctly used.
@@ -108,14 +104,12 @@ class Indexers(object):
             i = IndexEntries()
             i.video_id = event.video_id
             i.count = len(entries)
-            i.contains_detections = target == "regions"
-            i.contains_frames = target == "frames"
-            i.detection_name = '{}_subset_by_{}'.format(target,event.pk)
+            i.target = target
             i.algorithm = di.name
-            i.indexer = di
             i.indexer_shasum = di.shasum
             i.entries = entries
             i.features_file_name = feat_fname.split('/')[-1]
             i.event_id = event.pk
             i.source_filter_json = event.arguments
-            i.save()
+            index_entries.append(i)
+        event.finalize({'IndexEntries':index_entries})

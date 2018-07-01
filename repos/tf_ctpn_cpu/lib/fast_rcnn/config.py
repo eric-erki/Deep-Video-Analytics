@@ -14,7 +14,7 @@ __C.GPU_ID = 0
 __C.IS_RPN = True
 __C.ANCHOR_SCALES = [16]
 __C.NCLASSES = 2
-__C.USE_GPU_NMS = False
+__C.USE_GPU_NMS = True
 # multiscale training and testing
 __C.IS_MULTISCALE = False
 __C.IS_EXTRAPOLATING = True
@@ -27,6 +27,7 @@ __C.SUBCLS_NAME = 'voxel_exemplars'
 __C.TRAIN = edict()
 # Adam, Momentum, RMS
 __C.TRAIN.restore = 0
+__C.TRAIN.max_steps = 100000
 __C.TRAIN.SOLVER = 'Momentum'
 # learning rate
 __C.TRAIN.WEIGHT_DECAY = 0.0005
