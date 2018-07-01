@@ -1,0 +1,53 @@
+{% extends "dvaui/base.html" %}
+{% load staticfiles %}
+{% block page_content %}
+    <section class="content">
+        <div id="graph"></div>
+    </section>
+{% endblock %}
+{% block page_js %}
+    <script>
+        $(document).ready(function () {
+            Plotly.plot('graph', [], {
+                images: [
+
+                    {
+                        "source": "https://images.plot.ly/language-icons/api-home/js-logo.png",
+                        "xref": "x",
+                        "yref": "y",
+                        "x": 0,
+                        "y": 0,
+                        "sizex": 1,
+                        "sizey": 1,
+                        "xanchor": "left",
+                        "yanchor": "bottom"
+                    },
+                    {
+                        "source": "https://images.plot.ly/language-icons/api-home/matlab-logo.png",
+                        "xref": "x",
+                        "yref": "y",
+                        "x": 3,
+                        "y": 0,
+                        "sizex": 100,
+                        "sizey": 100,
+                        "opacity": 1,
+                        "xanchor": "left",
+                        "yanchor": "bottom"
+                    }
+                ], annotations: [
+                    {
+                        x: 2,
+                        y: 5,
+                        xref: 'x',
+                        yref: 'y',
+                        text: 'Annotation Text',
+                        showarrow: true,
+                        arrowhead: 7,
+                        ax: 0,
+                        ay: -40
+                    }
+                ]
+            })
+        })
+    </script>
+{% endblock %}

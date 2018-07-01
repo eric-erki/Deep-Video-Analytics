@@ -276,6 +276,14 @@ class TEvent(models.Model):
         if results:
             self.results.update(results)
 
+    def finalize_query(self,bulk_create,results=None):
+        self.results = {}
+        if 'QueryResult' in bulk_create:
+            created_query_results = QueryResult.objects.bulk_create(bulk_create['QueryResult'], batch_size=1000)
+            self.results['created_objects']['QueryResult'] = len(created_query_results)
+        if results:
+            self.results.update(results)
+
 
 class TrainedModel(models.Model):
     """
