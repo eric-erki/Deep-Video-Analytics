@@ -311,7 +311,7 @@ def handle_perform_matching(dt):
                             dr.path = tdr.global_frame_path()
                             dr.metadata = tdr.metadata
                         else:
-                            target_video = models.Video.objects.get(pk=result['video_id'])
+                            target_video = models.Video.objects.get(pk=result['video'])
                             dr.x = 0
                             dr.y = 0
                             dr.full_frame = True

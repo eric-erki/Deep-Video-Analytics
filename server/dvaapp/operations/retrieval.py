@@ -126,9 +126,8 @@ class Retrievers(object):
                 qr.frame_index = dd.frame_index
                 qr.video_id = dd.video_id
             elif r['type'] == 'frames':
-                dd = Frame.objects.get(frame_index=r['id'],video_id=r['video_id'])
-                qr.frame_index = dd.frame_index
-                qr.video_id = dd.video_id
+                qr.frame_index = r['id']
+                qr.video_id = r['video']
             else:
                 raise ValueError("No key found {}".format(r))
             qr.algorithm = dr.algorithm
