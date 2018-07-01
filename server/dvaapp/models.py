@@ -184,7 +184,7 @@ class TEvent(models.Model):
             temp = []
             for i, d in enumerate(bulk_create['IndexEntries']):
                 d.per_event_index = i
-                d.id = '{}_{}'.format(self.id.hex, i)
+                d.id = '{}_{}'.format(self.id, i)
                 temp.append(d)
             created_index_entries = IndexEntries.objects.bulk_create(temp, batch_size=1000)
             self.results['created_objects']['IndexEntries'] = len(created_index_entries)
@@ -192,7 +192,7 @@ class TEvent(models.Model):
             temp = []
             for i, d in enumerate(bulk_create['Region']):
                 d.per_event_index = i
-                d.id = '{}_{}'.format(self.id.hex, i)
+                d.id = '{}_{}'.format(self.id, i)
                 temp.append(d)
             created_regions = Region.objects.bulk_create(temp, batch_size=1000)
             self.results['created_objects']['Region'] = len(created_regions)
@@ -200,7 +200,7 @@ class TEvent(models.Model):
             temp = []
             for i, d in enumerate(bulk_create['Tube']):
                 d.per_event_index = i
-                d.id = '{}_{}'.format(self.id.hex, i)
+                d.id = '{}_{}'.format(self.id, i)
                 temp.append(d)
             created_tubes = Tube.objects.bulk_create(temp, batch_size=1000)
             self.results['created_objects']['Tube'] = len(created_tubes)
@@ -214,7 +214,7 @@ class TEvent(models.Model):
                     d.target_region_id = created_regions[value_map['target_region_id']].id
                 ancestor_events.add(d.source_region_id.split('_')[0])
                 ancestor_events.add(d.target_region_id.split('_')[0])
-                d.id = '{}_{}'.format(self.id.hex, i)
+                d.id = '{}_{}'.format(self.id, i)
                 d.per_event_index = i
                 temp.append(d)
             RegionRelation.objects.bulk_create(temp, batch_size=1000)
@@ -234,7 +234,7 @@ class TEvent(models.Model):
             for i, d_value_map in enumerate(bulk_create['TubeRegionRelation']):
                 d, value_map = d_value_map
                 d.per_event_index = i
-                d.id = '{}_{}'.format(self.id.hex, i)
+                d.id = '{}_{}'.format(self.id, i)
                 temp.append(d)
                 ancestor_events.add(d.tube_id.split('_')[0])
                 ancestor_events.add(d.region_id.split('_')[0])
@@ -250,7 +250,7 @@ class TEvent(models.Model):
                     if d.region_id is None:
                         raise ValueError(d_value_map)
                 d.per_event_index = i
-                d.id = '{}_{}'.format(self.id.hex, i)
+                d.id = '{}_{}'.format(self.id, i)
                 temp.append(d)
                 ancestor_events.add(d.region_id.split('_')[0])
             HyperRegionRelation.objects.bulk_create(temp, batch_size=1000)
@@ -265,7 +265,7 @@ class TEvent(models.Model):
                 else:
                     if d.tube_id is None:
                         raise ValueError(d_value_map)
-                d.id = '{}_{}'.format(self.id.hex, i)
+                d.id = '{}_{}'.format(self.id, i)
                 temp.append(d)
                 ancestor_events.add(d.tube_id.split('_')[0])
                 ancestor_events.add(d.region_id.split('_')[0])
