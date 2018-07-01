@@ -396,7 +396,6 @@ class VideoImporter(object):
         self.video = video
         self.json = video_json
         self.root = root_dir
-        self.frame_to_pk = {}
         self.name_to_shasum = {'inception': '48b026cf77dfbd5d9841cca3ee550ef0ee5a0751',
                                'facenet': '9f99caccbc75dcee8cb0a55a0551d7c5cb8a6836',
                                'vgg': '52723231e796dd06fafd190957c8a3b5a69e009c'}
@@ -482,20 +481,9 @@ class VideoImporter(object):
             di.created = i['created']
             di.event_id = i['event']
             di.features_file_name = i['features_file_name']
-            if 'entries_file_name' in i:
-                entries = json.load(file('{}/indexes/{}'.format(self.root, i['entries_file_name'])))
-            else:
-                entries = i['entries']
+            di.entries = i['entries']
             di.target = i['target']
             di.metadata = i.get('metadata', {})
-            transformed = []
-            for entry in entries:
-                if 'detection_primary_key' in entry:
-                    entry['detection_primary_key'] = entry['detection_primary_key']
-                if 'frame_primary_key' in entry:
-                    entry['frame_primary_key'] = self.frame_to_pk[entry['frame_primary_key']]
-                transformed.append(entry)
-            di.entries = transformed
             di.save()
 
     def bulk_import_frames(self,frame_list_json):
@@ -504,9 +492,7 @@ class VideoImporter(object):
         for i, f in enumerate(frame_list_json):
             frames.append(self.create_frame(f))
             frame_index_to_fid[i] = f['id']
-        bulk_frames = Frame.objects.bulk_create(frames)
-        for i, k in enumerate(bulk_frames):
-            self.frame_to_pk[frame_index_to_fid[i]] = k.id
+        Frame.objects.bulk_create(frames)
 
     def bulk_import_regions(self, region_list_json):
         regions = []
