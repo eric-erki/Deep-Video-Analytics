@@ -405,7 +405,7 @@ def perform_import(task_id):
         logging.info("importing exported file {}".format(path))
         task_shared.import_path(dv, path, export=True)
         logging.info("loading exported file {}".format(path))
-        task_shared.load_dva_export_file(dv)
+        task_shared.load_dva_export_file(dv,dt)
     # Download and import .mp4 and .zip files which contain raw video / images.
     elif path.startswith('/') and settings.ENABLE_CLOUDFS and not (export_file or framelist_file):
         # TODO handle case when going from s3 ---> gs and gs ---> s3

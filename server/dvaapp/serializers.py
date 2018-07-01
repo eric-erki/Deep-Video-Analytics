@@ -367,9 +367,9 @@ def import_region_json(r, frame_index, video_id, event_id, segment_index=None):
     return dr
 
 
-def create_event(e, v):
+def create_event(e, v, dt):
     de = TEvent()
-    de.imported = True
+    de.imported = dt
     de.id = e['id']  # id is a uuid
     de.results = e.get('results', None)
     de.started = e.get('started', False)
@@ -390,7 +390,9 @@ def create_event(e, v):
 
 
 class VideoImporter(object):
-    def __init__(self, video, video_json, root_dir):
+
+    def __init__(self, video, video_json, root_dir, import_event):
+        self.import_event = import_event
         self.video = video
         self.json = video_json
         self.root = root_dir
@@ -439,7 +441,7 @@ class VideoImporter(object):
             old_ids.append(e['id'])
             if 'parent' in e:
                 children_ids[e['parent']].append(e['id'])
-            events.append(create_event(e, self.video))
+            events.append(create_event(e, self.video, self.import_event))
         TEvent.objects.bulk_create(events, 1000)
         for ej in event_list_json:
             self.bulk_import_frames(ej.get('frame_list', []))

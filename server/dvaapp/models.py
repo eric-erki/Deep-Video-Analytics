@@ -163,9 +163,9 @@ class TEvent(models.Model):
     duration = models.FloatField(default=-1)
     arguments = JSONField(blank=True, null=True)
     task_id = models.TextField(null=True)
-    parent = models.ForeignKey('self', null=True)
+    parent = models.ForeignKey('self', null=True, related_name="parent")
+    imported= models.ForeignKey('self', null=True, related_name="imported")
     parent_process = models.ForeignKey(DVAPQL, null=True)
-    imported = models.BooleanField(default=False)
     task_group_id = models.IntegerField(default=-1)
     results = JSONField(blank=True, null=True)
 

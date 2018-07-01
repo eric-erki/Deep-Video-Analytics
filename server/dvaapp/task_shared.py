@@ -101,7 +101,7 @@ def count_framelist(dv):
     return len(frame_list['frames'])
 
 
-def load_dva_export_file(dv):
+def load_dva_export_file(dv, dt):
     video_id = dv.pk
     if settings.ENABLE_CLOUDFS:
         fname = "/{}/{}.zip".format(video_id, video_id)
@@ -120,7 +120,7 @@ def load_dva_export_file(dv):
             break
     with open("{}/{}/table_data.json".format(settings.MEDIA_ROOT, video_id)) as input_json:
         video_json = json.load(input_json)
-    importer = serializers.VideoImporter(video=dv, video_json=video_json, root_dir=video_root_dir)
+    importer = serializers.VideoImporter(video=dv, video_json=video_json, root_dir=video_root_dir, import_event=dt)
     importer.import_video()
     source_zip = "{}/{}.zip".format(video_root_dir, video_id)
     os.remove(source_zip)
