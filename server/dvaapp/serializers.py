@@ -268,7 +268,7 @@ class IndexEntryExportSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class TEventSerializer(serializers.ModelSerializer):
+class TEventSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = TEvent
         fields = '__all__'
@@ -302,7 +302,7 @@ class DVAPQLSerializer(serializers.HyperlinkedModelSerializer):
                   'results_metadata', 'results_available', 'completed', 'id')
 
 
-class TEventExportSerializer(serializers.HyperlinkedModelSerializer):
+class TEventExportSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
     region_list = RegionExportSerializer(source='region_set', read_only=True, many=True)
     hyper_region_relation_list = HyperRegionRelationExportSerializer(source='hyperregionrelation_set',
