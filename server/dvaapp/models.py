@@ -277,7 +277,8 @@ class TEvent(models.Model):
             self.results.update(results)
 
     def finalize_query(self,bulk_create,results=None):
-        self.results = {}
+        if self.results is None:
+            self.results = {'created_objects':[]}
         if 'QueryResult' in bulk_create:
             created_query_results = QueryResult.objects.bulk_create(bulk_create['QueryResult'], batch_size=1000)
             self.results['created_objects']['QueryResult'] = len(created_query_results)
