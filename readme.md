@@ -52,6 +52,7 @@ locally (even without a GPU) using a single command.
 | CROW   |  [Apache 2.0](https://github.com/yahoo/crow/blob/master/LICENSE)  | 
 | LOPQ   |  [Apache 2.0](https://github.com/yahoo/lopq/blob/master/LICENSE)  | 
 | Open Images Pre-trained network  |  [Apache 2.0](https://github.com/openimages/dataset/blob/master/LICENSE) |
+| Interval Tree  |  [Apache 2.0](https://github.com/chaimleib/intervaltree) |
 
 ### Libraries present in container (/root/thirdparty/)
 
