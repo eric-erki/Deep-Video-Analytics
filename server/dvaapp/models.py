@@ -169,7 +169,7 @@ class TEvent(models.Model):
     task_group_id = models.IntegerField(default=-1)
     results = JSONField(blank=True, null=True)
 
-    def finalize(self,bulk_create,results=None):
+    def finalize(self, bulk_create, results=None):
         created_regions = []
         created_tubes = []
         ancestor_events = set()
@@ -207,7 +207,7 @@ class TEvent(models.Model):
         if 'RegionRelation' in bulk_create:
             temp = []
             for i, d_value_map in enumerate(bulk_create['RegionRelation']):
-                d,value_map = d_value_map
+                d, value_map = d_value_map
                 if 'source_region_id' in value_map:
                     d.source_region_id = created_regions[value_map['source_region_id']].id
                 if 'target_region_id' in value_map:
@@ -271,17 +271,17 @@ class TEvent(models.Model):
                 ancestor_events.add(d.region_id.split('_')[0])
             HyperTubeRegionRelation.objects.bulk_create(temp, batch_size=1000)
             self.results['created_objects']['HyperTubeRegionRelation'] = len(temp)
-        ancestor_events.discard(self.pk) # Remove self from ancestors.
+        ancestor_events.discard(self.pk)  # Remove self from ancestors.
         self.results['ancestors'] = list(ancestor_events)
         if results:
             self.results.update(results)
 
-    def finalize_query(self,bulk_create,results=None):
+    def finalize_query(self, bulk_create, results=None):
         if self.results is None:
-            self.results = {'created_objects':[]}
+            self.results = {'created_objects': {'QueryResult': 0}}
         if 'QueryResult' in bulk_create:
             created_query_results = QueryResult.objects.bulk_create(bulk_create['QueryResult'], batch_size=1000)
-            self.results['created_objects']['QueryResult'] = len(created_query_results)
+            self.results['created_objects']['QueryResult'] += len(created_query_results)
         if results:
             self.results.update(results)
 
@@ -587,7 +587,7 @@ class Region(models.Model):
 
     def global_frame_path(self):
         if self.video.dataset:
-            df = Frame.objects.get(video=self.video,frame_index=self.frame_index)
+            df = Frame.objects.get(video=self.video, frame_index=self.frame_index)
             if df.name and not df.name.startswith('/'):
                 return df.name
             else:
@@ -596,7 +596,7 @@ class Region(models.Model):
             return "{}::{}".format(self.video.url, self.frame_index)
 
     class Meta:
-        unique_together = (("event","per_event_index"),)
+        unique_together = (("event", "per_event_index"),)
 
 
 class QueryRegion(models.Model):
@@ -710,7 +710,7 @@ class Tube(models.Model):
     per_event_index = models.IntegerField()
 
     class Meta:
-        unique_together = (("event","per_event_index"),)
+        unique_together = (("event", "per_event_index"),)
 
 
 class RegionRelation(models.Model):
