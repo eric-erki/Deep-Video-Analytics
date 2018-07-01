@@ -83,14 +83,14 @@ class Retrievers(object):
                     vectors, entries = index_entry.load_index()
                     logging.info("loading approximate index {}".format(index_entry.pk))
                     start_index = len(visual_index.entries)
-                    visual_index.load_index(entries=entries)
+                    visual_index.load_index(None,entries,index_entry.video_id,index_entry.target)
                     visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
                                                                                      end=len(visual_index.entries) - 1)
                 elif visual_index.algorithm == 'FAISS':
                     index_file_path, entries = index_entry.load_index()
                     logging.info("loading FAISS index {}".format(index_entry.pk))
                     start_index = visual_index.findex
-                    visual_index.load_index(index_file_path, entries)
+                    visual_index.load_index(index_file_path, entries, index_entry.video_id, index_entry.target)
                     visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
                                                                                      end=visual_index.findex - 1)
                 else:
@@ -99,7 +99,7 @@ class Retrievers(object):
                                                                           vectors.shape))
                     try:
                         start_index = visual_index.findex
-                        visual_index.load_index(vectors, entries)
+                        visual_index.load_index(vectors, entries, index_entry.video_id, index_entry.target)
                         visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
                                                                                          end=visual_index.findex - 1)
                     except:
@@ -120,13 +120,13 @@ class Retrievers(object):
                 qr.query_region_id = region_pk
             qr.query = event.parent_process
             qr.retrieval_event_id = event.pk
-            if 'detection_primary_key' in r:
-                dd = Region.objects.get(pk=r['detection_primary_key'])
-                qr.detection = dd
+            if r['type'] == 'regions':
+                dd = Region.objects.get(pk=r['id'])
+                qr.region = dd
                 qr.frame_index = dd.frame_index
                 qr.video_id = dd.video_id
-            elif 'frame_primary_key' in r:
-                dd = Frame.objects.get(pk=r['frame_primary_key'])
+            elif r['type'] == 'frames':
+                dd = Frame.objects.get(frame_index=r['id'],video_id=r['video_id'])
                 qr.frame_index = dd.frame_index
                 qr.video_id = dd.video_id
             else:

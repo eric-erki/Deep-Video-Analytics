@@ -66,27 +66,23 @@ class Indexers(object):
         entries, paths, images = [], [], {}
         for i, df in enumerate(queryset):
             if target == 'frames':
-                entry = {'frame_index': df.frame_index,
-                         'frame_primary_key': df.pk,
-                         'index': i,
-                         'type': 'frame'}
+                entry = df.frame_index
                 if cloud_paths:
                     paths.append(df.path('{}://{}'.format(settings.CLOUD_FS_PREFIX,settings.MEDIA_BUCKET)))
                 else:
                     paths.append(df.path())
-            elif target == 'regions':
-                entry = {
-                    'frame_index': df.frame_index,
-                    'detection_primary_key': df.pk,
-                    'index': i,
-                    'type': df.region_type
-                }
+            elif target == 'segments':
+                entry = df.segment_index
+                if cloud_paths:
+                    paths.append(df.path('{}://{}'.format(settings.CLOUD_FS_PREFIX,settings.MEDIA_BUCKET)))
+                else:
+                    paths.append(df.path())
+            else:
+                entry = df.pk
                 if df.full_frame:
                     paths.append(df.frame_path())
                 else:
                     paths.append(df.crop_and_get_region_path(images,temp_root))
-            else:
-                raise ValueError,"{} target not configured".format(target)
             entries.append(entry)
         if entries:
             logging.info(paths)  # adding temporary logging to check whether s3:// paths are being correctly used.

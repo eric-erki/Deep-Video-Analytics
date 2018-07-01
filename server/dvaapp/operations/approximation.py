@@ -65,9 +65,10 @@ class Approximators(object):
             approx_ind = IndexEntries()
             vectors, entries = index_entry.load_index()
             if da.algorithm == 'LOPQ':
+                new_entries = []
                 for i, e in enumerate(entries):
-                    e['codes'] = approx.approximate(vectors[i, :])
-                approx_ind.entries = entries
+                    new_entries.append((e,approx.approximate(vectors[i, :])))
+                approx_ind.entries = new_entries
                 approx_ind.features_file_name = ""
             elif da.algorithm == 'PCA':
                 # TODO optimize this by doing matmul rather than calling for each entry

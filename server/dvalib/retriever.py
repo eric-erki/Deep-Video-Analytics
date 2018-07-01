@@ -36,10 +36,11 @@ class BaseRetriever(object):
         self.index, self.files, self.findex = None, {}, 0
         self.support_batching = False
 
-    def load_index(self, numpy_matrix, entries):
+    def load_index(self, numpy_matrix, entries, video_id, entry_type):
         temp_index = [numpy_matrix, ]
         for i, e in enumerate(entries):
-            self.files[self.findex] = e
+            # todo use interval tree
+            self.files[self.findex] = {"id":e,"type":entry_type,"video":video_id}
             self.findex += 1
         if self.index is None:
             self.index = np.atleast_2d(np.concatenate(temp_index).squeeze())
@@ -81,14 +82,14 @@ class LOPQRetriever(BaseRetriever):
         self.approximator.load()
         self.searcher = LOPQSearcher(model=self.approximator.model)
 
-    def load_index(self, numpy_matrix=None, entries=None):
+    def load_index(self, numpy_matrix, entries, video_id, entry_type):
         codes = []
         ids = []
         last_index = len(self.entries)
         for i, e in enumerate(entries):
-            codes.append((tuple(e['codes'][0]), tuple(e['codes'][1])))
+            codes.append((tuple(e[1][0]), tuple(e[1][1])))
             ids.append(i + last_index)
-            self.entries.append(e)
+            self.entries.append({"id":e[0],"type":entry_type,"video":video_id})
         self.searcher.add_codes(codes, ids)
 
     def nearest(self, vector=None, n=12):
@@ -110,12 +111,12 @@ class FaissApproximateRetriever(BaseRetriever):
         self.uuid = str(uuid.uuid4()).replace('-', '_')
         self.faiss_index = None
 
-    def load_index(self, computed_index_path, entries):
+    def load_index(self, computed_index_path, entries, video_id, entry_type):
         if len(entries):
             computed_index_path = str(computed_index_path).replace('//', '/')
             logging.info("Adding {}".format(computed_index_path))
             for i, e in enumerate(entries):
-                self.files[self.findex] = e
+                self.files[self.findex] = {"id":e,"type":entry_type,"video":video_id}
                 self.findex += 1
             if self.faiss_index is None:
                 self.faiss_index = faiss.read_index(computed_index_path)
@@ -165,12 +166,12 @@ class FaissFlatRetriever(BaseRetriever):
         self.algorithm = "FAISS_{}".format(metric)
         self.faiss_index = faiss.index_factory(components, metric)
 
-    def load_index(self, numpy_matrix, entries):
+    def load_index(self, numpy_matrix, entries, video_id, entry_type):
         if len(entries):
             logging.info("Adding {}".format(numpy_matrix.shape))
             numpy_matrix = np.atleast_2d(numpy_matrix.squeeze())
             for i, e in enumerate(entries):
-                self.files[self.findex] = e
+                self.files[self.findex] = {"id":e,"type":entry_type,"video":video_id}
                 self.findex += 1
             self.faiss_index.add(numpy_matrix)
             logging.info("Index size {}".format(self.faiss_index.ntotal))

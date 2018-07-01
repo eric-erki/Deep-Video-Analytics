@@ -270,7 +270,7 @@ def handle_perform_matching(dt):
                 else:
                     components = mat.shape[1]
                     retriever = retrieval.retriever.FaissFlatRetriever("matcher", components=components)
-            retriever.load_index(mat, entries)
+            retriever.load_index(mat, entries, di.video_id, di.target)
     frame_to_region_index = {}
     for di in models.IndexEntries.objects.filter(**source_filters):
         mat, entries = di.load_index()
@@ -283,8 +283,8 @@ def handle_perform_matching(dt):
                 if match_self:
                     pass
                 else:
-                    if 'frame_primary_key' in entry:
-                        frame_id = entry['frame_primary_key']
+                    if entry['type'] == 'Frame':
+                        frame_id = entry['id']
                         if frame_id not in frame_to_region_index:
                             df = models.Frame.objects.get(pk=frame_id)
                             regions.append(models.Region(video_id=video_id, x=0, y=0, event=dt, w=df.w, h=df.h,
@@ -292,17 +292,17 @@ def handle_perform_matching(dt):
                             frame_to_region_index[frame_id] = region_count
                             region_count += 1
                         region_id = None
-                        value_map = {'region_id': frame_to_region_index[entry['frame_primary_key']]}
+                        value_map = {'region_id': frame_to_region_index[entry['id']]}
                     else:
-                        region_id = entry['detection_primary_key']
+                        region_id = entry['id']
                         value_map = {}
                     for result in results:
                         dr = models.HyperRegionRelation()
                         dr.video_id = video_id
                         dr.metadata = result
                         dr.region_id = region_id
-                        if 'detection_primary_key' in result:
-                            tdr = models.Region.objects.get(pk=result['detection_primary_key'])
+                        if result['type'] == 'Region':
+                            tdr = models.Region.objects.get(pk=result['id'])
                             dr.x = tdr.x
                             dr.y = tdr.y
                             dr.w = tdr.w
@@ -311,13 +311,19 @@ def handle_perform_matching(dt):
                             dr.path = tdr.global_frame_path()
                             dr.metadata = tdr.metadata
                         else:
-                            tdf = models.Frame.objects.get(pk=result['frame_primary_key'])
+                            target_video = models.Video.objects.get(pk=result['video_id'])
                             dr.x = 0
                             dr.y = 0
-                            dr.w = tdf.w
-                            dr.h = tdf.h
                             dr.full_frame = True
-                            dr.path = tdf.global_path()
+                            if target_video.dataset:
+                                tdf = models.Frame.objects.get(video=target_video,frame_index=result['id'])
+                                dr.w = tdf.w
+                                dr.h = tdf.h
+                                dr.path = tdf.global_path()
+                            else:
+                                dr.w = target_video.width
+                                dr.h = target_video.height
+                                dr.path = "{}::{}".format(target_video.video.url, target_video.frame_index)
                         dr.weight = result['dist']
                         dr.event_id = dt.pk
                         relations.append((dr, value_map))

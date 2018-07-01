@@ -177,9 +177,6 @@ class TEvent(models.Model):
             raise ValueError("Finalize should be only called once")
         else:
             self.results = {'created_objects': {}}
-        if 'QueryResult' in bulk_create:
-            created_query_results = QueryResult.objects.bulk_create(bulk_create['QueryResult'], batch_size=1000)
-            self.results['created_objects']['QueryResult'] = len(created_query_results)
         if 'IndexEntries' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['IndexEntries']):
@@ -632,16 +629,6 @@ class QueryRegion(models.Model):
     png = models.BooleanField(default=False)
 
 
-class QueryResult(models.Model):
-    query = models.ForeignKey(DVAPQL)
-    retrieval_event = models.ForeignKey(TEvent)
-    query_region = models.ForeignKey(QueryRegion, null=True)
-    video = models.ForeignKey(Video)
-    frame_index = models.IntegerField()
-    detection = models.ForeignKey(Region, null=True)
-    rank = models.IntegerField()
-    algorithm = models.CharField(max_length=100)
-    distance = models.FloatField(default=0.0)
 
 
 class IndexEntries(models.Model):
@@ -850,11 +837,17 @@ class SystemState(models.Model):
     hosts = JSONField(blank=True, null=True)
 
 
-class QueryRegionIndexVector(models.Model):
-    event = models.ForeignKey(TEvent)
-    query_region = models.ForeignKey(QueryRegion)
-    vector = models.BinaryField()
-    created = models.DateTimeField('date created', auto_now_add=True)
+class QueryResult(models.Model):
+    query = models.ForeignKey(DVAPQL)
+    retrieval_event = models.ForeignKey(TEvent)
+    query_region = models.ForeignKey(QueryRegion, null=True)
+    video = models.ForeignKey(Video)
+    frame_index = models.IntegerField()
+    region = models.ForeignKey(Region, null=True)
+    tube = models.ForeignKey(Tube, null=True)
+    rank = models.IntegerField()
+    algorithm = models.CharField(max_length=100)
+    distance = models.FloatField(default=0.0)
 
 
 class Export(models.Model):

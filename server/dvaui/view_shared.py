@@ -415,7 +415,7 @@ def get_sequence_name(i, r):
 
 
 def get_result_json(r):
-    return dict(url=get_url(r), result_type="Region" if r.detection_id else "Frame", rank=r.rank,
+    return dict(url=get_url(r), result_type="Region" if r.region_id else "Frame", rank=r.rank,
                 frame_index=r.frame_index, distance=r.distance, video_id=r.video_id, video_name=r.video.name)
 
 
