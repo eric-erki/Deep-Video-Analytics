@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from models import Video, Frame, Region, DVAPQL, QueryResult, TEvent, IndexEntries, Tube, Segment, TrainedModel, \
     Retriever, SystemState, QueryRegion, Worker, TrainingSet, RegionRelation, TubeRegionRelation, TubeRelation, \
     Export, HyperRegionRelation, HyperTubeRegionRelation
-import os, json, glob
+import os, glob
 from collections import defaultdict
 from django.conf import settings
 
@@ -318,7 +318,7 @@ class TEventExportSerializer(serializers.ModelSerializer):
         fields = ('id', 'started', 'completed', 'errored', 'error_message', 'operation', 'queue', 'created',
                   'start_ts', 'duration', 'arguments', 'task_id', 'parent', 'parent_process', 'task_group_id',
                   'results', 'region_list', 'hyper_region_relation_list', 'index_entries_list', 'frame_list',
-                  'segment_list','tube_list', 'region_relation_list')
+                  'segment_list', 'tube_list', 'region_relation_list')
 
 
 class VideoExportSerializer(serializers.ModelSerializer):
@@ -459,11 +459,9 @@ class VideoImporter(object):
                 ce.parent_id = parent_id
                 ce.save()
 
-    def bulk_import_segments(self,segment_list_json):
-        old_ids = []
+    def bulk_import_segments(self, segment_list_json):
         segments = []
         for s in segment_list_json:
-            old_ids.append(s['id'])
             segments.append(self.create_segment(s))
         Segment.objects.bulk_create(segments, 1000)
 
@@ -486,7 +484,7 @@ class VideoImporter(object):
             di.metadata = i.get('metadata', {})
             di.save()
 
-    def bulk_import_frames(self,frame_list_json):
+    def bulk_import_frames(self, frame_list_json):
         frames = []
         frame_index_to_fid = {}
         for i, f in enumerate(frame_list_json):
@@ -535,14 +533,10 @@ class VideoImporter(object):
     def create_region_relation(self, a):
         da = RegionRelation()
         da.video_id = self.video.pk
-        if 'metadata' in a:
-            da.metadata = a['metadata']
-        if 'weight' in a:
-            da.weight = a['weight']
-        if 'name' in a:
-            da.name = a['name']
-        if a.get('event', None):
-            da.event_id = a['event']
+        da.metadata = a.get('metadata', None)
+        da.weight = a.get('weight', None)
+        da.name = a.get('name',None)
+        da.event_id = a['event']
         da.source_region_id = a['source_region']
         da.target_region_id = a['target_region']
         return da

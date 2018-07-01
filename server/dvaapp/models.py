@@ -164,7 +164,7 @@ class TEvent(models.Model):
     arguments = JSONField(blank=True, null=True)
     task_id = models.TextField(null=True)
     parent = models.ForeignKey('self', null=True, related_name="parent_task")
-    imported= models.ForeignKey('self', null=True, related_name="importer_task")
+    imported = models.ForeignKey('self', null=True, related_name="importer_task")
     parent_process = models.ForeignKey(DVAPQL, null=True)
     task_group_id = models.IntegerField(default=-1)
     results = JSONField(blank=True, null=True)
@@ -627,8 +627,6 @@ class QueryRegion(models.Model):
     object_name = models.CharField(max_length=100)
     confidence = models.FloatField(default=0.0)
     png = models.BooleanField(default=False)
-
-
 
 
 class IndexEntries(models.Model):
