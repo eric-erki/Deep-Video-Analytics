@@ -403,8 +403,8 @@ def gather_results(r, rids_to_names, results):
 
 
 def get_url(r):
-    if r.detection:
-        region_path = r.detection.crop_and_get_region_path({},settings.MEDIA_ROOT)
+    if r.region:
+        region_path = r.region.crop_and_get_region_path({},settings.MEDIA_ROOT)
         return "data:image/jpeg;base64, {}".format(base64.b64encode(file(region_path).read()))
     else:
         return '{}{}/frames/{}.jpg'.format(settings.MEDIA_URL, r.video_id, r.frame_index)
