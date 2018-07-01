@@ -318,7 +318,7 @@ class TEventExportSerializer(serializers.ModelSerializer):
         fields = ('id', 'started', 'completed', 'errored', 'error_message', 'operation', 'queue', 'created',
                   'start_ts', 'duration', 'arguments', 'task_id', 'parent', 'parent_process', 'task_group_id',
                   'results', 'region_list', 'hyper_region_relation_list', 'index_entries_list', 'frame_list',
-                  'segment_list' 'tube_list', 'region_relation_list')
+                  'segment_list','tube_list', 'region_relation_list')
 
 
 class VideoExportSerializer(serializers.ModelSerializer):
