@@ -58,6 +58,7 @@ if __name__ == '__main__':
         temp = TEvent.objects.create(arguments={'video_selector':{'pk':v.pk}})
         perform_export(temp.pk)
         fname = Export.objects.get(event=temp).url
+        v.delete() # Delete exported video so that the uniqueness constraint is not violated.
         f = SimpleUploadedFile(fname, file(fname.replace(settings.MEDIA_URL,settings.MEDIA_ROOT)).read(),
                                content_type="application/zip")
         print fname
