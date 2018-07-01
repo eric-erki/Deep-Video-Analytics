@@ -268,7 +268,7 @@ class IndexEntryExportSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class TEventExportSerializer(serializers.ModelSerializer):
+class TEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = TEvent
         fields = '__all__'
@@ -302,7 +302,7 @@ class DVAPQLSerializer(serializers.HyperlinkedModelSerializer):
                   'results_metadata', 'results_available', 'completed', 'id')
 
 
-class TEventSerializer(serializers.HyperlinkedModelSerializer):
+class TEventExportSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     region_list = RegionExportSerializer(source='region_set', read_only=True, many=True)
     hyper_region_relation_list = HyperRegionRelationExportSerializer(source='hyperregionrelation_set',
@@ -451,7 +451,7 @@ class VideoImporter(object):
             if 'parent' in e:
                 children_ids[e['parent']].append(e['id'])
             events.append(create_event(e, self.video))
-        event_ids = TEvent.objects.bulk_create(events, 1000)
+        TEvent.objects.bulk_create(events, 1000)
         for ej in event_list_json:
             self.bulk_import_regions(ej.get('region_list', []))
         for ej in event_list_json:
