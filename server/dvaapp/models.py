@@ -573,6 +573,7 @@ class Region(models.Model):
             with open(region_path, 'wb') as out:
                 out.write(cached_data)
         else:
+            fs.ensure(self.frame_path(""))
             frame_path = self.frame_path()
             if frame_path not in images:
                 images[frame_path] = Image.open(frame_path)
