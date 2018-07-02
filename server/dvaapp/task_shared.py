@@ -344,3 +344,13 @@ def upload(dirname, event_id, video_id):
             time.sleep(3)
     else:
         upload_video_to_remote(video_id)
+
+
+def generate_tpu_training_set(event):
+    """
+    Generate training set on GCS for training using Cloud TPUs
+    :param event:
+    :return:
+    """
+    pass
+
