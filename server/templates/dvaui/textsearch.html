@@ -86,7 +86,7 @@
                             <td>{{ r.frame.frame_index }}</td>
                             <td>{{ r.object_name }}</td>
                             <td>{{ r.text }}</td>
-                            <td class="text-center"><a href="/frames/{{ r.frame.pk }}">details</a></td>
+                            <td class="text-center"><a href="/frames/by_index/{{ r.video_id }}/{{ r.frame_index }}">details</a></td>
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -113,7 +113,7 @@
                             <td>{{ r.frame.frame_index }}</td>
                             <td>{{ r.object_name }}</td>
                             <td>{{ r.text }}</td>
-                            <td class="text-center"><a href="/frames/{{ r.frame.pk }}">details</a></td>
+                            <td class="text-center"><a href="/frames/by_index/{{ r.video_id }}/{{ r.frame_index }}">details</a></td>
                         </tr>
                     {% endfor %}
                     </tbody>
