@@ -284,20 +284,20 @@ def handle_perform_matching(dt):
                     pass
                 else:
                     if di.target == 'frames':
-                        if e is list:
-                            e = e[0]
-                        if e not in frame_to_region_index:
+                        if entry is list:
+                            entry = entry[0]
+                        if entry not in frame_to_region_index:
                             if di.video.dataset:
-                                df = models.Frame.objects.get(frame_index=e,video_id=di.video_id)
+                                df = models.Frame.objects.get(frame_index=entry,video_id=di.video_id)
                                 regions.append(models.Region(video_id=di.video_id, x=0, y=0, event=dt, w=df.w, h=df.h,
-                                                             frame_index=e, full_frame=True))
+                                                             frame_index=entry, full_frame=True))
                             else:
                                 regions.append(models.Region(video_id=di.video_id, x=0, y=0, event=dt, w=di.video.width,
-                                                             h=di.video.height, frame_index=e, full_frame=True))
-                            frame_to_region_index[e] = region_count
+                                                             h=di.video.height, frame_index=entry, full_frame=True))
+                            frame_to_region_index[entry] = region_count
                             region_count += 1
                         region_id = None
-                        value_map = {'region_id': frame_to_region_index[e]}
+                        value_map = {'region_id': frame_to_region_index[entry]}
                     else:
                         region_id = entry
                         value_map = {}
