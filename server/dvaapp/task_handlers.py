@@ -306,7 +306,7 @@ def handle_perform_matching(dt):
                         dr.video_id = video_id
                         dr.metadata = result
                         dr.region_id = region_id
-                        if result['type'] == 'Region':
+                        if result['type'] == 'regions':
                             tdr = models.Region.objects.get(pk=result['id'])
                             dr.x = tdr.x
                             dr.y = tdr.y
@@ -328,7 +328,7 @@ def handle_perform_matching(dt):
                             else:
                                 dr.w = target_video.width
                                 dr.h = target_video.height
-                                dr.path = "{}::{}".format(target_video.video.url, target_video.frame_index)
+                                dr.path = "{}::{}".format(target_video.url, result['id'])
                         dr.weight = result['dist']
                         dr.event_id = dt.pk
                         relations.append((dr, value_map))
