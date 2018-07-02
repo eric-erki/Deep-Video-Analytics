@@ -155,7 +155,7 @@ def export_video_to_file(video_obj, export, task_obj):
                 path = path.replace('.zip', '.dva_export.zip')
             else:
                 path = '{}.dva_export.zip'.format(path)
-        upload_file_to_path(local_path, path)
+        upload_file_to_path(local_path, path, task_obj.arguments.get("public",False))
         os.remove(local_path)
         export.url = path
     else:
