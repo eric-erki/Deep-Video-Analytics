@@ -1,5 +1,5 @@
 import os, json, copy, time, subprocess, logging, shutil, zipfile, uuid
-from models import QueryRegion, DVAPQL, Region, Frame, Segment, IndexEntries, TEvent, DeletedVideo, TaskRestart
+from models import QueryRegion, DVAPQL, Region, Frame, Segment, IndexEntries, TEvent, DeletedVideo, TaskRestart, Export
 
 from django.conf import settings
 from PIL import Image
@@ -128,7 +128,10 @@ def load_dva_export_file(dv, dt):
     os.remove(source_zip)
 
 
-def export_video_to_file(video_obj, export, task_obj):
+def export_video_to_file(video_obj, task_obj):
+    export = Export()
+    export.event = task_obj
+    export.export_type = export.VIDEO_EXPORT
     if settings.ENABLE_CLOUDFS:
         download_video_from_remote_to_local(video_obj)
     video_id = video_obj.pk
@@ -164,6 +167,49 @@ def export_video_to_file(video_obj, export, task_obj):
         if settings.ENABLE_CLOUDFS:
             upload_file_to_remote("/exports/{}".format(file_name))
         export.url = "{}/exports/{}".format(settings.MEDIA_URL, file_name).replace('//exports', '/exports')
+    return export
+
+
+def export_model_to_file(model_obj, task_obj):
+    export = Export()
+    export.event = task_obj
+    export.export_type = export.MODEL_EXPORT
+    if settings.ENABLE_CLOUDFS:
+        model_obj.ensure()
+    model_id = model_obj.pk
+    export_uuid = str(uuid.uuid4())
+    file_name = '{}.dva_model_export.zip'.format(export_uuid)
+    try:
+        os.mkdir("{}/{}".format(settings.MEDIA_ROOT, 'exports'))
+    except:
+        pass
+    shutil.copytree('{}/models/{}'.format(settings.MEDIA_ROOT, model_id),
+                    "{}/exports/{}".format(settings.MEDIA_ROOT, export_uuid))
+    a = serializers.TrainedModelSerializer(instance=model_obj)
+    data = copy.deepcopy(a.data)
+    data['version'] = settings.SERIALIZER_VERSION
+    with file("{}/exports/{}/model_spec.json".format(settings.MEDIA_ROOT, export_uuid), 'w') as output:
+        json.dump(data, output)
+    zipper = subprocess.Popen(['zip', file_name, '-r', '{}'.format(export_uuid)],
+                              cwd='{}/exports/'.format(settings.MEDIA_ROOT))
+    zipper.wait()
+    shutil.rmtree("{}/exports/{}".format(settings.MEDIA_ROOT, export_uuid))
+    local_path = "{}/exports/{}".format(settings.MEDIA_ROOT, file_name)
+    path = task_obj.arguments.get('path', None)
+    if path:
+        if not path.endswith('dva_model_export.zip'):
+            if path.endswith('.zip'):
+                path = path.replace('.zip', '.dva_model_export.zip')
+            else:
+                path = '{}.dva_model_export.zip'.format(path)
+        upload_file_to_path(local_path, path, task_obj.arguments.get("public",False))
+        os.remove(local_path)
+        export.url = path
+    else:
+        if settings.ENABLE_CLOUDFS:
+            upload_file_to_remote("/exports/{}".format(file_name))
+        export.url = "{}/exports/{}".format(settings.MEDIA_URL, file_name).replace('//exports', '/exports')
+    return export
 
 
 def build_queryset(args, video_id=None, query_id=None, target=None, filters=None):

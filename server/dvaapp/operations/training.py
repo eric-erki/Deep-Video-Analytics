@@ -8,7 +8,7 @@ from dvaapp.models import TrainedModel, Retriever, TrainingSet, IndexEntries
 
 def train_lopq(start,args):
     args = copy.deepcopy(args)
-    dt = TrainingSet.objects.get(**args['training_set_selector'])
+    dt = TrainingSet.objects.get(**args['trainingset_selector'])
     m = TrainedModel()
     dirname = "{}/models/{}".format(settings.MEDIA_ROOT,m.uuid)
     m.create_directory()
@@ -45,7 +45,7 @@ def train_lopq(start,args):
 
 def train_faiss(start,args):
     args = copy.deepcopy(args)
-    dt = TrainingSet.objects.get(**args['training_set_selector'])
+    dt = TrainingSet.objects.get(**args['trainingset_selector'])
     m = TrainedModel()
     m.create_directory()
     index_list = []

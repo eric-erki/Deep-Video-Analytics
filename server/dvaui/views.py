@@ -833,19 +833,6 @@ def delete_video(request):
 
 
 @user_passes_test(user_check)
-def rename_video(request):
-    if request.user.is_staff:  # currently only staff can rename
-        video_pk = request.POST.get('video_id')
-        name = request.POST.get('name')
-        v = Video.objects.get(pk=video_pk)
-        v.name = name
-        v.save()
-        return redirect('video_list')
-    else:
-        return redirect('accounts/login/')
-
-
-@user_passes_test(user_check)
 def shortcuts(request):
     user = request.user if request.user.is_authenticated else None
     if request.method == 'POST':

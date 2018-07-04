@@ -177,6 +177,12 @@ class TEvent(models.Model):
             raise ValueError("Finalize should be only called once")
         else:
             self.results = {'created_objects': {}}
+        if 'Export' in bulk_create:
+            temp = []
+            for i, d in enumerate(bulk_create['Export']):
+                temp.append(d)
+            created_exports = Export.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['Export'] = len(created_exports)
         if 'IndexEntries' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['IndexEntries']):

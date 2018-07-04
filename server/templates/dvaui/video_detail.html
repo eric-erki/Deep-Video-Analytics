@@ -151,21 +151,6 @@
                         <button type="submit" class="btn btn-danger btn-block"><i class="fa fa-delete"></i> Delete (only staff)</button>
                     </form>
                 </div>
-                <div class="col-sm-6">
-                    <form action="/rename_video" method="post">
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="form-group">
-                                    <input name="name" type="text" placeholder="New name for {{ object.name }}" required="required" class="form-control" />
-                                </div>
-                            </div>
-                            <div class="col-sm-6 text-center">
-                                <input type="hidden" value="{{ object.pk }}" name="video_id">{% csrf_token %}
-                                <button type="submit" class="btn btn-success btn-block"><i class="fa fa-edit"></i> Rename</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
             </div>
             <form action="/export_video" method="post">
             <div class="row m-t" style="margin-top:25px">

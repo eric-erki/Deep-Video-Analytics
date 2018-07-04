@@ -49,6 +49,14 @@ class TrainedModelSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
 
+class TrainedModelExportSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField()
+
+    class Meta:
+        model = TrainedModel
+        fields = '__all__'
+
+
 class TrainingSetSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
 

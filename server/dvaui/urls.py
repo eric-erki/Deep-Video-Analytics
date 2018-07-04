@@ -30,7 +30,6 @@ urlpatterns = [
     url(r'^stored_process/(?P<pk>\d+)/$', views.StoredProcessDetail.as_view(), name='stored_process_detail'),
     url(r'^export_video', views.export_video, name='export_video'),
     url(r'^delete_video', views.delete_video, name='delete_video'),
-    url(r'^rename_video', views.rename_video, name='rename_video'),
     url(r'^shortcuts', views.shortcuts, name='shortcuts'),
     url(r'^import_s3', views.import_s3, name='import_s3'),
     url(r'^submit_process', views.submit_process, name='submit_process'),

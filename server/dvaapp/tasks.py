@@ -344,26 +344,26 @@ def perform_export(task_id):
     if dt is None:
         return 0
     args = dt.arguments
-    de = models.Export()
-    de.event = dt
+    exports = []
     try:
         if 'video_selector' in args:
             dv = models.Video.objects.get(**args['video_selector'])
-            de.export_type = de.VIDEO_EXPORT
-            task_shared.export_video_to_file(dv,de,dt)
-            de.save()
-        elif 'model_selector' in args:
-            raise NotImplementedError
-        elif 'training_set_selector' in args:
+            exports.append(task_shared.export_video_to_file(dv,dt))
+        elif 'trainedmodel_selector' in args:
+            dm = models.TrainedModel.objects.get(**args['trainedmodel_selector'])
+            exports.append(task_shared.export_model_to_file(dm, dt))
+        elif 'trainingset_selector' in args:
             raise NotImplementedError
         else:
-            raise ValueError("selector not found")
+            raise ValueError("one of ('video_selector','trainedmodel_selector','trainingset_selector') not "
+                             "found in {}".format(args))
     except:
         dt.errored = True
         dt.error_message = "Could not export"
         dt.save()
         exc_info = sys.exc_info()
         raise exc_info[0], exc_info[1], exc_info[2]
+    dt.finalize({"Export":exports})
     mark_as_completed(dt)
 
 
@@ -548,8 +548,8 @@ def perform_training_set_creation(task_id):
     args = dt.arguments
     if 'training_set_pk' in args:
         train_set = models.TrainingSet.objects.get(pk=args['training_set_pk'])
-    elif 'training_set_selector' in args:
-        train_set = models.TrainingSet.objects.get(**args['training_set_selector'])
+    elif 'trainingset_selector' in args:
+        train_set = models.TrainingSet.objects.get(**args['trainingset_selector'])
     else:
         raise ValueError("Could not find training set {}".format(args))
     if train_set.built:
