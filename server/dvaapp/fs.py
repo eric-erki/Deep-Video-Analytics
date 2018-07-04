@@ -233,9 +233,8 @@ def upload_file_to_path(local_path, remote_path, make_public=False):
             object_acl.put(ACL='public-read')
     elif fs_type == 'gs':
         remote_bucket = GS.get_bucket(bucket_name)
-        blob = remote_bucket.get_blob(key)
-        with open(local_path, 'w') as flocal:
-            blob.upload_from_file(flocal)
+        blob = remote_bucket.blob(key.strip('/'))
+        blob.upload_from_filename(local_path)
         if make_public:
             blob.make_public()
     elif fs_type == 'do':
