@@ -37,7 +37,7 @@
             <div class="col-lg-12">
                 <div class="box box-primary">
                     <div class="box-header with-border">
-                        <h4>Models</h4>
+                        <h3>Models</h3>
                     </div>
                     <div class="box-body">
                         <table class="table dataTables-dict">
@@ -94,7 +94,7 @@
                             {% for e in exports %}
                                 <tr>
                                     <td><a href="/task_detail/{{ e.event_id }}">{{ e.event_id }}</a></td>
-                                    <td>{{ e.event.arguments.video_selector }}</td>
+                                    <td>{{ e.event.arguments.trainedmodel_selector }}</td>
                                     <td class="text-center">{{ e.created }}</td>
                                     <td class="text-center"><a href="{{ e.url }}" target="_blank" rel="noreferrer"
                                                                rel="noopener">{{ e.url }}</a></td>
