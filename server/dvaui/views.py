@@ -488,9 +488,8 @@ def index(request, query_pk=None, frame_pk=None, detection_pk=None):
     context['script_count'] = StoredDVAPQL.objects.all().count()
     context['tube_count'] = Tube.objects.all().count()
     context["videos"] = Video.objects.all().filter()
-    context["exported_video_count"] = Export.objects.filter(export_type=Export.VIDEO_EXPORT)
-    context["exported_model_count"] = Export.objects.filter(export_type=Export.MODEL_EXPORT)
-    context['detector_count'] = TrainedModel.objects.filter(model_type=TrainedModel.DETECTOR).count()
+    context["exported_video_count"] = Export.objects.filter(export_type=Export.VIDEO_EXPORT).count()
+    context["exported_model_count"] = Export.objects.filter(export_type=Export.MODEL_EXPORT).count()
     context['rate'] = settings.DEFAULT_RATE
     return render(request, 'dvaui/dashboard.html', context)
 
