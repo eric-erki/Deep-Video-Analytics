@@ -185,7 +185,7 @@ def export_model_to_file(model_obj, task_obj):
         pass
     shutil.copytree('{}/models/{}'.format(settings.MEDIA_ROOT, model_id),
                     "{}/exports/{}".format(settings.MEDIA_ROOT, export_uuid))
-    a = serializers.TrainedModelSerializer(instance=model_obj)
+    a = serializers.TrainedModelExportSerializer(instance=model_obj)
     data = copy.deepcopy(a.data)
     data['version'] = settings.SERIALIZER_VERSION
     with file("{}/exports/{}/model_spec.json".format(settings.MEDIA_ROOT, export_uuid), 'w') as output:
