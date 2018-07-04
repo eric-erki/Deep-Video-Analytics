@@ -199,7 +199,7 @@ def get_path_to_file(path, local_path):
                     f.write(chunk)
         r.close()
     elif path.endswith('/'):
-        raise NotImplementedError("Importing directories disabled {}".format(path))
+        raise ValueError("Cannot import directories {}".format(path))
     elif path.startswith('s3'):
         bucket_name = path[5:].split('/')[0]
         key = '/'.join(path[5:].split('/')[1:])
@@ -216,7 +216,7 @@ def get_path_to_file(path, local_path):
         key = '/'.join(path[5:].split('/')[1:])
         do_client.download_file(bucket_name, key, local_path)
     else:
-        raise NotImplementedError("Unknown file system {}".format(path))
+        raise ValueError("Unknown file system {}".format(path))
 
 
 def upload_file_to_path(local_path, remote_path, make_public=False):
@@ -224,7 +224,7 @@ def upload_file_to_path(local_path, remote_path, make_public=False):
     bucket_name = remote_path[5:].split('/')[0]
     key = '/'.join(remote_path[5:].split('/')[1:])
     if remote_path.endswith('/'):
-        raise NotImplementedError("key/remote-path cannot end in a /")
+        raise ValueError("key/remote-path cannot end in a /")
     elif fs_type == 's3':
         with open(local_path, 'rb') as body:
             S3.Object(bucket_name, key).put(Body=body)
@@ -233,15 +233,18 @@ def upload_file_to_path(local_path, remote_path, make_public=False):
             object_acl.put(ACL='public-read')
     elif fs_type == 'gs':
         remote_bucket = GS.get_bucket(bucket_name)
+        blob = remote_bucket.get_blob(key)
         with open(local_path, 'w') as flocal:
-            remote_bucket.get_blob(key).upload_from_file(flocal)
+            blob.upload_from_file(flocal)
+        if make_public:
+            blob.make_public()
     elif fs_type == 'do':
         do_client.upload_file(local_path, bucket_name, key)
         if make_public:
             object_acl = do_resource.ObjectAcl(bucket_name, key)
             object_acl.put(ACL='public-read')
     else:
-        raise NotImplementedError("Unknown cloud file system {}".format(remote_path))
+        raise ValueError("Unknown cloud file system : '{}'".format(remote_path))
 
 
 def upload_file_to_remote(fpath, cache=True):
