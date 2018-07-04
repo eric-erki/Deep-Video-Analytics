@@ -265,6 +265,9 @@ TASK_NAMES_TO_QUEUE = {
 
 
 RESTARTABLE_TASKS = {
+    'perform_video_segmentation':{
+        'delete_models':['Segment',],
+    },
     'perform_indexing':{
         'delete_models':['IndexEntries',],
     },

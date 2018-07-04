@@ -869,6 +869,8 @@ class TaskRestart(models.Model):
     arguments = JSONField(blank=True, null=True)
     operation = models.CharField(max_length=100, default="")
     queue = models.CharField(max_length=100, default="")
+    exception = models.TextField(default="")
+    # We don't want to to associate it with the video as result there is no relation but instead we store UUID
     video_uuid = models.UUIDField(default=uuid.uuid4, null=True)
     process = models.ForeignKey(DVAPQL)
     created = models.DateTimeField('date created', auto_now_add=True)

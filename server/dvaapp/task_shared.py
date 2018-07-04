@@ -20,7 +20,7 @@ def pid_exists(pid):
         return True
 
 
-def restart_task(dt):
+def restart_task(dt, exception_traceback):
     if dt.operation in settings.RESTARTABLE_TASKS:
         try:
             previous_attempt = TaskRestart.objects.get(launched_event_pk=dt.pk)
@@ -47,10 +47,12 @@ def restart_task(dt):
                 TaskRestart.objects.create(original_event_pk=previous_attempt.original_event_pk,
                                            launched_event_pk=new_dt.pk,
                                            process=dt.parent_process,
+                                           exception=exception_traceback,
                                            attempts=previous_attempt.attempts + 1)
             else:
                 TaskRestart.objects.create(original_event_pk=dt.pk,
                                            launched_event_pk=new_dt.pk,
+                                           exception=exception_traceback,
                                            process=dt.parent_process,
                                            attempts=1)
             app.send_task(name=new_dt.operation, args=[new_dt.pk, ], queue=new_dt.queue)
