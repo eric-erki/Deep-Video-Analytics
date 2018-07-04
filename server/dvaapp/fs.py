@@ -270,7 +270,10 @@ def download_video_from_remote_to_local(dv):
         if syncer.returncode != 0:
             raise ValueError("Error while executing : {}".format(command))
     else:
-        raise NotImplementedError
+        dv.create_directory()
+        for blob in BUCKET.list_blobs(prefix='{}/'.format(dv.pk)):
+            with open("{}/{}".format(settings.MEDIA_ROOT,blob.name), 'w') as fout:
+                blob.download_to_file(fout)
 
 
 def upload_video_to_remote(video_id):
