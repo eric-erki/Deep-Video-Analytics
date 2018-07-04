@@ -176,7 +176,7 @@ def export_model_to_file(model_obj, task_obj):
     export.export_type = export.MODEL_EXPORT
     if settings.ENABLE_CLOUDFS:
         model_obj.ensure()
-    model_id = model_obj.pk
+    model_id = model_obj.uuid
     export_uuid = str(uuid.uuid4())
     file_name = '{}.dva_model_export.zip'.format(export_uuid)
     try:
