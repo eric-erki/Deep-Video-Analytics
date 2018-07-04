@@ -307,6 +307,7 @@ class TrainedModelList(UserPassesTestMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(TrainedModelList, self).get_context_data(**kwargs)
+        context['exports'] = Export.objects.filter(export_type=Export.MODEL_EXPORT)
         return context
 
     def test_func(self):
@@ -881,6 +882,9 @@ def shortcuts(request):
                     'v': request.POST.get('v'),
                     'sub': request.POST.get('sub')}
             process_pk = view_shared.perform_training(training_set_pk, args, user)
+            return redirect('process_detail', process_pk)
+        elif request.POST.get('op') == 'export_model':
+            process_pk = view_shared.perform_model_export(request.POST.get('model_pk'), user)
             return redirect('process_detail', process_pk)
         else:
             raise NotImplementedError(request.POST.get('op'))
