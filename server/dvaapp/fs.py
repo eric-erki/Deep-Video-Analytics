@@ -42,6 +42,11 @@ if 'DO_ACCESS_KEY_ID' in os.environ and 'DO_SECRET_ACCESS_KEY' and os.environ:
                                       os.environ.get('DO_REGION', 'nyc3')),
                                   aws_access_key_id=os.environ['DO_ACCESS_KEY_ID'],
                                   aws_secret_access_key=os.environ['DO_SECRET_ACCESS_KEY'])
+    do_resource = do_session.resource('s3', region_name=os.environ.get('DO_REGION', 'nyc3'),
+                                  endpoint_url='https://{}.digitaloceanspaces.com'.format(
+                                      os.environ.get('DO_REGION', 'nyc3')),
+                                  aws_access_key_id=os.environ['DO_ACCESS_KEY_ID'],
+                                  aws_secret_access_key=os.environ['DO_SECRET_ACCESS_KEY'])
 
 
 def cacheable(path):
@@ -194,7 +199,7 @@ def get_path_to_file(path, local_path):
                     f.write(chunk)
         r.close()
     elif path.endswith('/'):
-        raise NotImplementedError("Importing directories disabled {}".format(path))
+        raise ValueError("Cannot import directories {}".format(path))
     elif path.startswith('s3'):
         bucket_name = path[5:].split('/')[0]
         key = '/'.join(path[5:].split('/')[1:])
@@ -211,26 +216,34 @@ def get_path_to_file(path, local_path):
         key = '/'.join(path[5:].split('/')[1:])
         do_client.download_file(bucket_name, key, local_path)
     else:
-        raise NotImplementedError("Unknown file system {}".format(path))
+        raise ValueError("Unknown file system {}".format(path))
 
 
-def upload_file_to_path(local_path, remote_path):
+def upload_file_to_path(local_path, remote_path, make_public=False):
     fs_type = remote_path[:2]
     bucket_name = remote_path[5:].split('/')[0]
     key = '/'.join(remote_path[5:].split('/')[1:])
     if remote_path.endswith('/'):
-        raise NotImplementedError("key/remote-path cannot end in a /")
+        raise ValueError("key/remote-path cannot end in a /")
     elif fs_type == 's3':
         with open(local_path, 'rb') as body:
             S3.Object(bucket_name, key).put(Body=body)
+        if make_public:
+            object_acl = S3.ObjectAcl(bucket_name, key)
+            object_acl.put(ACL='public-read')
     elif fs_type == 'gs':
         remote_bucket = GS.get_bucket(bucket_name)
-        with open(local_path, 'w') as flocal:
-            remote_bucket.get_blob(key).upload_from_file(flocal)
+        blob = remote_bucket.blob(key.strip('/'))
+        blob.upload_from_filename(local_path)
+        if make_public:
+            blob.make_public()
     elif fs_type == 'do':
         do_client.upload_file(local_path, bucket_name, key)
+        if make_public:
+            object_acl = do_resource.ObjectAcl(bucket_name, key)
+            object_acl.put(ACL='public-read')
     else:
-        raise NotImplementedError("Unknown cloud file system {}".format(remote_path))
+        raise ValueError("Unknown cloud file system : '{}'".format(remote_path))
 
 
 def upload_file_to_remote(fpath, cache=True):
@@ -259,7 +272,10 @@ def download_video_from_remote_to_local(dv):
         if syncer.returncode != 0:
             raise ValueError("Error while executing : {}".format(command))
     else:
-        raise NotImplementedError
+        dv.create_directory()
+        for blob in BUCKET.list_blobs(prefix='{}/'.format(dv.pk)):
+            with open("{}/{}".format(settings.MEDIA_ROOT,blob.name), 'w') as fout:
+                blob.download_to_file(fout)
 
 
 def upload_video_to_remote(video_id):

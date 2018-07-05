@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from models import Video, Frame, Region, DVAPQL, QueryResult, TEvent, IndexEntries, Tube, Segment, TrainedModel, \
     Retriever, SystemState, QueryRegion, Worker, TrainingSet, RegionRelation, TubeRegionRelation, TubeRelation, \
-    Export, HyperRegionRelation, HyperTubeRegionRelation
+    Export, HyperRegionRelation, HyperTubeRegionRelation, TaskRestart
 import os, glob
 from collections import defaultdict
 from django.conf import settings
@@ -42,6 +42,14 @@ class RetrieverSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class TrainedModelSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.ReadOnlyField()
+
+    class Meta:
+        model = TrainedModel
+        fields = '__all__'
+
+
+class TrainedModelExportSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
 
     class Meta:
@@ -274,6 +282,12 @@ class TEventSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
 
+class TaskRestartSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = TaskRestart
+        fields = '__all__'
+
+
 class TubeExportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tube
@@ -288,6 +302,7 @@ class SegmentExportSerializer(serializers.ModelSerializer):
 
 class DVAPQLSerializer(serializers.HyperlinkedModelSerializer):
     tasks = TaskExportSerializer(source='tevent_set', read_only=True, many=True)
+    task_restarts = TaskRestartSerializer(source='taskrestart_set', read_only=True, many=True)
     query_image_url = serializers.SerializerMethodField()
 
     def get_query_image_url(self, obj):
@@ -298,7 +313,7 @@ class DVAPQLSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = DVAPQL
-        fields = ('process_type', 'query_image_url', 'created', 'user', 'uuid', 'script', 'tasks',
+        fields = ('process_type', 'query_image_url', 'created', 'user', 'uuid', 'script', 'tasks', 'task_restarts',
                   'results_metadata', 'results_available', 'completed', 'id')
 
 

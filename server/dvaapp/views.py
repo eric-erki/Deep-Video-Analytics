@@ -2,7 +2,7 @@ from django.conf import settings
 import json
 from .models import Video, Frame, DVAPQL, QueryResult, TEvent, IndexEntries, Region, Tube, Segment, \
     TubeRegionRelation, TubeRelation, Retriever, SystemState, QueryRegion, \
-    TrainedModel, Worker, TrainingSet, RegionRelation, Export, HyperRegionRelation, HyperTubeRegionRelation
+    TrainedModel, Worker, TrainingSet, RegionRelation, Export, HyperRegionRelation, HyperTubeRegionRelation, TaskRestart
 import serializers
 from rest_framework import viewsets
 from django.contrib.auth.models import User
@@ -134,6 +134,13 @@ class TEventViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = TEvent.objects.all()
     serializer_class = serializers.TEventSerializer
     filter_fields = ('video', 'operation', 'completed', 'started', 'errored', 'parent_process')
+
+
+class TaskRestartViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
+    queryset = TaskRestart.objects.all()
+    serializer_class = serializers.TaskRestartSerializer
+    filter_fields = ('process','video_uuid')
 
 
 class WorkerViewSet(viewsets.ReadOnlyModelViewSet):

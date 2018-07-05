@@ -283,25 +283,30 @@ def handle_perform_matching(dt):
                 if match_self:
                     pass
                 else:
-                    if entry['type'] == 'Frame':
-                        frame_id = entry['id']
-                        if frame_id not in frame_to_region_index:
-                            df = models.Frame.objects.get(pk=frame_id)
-                            regions.append(models.Region(video_id=video_id, x=0, y=0, event=dt, w=df.w, h=df.h,
-                                                         full_frame=True))
-                            frame_to_region_index[frame_id] = region_count
+                    if di.target == 'frames':
+                        if entry is list:
+                            entry = entry[0]
+                        if entry not in frame_to_region_index:
+                            if di.video.dataset:
+                                df = models.Frame.objects.get(frame_index=entry,video_id=di.video_id)
+                                regions.append(models.Region(video_id=di.video_id, x=0, y=0, event=dt, w=df.w, h=df.h,
+                                                             frame_index=entry, full_frame=True))
+                            else:
+                                regions.append(models.Region(video_id=di.video_id, x=0, y=0, event=dt, w=di.video.width,
+                                                             h=di.video.height, frame_index=entry, full_frame=True))
+                            frame_to_region_index[entry] = region_count
                             region_count += 1
                         region_id = None
-                        value_map = {'region_id': frame_to_region_index[entry['id']]}
+                        value_map = {'region_id': frame_to_region_index[entry]}
                     else:
-                        region_id = entry['id']
+                        region_id = entry
                         value_map = {}
                     for result in results:
                         dr = models.HyperRegionRelation()
                         dr.video_id = video_id
                         dr.metadata = result
                         dr.region_id = region_id
-                        if result['type'] == 'Region':
+                        if result['type'] == 'regions':
                             tdr = models.Region.objects.get(pk=result['id'])
                             dr.x = tdr.x
                             dr.y = tdr.y
@@ -323,7 +328,7 @@ def handle_perform_matching(dt):
                             else:
                                 dr.w = target_video.width
                                 dr.h = target_video.height
-                                dr.path = "{}::{}".format(target_video.video.url, target_video.frame_index)
+                                dr.path = "{}::{}".format(target_video.url, result['id'])
                         dr.weight = result['dist']
                         dr.event_id = dt.pk
                         relations.append((dr, value_map))

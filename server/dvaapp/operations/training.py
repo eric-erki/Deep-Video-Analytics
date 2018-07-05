@@ -8,7 +8,7 @@ from dvaapp.models import TrainedModel, Retriever, TrainingSet, IndexEntries
 
 def train_lopq(start,args):
     args = copy.deepcopy(args)
-    dt = TrainingSet.objects.get(**args['training_set_selector'])
+    dt = TrainingSet.objects.get(**args['trainingset_selector'])
     m = TrainedModel()
     dirname = "{}/models/{}".format(settings.MEDIA_ROOT,m.uuid)
     m.create_directory()
@@ -45,7 +45,7 @@ def train_lopq(start,args):
 
 def train_faiss(start,args):
     args = copy.deepcopy(args)
-    dt = TrainingSet.objects.get(**args['training_set_selector'])
+    dt = TrainingSet.objects.get(**args['trainingset_selector'])
     m = TrainedModel()
     m.create_directory()
     index_list = []
@@ -66,7 +66,11 @@ def train_faiss(start,args):
     m.name = args['name']
     m.algorithm = "FAISS"
     m.model_type = m.APPROXIMATOR
-    m.arguments = {'index_factory':args['index_factory']}
+    m.arguments = {'index_factory': args['index_factory']}
+    if 'indexer_shasum' in args:
+        m.arguments['indexer_shasum'] = args['indexer_shasum']
+    if 'approximator_shasum' in args:
+        m.arguments['approximator_shasum'] = args['approximator_shasum']
     m.shasum = shasum
     m.files = [{"filename":"faiss.index","url":output_file}]
     m.event = start

@@ -260,8 +260,8 @@ def launch_tasks(k, dt, inject_filters, map_filters=None, launch_type=""):
         if op in settings.TRAINING_TASKS:
             if "training_set_id" in k:
                 training_set = TrainingSet.objects.get(pk=k['training_set_id'])
-            elif "training_set_selector" in k['arguments']:
-                training_set = TrainingSet.objects.get(**k['arguments']['training_set_selector'])
+            elif "trainingset_selector" in k['arguments']:
+                training_set = TrainingSet.objects.get(**k['arguments']['trainingset_selector'])
             else:
                 training_set = dt.training_set
         else:
@@ -525,8 +525,8 @@ class DVAPQLProcess(object):
                 dt.video_id = t['video_id']
             if 'training_set_id' in t:
                 dt.training_set_id = t['training_set_id']
-            elif 'training_set_selector' in t['arguments']:
-                dt.training_set_id = TrainingSet.objects.get(**t['arguments']['training_set_selector'])
+            elif 'trainingset_selector' in t['arguments']:
+                dt.training_set_id = TrainingSet.objects.get(**t['arguments']['trainingset_selector'])
             dt.arguments = args
             dt.queue, op = get_queue_name_and_operation(t['operation'], t.get('arguments', {}))
             dt.operation = op

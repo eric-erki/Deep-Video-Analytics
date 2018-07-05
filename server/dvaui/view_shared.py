@@ -483,3 +483,20 @@ def perform_training(training_set_pk, args, user=None):
     p.create_from_json(spec, user)
     p.launch()
     return p.process.pk
+
+
+def perform_model_export(model_pk, user=None):
+    spec = {
+        'process_type': dvaapp.models.DVAPQL.PROCESS,
+        'map': [
+
+            {
+                "operation": "perform_export",
+                "arguments": {'trainedmodel_selector':{"pk": model_pk}}
+            }
+        ]
+    }
+    p = DVAPQLProcess()
+    p.create_from_json(spec, user)
+    p.launch()
+    return p.process.pk

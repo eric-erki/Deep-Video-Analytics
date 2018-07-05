@@ -23,6 +23,7 @@ router.register(r'queryresults', views.QueryResultsViewSet)
 router.register(r'queryregions', views.QueryRegionViewSet)
 router.register(r'indexentries', views.IndexEntriesViewSet)
 router.register(r'events', views.TEventViewSet)
+router.register(r'restarts', views.TaskRestartViewSet)
 router.register(r'workers', views.WorkerViewSet)
 router.register(r'system_state', views.SystemStateViewSet)
 

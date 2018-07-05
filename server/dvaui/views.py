@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.http import JsonResponse
-import glob
 import json
 from django.views.generic import ListView, DetailView
 from .forms import UploadFileForm, YTVideoForm, AnnotationForm
@@ -308,6 +307,7 @@ class TrainedModelList(UserPassesTestMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(TrainedModelList, self).get_context_data(**kwargs)
+        context['exports'] = Export.objects.filter(export_type=Export.MODEL_EXPORT)
         return context
 
     def test_func(self):
@@ -489,7 +489,8 @@ def index(request, query_pk=None, frame_pk=None, detection_pk=None):
     context['script_count'] = StoredDVAPQL.objects.all().count()
     context['tube_count'] = Tube.objects.all().count()
     context["videos"] = Video.objects.all().filter()
-    context['detector_count'] = TrainedModel.objects.filter(model_type=TrainedModel.DETECTOR).count()
+    context["exported_video_count"] = Export.objects.filter(export_type=Export.VIDEO_EXPORT).count()
+    context["exported_model_count"] = Export.objects.filter(export_type=Export.MODEL_EXPORT).count()
     context['rate'] = settings.DEFAULT_RATE
     return render(request, 'dvaui/dashboard.html', context)
 
@@ -833,19 +834,6 @@ def delete_video(request):
 
 
 @user_passes_test(user_check)
-def rename_video(request):
-    if request.user.is_staff:  # currently only staff can rename
-        video_pk = request.POST.get('video_id')
-        name = request.POST.get('name')
-        v = Video.objects.get(pk=video_pk)
-        v.name = name
-        v.save()
-        return redirect('video_list')
-    else:
-        return redirect('accounts/login/')
-
-
-@user_passes_test(user_check)
 def shortcuts(request):
     user = request.user if request.user.is_authenticated else None
     if request.method == 'POST':
@@ -894,6 +882,9 @@ def shortcuts(request):
                     'v': request.POST.get('v'),
                     'sub': request.POST.get('sub')}
             process_pk = view_shared.perform_training(training_set_pk, args, user)
+            return redirect('process_detail', process_pk)
+        elif request.POST.get('op') == 'export_model':
+            process_pk = view_shared.perform_model_export(request.POST.get('model_pk'), user)
             return redirect('process_detail', process_pk)
         else:
             raise NotImplementedError(request.POST.get('op'))

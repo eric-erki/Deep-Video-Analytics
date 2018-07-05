@@ -177,6 +177,12 @@ class TEvent(models.Model):
             raise ValueError("Finalize should be only called once")
         else:
             self.results = {'created_objects': {}}
+        if 'Export' in bulk_create:
+            temp = []
+            for i, d in enumerate(bulk_create['Export']):
+                temp.append(d)
+            created_exports = Export.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['Export'] = len(created_exports)
         if 'IndexEntries' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['IndexEntries']):
@@ -322,11 +328,11 @@ class TrainedModel(models.Model):
     model_type = models.CharField(max_length=1, choices=MTYPE, db_index=True, default=INDEXER)
     name = models.CharField(max_length=100)
     algorithm = models.CharField(max_length=100, default="")
-    shasum = models.CharField(max_length=40, null=True, unique=True)
+    shasum = models.CharField(max_length=40, null=True)
     model_filename = models.CharField(max_length=200, default="", null=True)
     created = models.DateTimeField('date created', auto_now_add=True)
     arguments = JSONField(null=True, blank=True)
-    event = models.ForeignKey(TEvent)
+    event = models.ForeignKey(TEvent, null=True)
     trained = models.BooleanField(default=False)
     training_set = models.ForeignKey(TrainingSet, null=True)
     url = models.CharField(max_length=200, default="")
@@ -573,6 +579,7 @@ class Region(models.Model):
             with open(region_path, 'wb') as out:
                 out.write(cached_data)
         else:
+            fs.ensure(self.frame_path(""))
             frame_path = self.frame_path()
             if frame_path not in images:
                 images[frame_path] = Image.open(frame_path)
@@ -868,6 +875,8 @@ class TaskRestart(models.Model):
     arguments = JSONField(blank=True, null=True)
     operation = models.CharField(max_length=100, default="")
     queue = models.CharField(max_length=100, default="")
+    exception = models.TextField(default="")
+    # We don't want to to associate it with the video as result there is no relation but instead we store UUID
     video_uuid = models.UUIDField(default=uuid.uuid4, null=True)
     process = models.ForeignKey(DVAPQL)
     created = models.DateTimeField('date created', auto_now_add=True)
