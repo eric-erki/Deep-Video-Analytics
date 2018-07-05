@@ -604,6 +604,12 @@ def perform_test(task_id):
     args = dt.arguments
     if 'sleep_seconds' in args:
         time.sleep(args['sleep_seconds'])
+    if 'throw_error' in args:
+        if args['throw_error'] <= 0:
+            raise ValueError("Threw an error at very first attempt!")
+        else:
+            raise NotImplementedError("Throwing errors until {} th attempt not implemented yet".format(
+                args['throw_error']))
     process_next(dt)
     mark_as_completed(dt)
     return 0

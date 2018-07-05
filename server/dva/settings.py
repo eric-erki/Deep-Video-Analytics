@@ -283,6 +283,7 @@ RESTARTABLE_TASKS = {
     'perform_video_decode':{
         'delete_models':['Frame',]
     },
+    'perform_test':{},
 }
 
 
