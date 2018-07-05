@@ -66,7 +66,11 @@ def train_faiss(start,args):
     m.name = args['name']
     m.algorithm = "FAISS"
     m.model_type = m.APPROXIMATOR
-    m.arguments = {'index_factory':args['index_factory']}
+    m.arguments = {'index_factory': args['index_factory']}
+    if 'indexer_shasum' in args:
+        m.arguments['indexer_shasum'] = args['indexer_shasum']
+    if 'approximator_shasum' in args:
+        m.arguments['approximator_shasum'] = args['approximator_shasum']
     m.shasum = shasum
     m.files = [{"filename":"faiss.index","url":output_file}]
     m.event = start
