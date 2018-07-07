@@ -263,29 +263,8 @@ TASK_NAMES_TO_QUEUE = {
     "perform_video_decode_lambda": Q_LAMBDA
 }
 
-
-RESTARTABLE_TASKS = {
-    'perform_video_segmentation':{
-        'delete_models':['Segment',],
-    },
-    'perform_indexing':{
-        'delete_models':['IndexEntries',],
-    },
-    'perform_detection':{
-        'delete_models':['Region',]
-    },
-    'perform_analysis':{
-        'delete_models':['Region',]
-    },
-    'perform_frame_download':{
-        'delete_models':['Region','Frame']
-    },
-    'perform_video_decode':{
-        'delete_models':['Frame',]
-    },
-    'perform_test':{},
-}
-
+RESTARTABLE_TASKS = {'perform_video_segmentation', 'perform_indexing', 'perform_detection', 'perform_analysis',
+                     'perform_frame_download', 'perform_video_decode', 'perform_test'}
 
 NON_PROCESSING_TASKS = {'perform_training','perform_training_set_creation','perform_deletion', 'perform_export'}
 

@@ -14,26 +14,6 @@ from django.apps import apps
 from models import Video, DVAPQL, TEvent, TrainedModel, Retriever, Worker, DeletedVideo, TrainingSet
 from celery.result import AsyncResult
 import fs
-import task_shared
-
-SYNC_TASKS = {
-    "perform_dataset_extraction": [{'operation': 'perform_sync', 'arguments': {'dirname': 'frames'}}, ],
-    "perform_video_segmentation": [{'operation': 'perform_sync', 'arguments': {'dirname': 'segments'}}, ],
-    "perform_video_decode": [{'operation': 'perform_sync', 'arguments': {'dirname': 'frames'}}, ],
-    "perform_frame_download": [{'operation': 'perform_sync', 'arguments': {'dirname': 'frames'}}, ],
-    'perform_detection': [],
-    'perform_matching': [],
-    'perform_region_import': [],
-    'perform_transformation': [{'operation': 'perform_sync', 'arguments': {'dirname': 'regions'}}, ],
-    'perform_indexing': [{'operation': 'perform_sync', 'arguments': {'dirname': 'indexes'}}, ],
-    'perform_index_approximation': [{'operation': 'perform_sync', 'arguments': {'dirname': 'indexes'}}, ],
-    'perform_import': [{'operation': 'perform_sync', 'arguments': {}}, ],
-    'perform_training': [],
-    'perform_stream_capture': [],
-    'perform_reduce': [],
-    'perform_test': [],
-    'perform_detector_import': [],
-}
 
 ANALYER_NAME_TO_PK = {}
 APPROXIMATOR_NAME_TO_PK = {}
@@ -280,18 +260,15 @@ def launch_tasks(k, dt, inject_filters, map_filters=None, launch_type=""):
 def process_next(dt, inject_filters=None, custom_next_tasks=None, sync=True, launch_next=True, map_filters=None):
     if custom_next_tasks is None:
         custom_next_tasks = []
-    task_id = dt.pk
     launched = []
     args = copy.deepcopy(dt.arguments)
     logging.info("next tasks for {}".format(dt.operation))
     next_tasks = args.get('map', []) if args and launch_next else []
     if sync and settings.MEDIA_BUCKET:
-        for k in SYNC_TASKS.get(dt.operation, []):
-            if settings.ENABLE_CLOUDFS:
-                dirname = k['arguments'].get('dirname', None)
-                task_shared.upload(dirname, task_id, dt.video_id)
-            else:
-                launched += launch_tasks(k, dt, inject_filters, None, 'sync')
+        if settings.ENABLE_CLOUDFS:
+            dt.upload()
+        else:
+            launched += launch_tasks(dt, inject_filters, None, 'sync')
     for k in next_tasks + custom_next_tasks:
         if map_filters is None:
             map_filters = get_map_filters(k, dt.video)

@@ -72,8 +72,9 @@ class Approximators(object):
                 approx_ind.features_file_name = ""
             elif da.algorithm == 'PCA':
                 # TODO optimize this by doing matmul rather than calling for each entry
+                event.create_dir()
                 approx_vectors = np.array([approx.approximate(vectors[i, :]) for i, e in enumerate(entries)])
-                feat_fname = "{}/{}/indexes/{}.npy".format(settings.MEDIA_ROOT, index_entry.video_id, uid)
+                feat_fname = "{}/{}.npy".format(event.get_dir(), uid)
                 with open(feat_fname, 'w') as featfile:
                     np.save(featfile, approx_vectors)
                 approx_ind.features_file_name = "{}.npy".format(uid)

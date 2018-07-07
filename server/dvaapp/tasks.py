@@ -270,7 +270,8 @@ def perform_video_segmentation(task_id):
     dv.create_directory(create_subdirs=True)
     v = VideoDecoder(dvideo=dv, media_dir=settings.MEDIA_ROOT)
     v.get_metadata()
-    v.segment_video(task_id)
+    segments_batch = v.segment_video(task_id)
+    dt.finalize({"Segment":segments_batch})
     if args.get('sync', False):
         next_args = {'rescale': args['rescale'], 'rate': args['rate']}
         next_task = models.TEvent.objects.create(video=dv, operation='perform_video_decode', arguments=next_args,
@@ -301,8 +302,10 @@ def perform_video_decode(task_id):
     if target != 'segments':
         raise NotImplementedError("Cannot decode target:{}".format(target))
     task_shared.ensure_files(queryset, target)
+    frame_batch = []
     for ds in queryset:
-        v.decode_segment(ds=ds, denominator=args.get('rate', 30), event_id=task_id)
+        frame_batch += v.decode_segment(ds,dt.pk,denominator=args.get('rate', 30))
+    dt.finalize(frame_batch)
     process_next(dt)
     mark_as_completed(dt)
     return task_id
@@ -470,15 +473,8 @@ def perform_sync(task_id):
     dt = get_and_check_task(task_id)
     if dt is None:
         return 0
-    args = dt.arguments
-    if settings.MEDIA_BUCKET:
-        dirname = args.get('dirname', None)
-        task_shared.upload(dirname, dt.parent_id, dt.video_id)
-    else:
-        logging.info("Media bucket name not specified, nothing was synced.")
-        dt.error_message = "Media bucket name is empty".format(settings.MEDIA_BUCKET)
+    dt.parent.upload()
     mark_as_completed(dt)
-    return
 
 
 @app.task(track_started=True, name="perform_deletion")

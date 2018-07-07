@@ -98,7 +98,8 @@ class Indexers(object):
                     except:
                         logging.exception("error creating {}".format(dirname))
                         pass
-            feat_fname = "{}/{}/indexes/{}.npy".format(settings.MEDIA_ROOT,event.video_id,uid)
+            event.create_dir()
+            feat_fname = "{}/{}.npy".format(event.get_dir(),uid)
             with open(feat_fname, 'w') as feats:
                 np.save(feats, np.array(features))
             i = IndexEntries()

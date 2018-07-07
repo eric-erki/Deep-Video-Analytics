@@ -63,14 +63,12 @@ class DatasetCreator(object):
                 logging.warning("skipping {} ".format(subdir))
         self.dvideo.frames = len(df_list)
         self.dvideo.save()
-        df_ids = Frame.objects.bulk_create(df_list,batch_size=1000)
         regions = []
         per_event_region_index = 0
         for i,f in enumerate(df_list):
             if f.name:
                 a = Region()
                 a.video_id = self.dvideo.pk
-                a.frame_id = df_ids[i].id
                 a.frame_index = f.frame_index
                 a.per_event_index = per_event_region_index
                 per_event_region_index += 1
@@ -81,4 +79,4 @@ class DatasetCreator(object):
                 a.object_name = 'directory_labels'
                 a.event_id = event.pk
                 regions.append(a)
-        event.finalize({"Region":regions})
+        event.finalize({"Region":regions, "Frame":df_list})
