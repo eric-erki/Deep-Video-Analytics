@@ -206,13 +206,16 @@
                     <div class="box-header with-border">
                         <div class="row">
                             <div class="col-xs-3 text-center">
-                                <h4 style="margin: 18px auto">Task status</h4>
-                            </div>
-                            <div class="col-xs-offset-3 col-xs-3 text-center">
-                                <a class="btn btn-primary" href="/process/" style="margin: 10px auto">All processes</a>
+                                <h4 style="margin: 18px auto">Execution</h4>
                             </div>
                             <div class="col-xs-3 text-center">
-                                <a class="btn btn-primary" href="{% url 'tasks' %}" style="margin: 10px auto" >All tasks</a>
+                                <a class="btn btn-primary" href="/management/" style="margin: 10px auto">{{ restart_count }} restarts</a>
+                            </div>
+                            <div class="col-xs-3 text-center">
+                                <a class="btn btn-primary" href="/process/" style="margin: 10px auto">{{ process_count }} processes</a>
+                            </div>
+                            <div class="col-xs-3 text-center">
+                                <a class="btn btn-primary" href="{% url 'tasks' %}" style="margin: 10px auto" >{{ task_events_count }} tasks</a>
                             </div>
                         </div>
                     </div>
@@ -261,13 +264,13 @@
                                 <a class="btn" href="/models/" style="margin: 10px auto" > <i class="fa fa-play"></i> {{ models_count }} trained models</a>
                             </div>
                             <div class="col-xs-3">
-                                <a class="btn" href="/tasks/" style="margin: 10px auto" > <i class="fa fa-clock-o"></i> {{ task_events_count }}  tasks </a>
-                            </div>
-                            <div class="col-xs-3">
-                                <a class="btn" href="/process/" style="margin: 10px auto" > <i class="fa fa-list"></i> {{ process_count }} processes</a>
-                            </div>
-                            <div class="col-xs-3">
                                 <a class="btn" href="/stored_process/" style="margin: 10px auto" > <i class="fa fa-newspaper-o"></i> {{ script_count }} scripts</a>
+                            </div>
+                            <div class="col-xs-3">
+                                <a class="btn" href="/videos/" style="margin: 10px auto" > <i class="fa fa-circle"></i> {{ exported_video_count }} data exports</a>
+                            </div>
+                            <div class="col-xs-3">
+                                <a class="btn" href="/models/" style="margin: 10px auto" > <i class="fa fa-backward"></i> {{ exported_model_count }} model exports</a>
                             </div>
                         </div>
                         <div class="row">
@@ -282,14 +285,6 @@
                             </div>
                             <div class="col-xs-3">
                                 <a class="btn" href="/management/" style="margin: 10px auto" > <i class="fa fa-gears"></i> {{ worker_count }} workers</a>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-xs-6">
-                                <a class="btn" href="/videos/" style="margin: 10px auto" > <i class="fa fa-circle"></i> {{ exported_video_count }} video/dataset exports</a>
-                            </div>
-                            <div class="col-xs-6">
-                                <a class="btn" href="/models/" style="margin: 10px auto" > <i class="fa fa-backward"></i> {{ exported_model_count }} trained model exports</a>
                             </div>
                         </div>
                     </div>
