@@ -606,9 +606,10 @@ def perform_test(task_id):
         current_attempt = models.TaskRestart.objects.get(launched_event_pk=task_id).attempts
     except:
         current_attempt = 0
-
     if 'sleep_seconds' in args:
         time.sleep(args['sleep_seconds'])
+    if 'kill' in args:
+        os.kill(os.getpid(), 9)
     if 'throw_error_until' in args:
         throw_error_until = int(args['throw_error_until'])
         if current_attempt < throw_error_until:

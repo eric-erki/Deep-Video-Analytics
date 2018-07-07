@@ -149,7 +149,7 @@ def get_model_pk_from_args(operation, args):
 
 def get_queue_name_and_operation(operation, args):
     global CURRENT_QUEUES
-    if operation == 'perform_test':
+    if 'queue' in args:
         return args['queue'], operation
     elif operation in settings.TASK_NAMES_TO_QUEUE:
         # Here we return directly since queue name is not per model
