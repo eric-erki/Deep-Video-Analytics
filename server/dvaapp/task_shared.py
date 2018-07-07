@@ -32,9 +32,10 @@ def restart_task(dt, exception_traceback):
             return None
         else:
             logging.info("Restarting {}".format(dt.pk))
-            for model_name in settings.RESTARTABLE_TASKS[dt.operation]['delete_models']:
-                m = apps.get_model(app_label='dvaapp', model_name=model_name)
-                m.objects.filter(event_id=dt.pk).delete()
+            if 'delete_models' in settings.RESTARTABLE_TASKS[dt.operation]:
+                for model_name in settings.RESTARTABLE_TASKS[dt.operation]:
+                    m = apps.get_model(app_label='dvaapp', model_name=model_name)
+                    m.objects.filter(event_id=dt.pk).delete()
             new_dt = TEvent.objects.create(parent_process=dt.parent_process,
                                            task_group_id=dt.task_group_id,
                                            parent=dt.parent,
