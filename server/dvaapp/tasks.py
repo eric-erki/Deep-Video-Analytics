@@ -602,14 +602,18 @@ def perform_test(task_id):
     if dt is None:
         return 0
     args = dt.arguments
+    try:
+        current_attempt = models.TaskRestart.objects.get(launched_event_pk=task_id).attempts
+    except:
+        current_attempt = 0
+
     if 'sleep_seconds' in args:
         time.sleep(args['sleep_seconds'])
-    if 'throw_error' in args:
-        if args['throw_error'] <= 0:
-            raise ValueError("Threw an error at very first attempt!")
-        else:
-            raise NotImplementedError("Throwing errors until {} th attempt not implemented yet".format(
-                args['throw_error']))
+    if 'throw_error_until' in args:
+        throw_error_until = int(args['throw_error_until'])
+        if current_attempt < throw_error_until:
+            raise ValueError("Throwing error until attempt {}, current attempt {} ".format(throw_error_until,
+                                                                                           current_attempt))
     process_next(dt)
     mark_as_completed(dt)
     return 0
