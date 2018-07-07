@@ -305,7 +305,7 @@ def perform_video_decode(task_id):
     frame_batch = []
     for ds in queryset:
         frame_batch += v.decode_segment(ds,dt.pk,denominator=args.get('rate', 30))
-    dt.finalize(frame_batch)
+    dt.finalize({"Frame":frame_batch})
     process_next(dt)
     mark_as_completed(dt)
     return task_id
