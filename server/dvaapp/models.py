@@ -336,7 +336,7 @@ class TEvent(models.Model):
         else:
             fnames = []
             created_type_count = 0
-            if 'created_objects' in self.results:
+            if self.results and 'created_objects' in self.results:
                 if 'Frame' in self.results['created_objects']:
                     fnames += [k.path(media_root="") for k in Frame.objects.filter(event_id=self.pk)]
                     created_type_count += 1
