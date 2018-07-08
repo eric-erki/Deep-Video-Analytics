@@ -1,6 +1,7 @@
 import logging
 from .approximation import Approximators
 from .indexing import Indexers
+from collections import defaultdict
 
 try:
     from dvalib import indexer, retriever
@@ -15,7 +16,7 @@ from ..models import IndexEntries, QueryResult, Region, Retriever, Frame
 class Retrievers(object):
     _visual_retriever = {}
     _retriever_object = {}
-    _index_count = 0
+    _index_count = defaultdict(int)
 
     @classmethod
     def get_retriever(cls, retriever_pk):
@@ -53,15 +54,12 @@ class Retrievers(object):
 
     @classmethod
     def refresh_index(cls, dr):
-        # This has a BUG where total count of index entries remains unchanged
-        # TODO: Waiting for https://github.com/celery/celery/issues/3620 to be resolved to enabel ASYNC index updates
-        # TODO improve this by either having a seperate broadcast queues or using last update timestampl
-        last_count = cls._index_count
+        # TODO improve this by either having a separate broadcast queues or using redis
+        last_count = cls._index_count[dr.pk]
         current_count = IndexEntries.objects.count()
         visual_index = cls._visual_retriever[dr.pk]
         if last_count == 0 or last_count != current_count or len(visual_index.loaded_entries) == 0:
-            # update the count
-            cls._index_count = current_count
+            cls._index_count[dr.pk] = current_count
             cls.update_index(dr)
 
     @classmethod
