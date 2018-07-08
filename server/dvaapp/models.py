@@ -336,26 +336,28 @@ class TEvent(models.Model):
         else:
             fnames = []
             created_type_count = 0
-            if 'Frame' in self.results['created_objects']:
-                fnames += [k.path(media_root="") for k in Frame.objects.filter(event_id=self.pk)]
-                created_type_count += 1
-            if 'Segment' in self.results['created_objects']:
-                fnames += [k.path(media_root="") for k in Segment.objects.filter(event_id=self.pk)]
-                created_type_count += 1
-            # If anything else has been created then sync the directory
-            if len(self.results['created_objects']) > created_type_count:
-                event_dir = self.get_dir()
-                if event_dir and os.path.isdir(event_dir):
-                    for fname in os.listdir(event_dir):
-                        path = "{}{}".format(event_dir,fname)
-                        if os.path.isfile(path):
-                            fnames.append("{}{}".format(self.get_dir(media_root=""),fname))
-                        else:
-                            raise ValueError("{} is directory, event specific directory can only contain files")
-            for fp in fnames:
-                fs.upload_file_to_remote(fp)
-            if fnames:  # if files are uploaded, sleep three seconds to ensure that files are available before launching
-                time.sleep(3)
+            if 'created_objects' in self.results:
+                if 'Frame' in self.results['created_objects']:
+                    fnames += [k.path(media_root="") for k in Frame.objects.filter(event_id=self.pk)]
+                    created_type_count += 1
+                if 'Segment' in self.results['created_objects']:
+                    fnames += [k.path(media_root="") for k in Segment.objects.filter(event_id=self.pk)]
+                    created_type_count += 1
+                # If anything else has been created then sync the directory
+                if len(self.results['created_objects']) > created_type_count:
+                    event_dir = self.get_dir()
+                    if event_dir and os.path.isdir(event_dir):
+                        for fname in os.listdir(event_dir):
+                            path = "{}{}".format(event_dir,fname)
+                            if os.path.isfile(path):
+                                fnames.append("{}{}".format(self.get_dir(media_root=""),fname))
+                            else:
+                                raise ValueError("{} is directory, event specific directory can only contain files")
+                for fp in fnames:
+                    fs.upload_file_to_remote(fp)
+                # TODO(akshay): Remove this
+                if fnames:
+                    time.sleep(2)
 
 
 class TrainedModel(models.Model):
