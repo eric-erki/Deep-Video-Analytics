@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-import os, json, gzip, sys, shutil, zipfile, uuid, hashlib
+import os, json, gzip, sys, shutil, zipfile, uuid, hashlib, logging
 
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              "../../client/"))  # This ensures that the constants are same between client and server
@@ -171,12 +171,23 @@ class TEvent(models.Model):
     results = JSONField(blank=True, null=True)
 
     def create_dir(self,media_root=None):
-        dirname = self.get_dir(media_root)
-        if not os.path.isdir(dirname):
-            try:
-                os.mkdir(dirname)
-            except:
-                pass
+        if self.video_id:
+            dirnames = ['{}/{}/'.format(settings.MEDIA_ROOT, self.video_id),
+                        '{}/{}/events/'.format(settings.MEDIA_ROOT, self.video_id), self.get_dir(media_root)]
+        elif self.training_set_id:
+            dirnames = ['{}/{}/'.format(settings.MEDIA_ROOT, self.training_set_id),
+                        '{}/{}/events/'.format(settings.MEDIA_ROOT, self.training_set_id), self.get_dir(media_root)]
+        else:
+            dirnames = [self.get_dir(media_root),]
+        for dirname in dirnames:
+            if not os.path.isdir(dirname):
+                try:
+                    os.mkdir(dirname)
+                except:
+                    error_message = "error creating {}".format(dirname)
+                    self.error_message += error_message
+                    logging.exception(error_message)
+                    pass
 
     def get_dir(self,media_root=None):
         if media_root is None:

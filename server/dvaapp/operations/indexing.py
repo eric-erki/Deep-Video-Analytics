@@ -89,15 +89,6 @@ class Indexers(object):
             # TODO Ensure that "full frame"/"regions" are not repeatedly indexed.
             features = visual_index.index_paths(paths)
             uid = str(uuid.uuid1()).replace('-','_')
-            dirnames = ['{}/{}/'.format(settings.MEDIA_ROOT,event.video_id),
-                        '{}/{}/indexes/'.format(settings.MEDIA_ROOT,event.video_id)]
-            for dirname in dirnames:
-                if not os.path.isdir(dirname):
-                    try:
-                        os.mkdir(dirname)
-                    except:
-                        logging.exception("error creating {}".format(dirname))
-                        pass
             event.create_dir()
             feat_fname = "{}/{}.npy".format(event.get_dir(),uid)
             with open(feat_fname, 'w') as feats:
