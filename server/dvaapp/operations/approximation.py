@@ -80,7 +80,8 @@ class Approximators(object):
                 approx_ind.features_file_name = "{}.npy".format(uid)
                 approx_ind.entries = entries
             elif da.algorithm == "FAISS":
-                feat_fname = "{}/{}/indexes/{}.index".format(settings.MEDIA_ROOT, index_entry.video_id, uid)
+                event.create_dir()
+                feat_fname = "{}/{}.index".format(event.get_dir(), uid)
                 approx.approximate_batch(np.atleast_2d(vectors.squeeze()),feat_fname)
                 approx_ind.features_file_name = "{}.index".format(uid)
                 approx_ind.entries = entries
