@@ -10,7 +10,7 @@ except ImportError:
     np = None
     logging.warning("Could not import indexer / clustering assuming running in front-end mode")
 
-from ..models import IndexEntries, QueryResult, Region, Retriever, Frame
+from ..models import IndexEntries, QueryResult, Region, Retriever
 
 
 class Retrievers(object):
@@ -80,26 +80,20 @@ class Retrievers(object):
                 if visual_index.algorithm == "LOPQ":
                     vectors, entries = index_entry.load_index()
                     logging.info("loading approximate index {}".format(index_entry.pk))
-                    start_index = len(visual_index.entries)
                     visual_index.load_index(None,entries,index_entry.video_id,index_entry.target)
-                    visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
-                                                                                     end=len(visual_index.entries) - 1)
+                    visual_index.loaded_entries.add(index_entry.pk)
                 elif visual_index.algorithm == 'FAISS':
                     index_file_path, entries = index_entry.load_index()
                     logging.info("loading FAISS index {}".format(index_entry.pk))
-                    start_index = visual_index.findex
                     visual_index.load_index(index_file_path, entries, index_entry.video_id, index_entry.target)
-                    visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
-                                                                                     end=visual_index.findex - 1)
+                    visual_index.loaded_entries.add(index_entry.pk)
                 else:
                     vectors, entries = index_entry.load_index()
                     logging.info("Starting {} in {} with shape {}".format(index_entry.video_id, visual_index.name,
                                                                           vectors.shape))
                     try:
-                        start_index = visual_index.findex
                         visual_index.load_index(vectors, entries, index_entry.video_id, index_entry.target)
-                        visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
-                                                                                         end=visual_index.findex - 1)
+                        visual_index.loaded_entries.add(index_entry.pk)
                     except:
                         logging.info("ERROR Failed to load {} vectors shape {} entries {}".format(
                             index_entry.video_id, vectors.shape, len(entries)))

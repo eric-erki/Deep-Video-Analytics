@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import spatial
-from collections import namedtuple, defaultdict
+from collections import defaultdict
+from .intervaltree import IntervalTree
 import uuid
 import sys
 
@@ -21,8 +22,6 @@ try:
 except ImportError:
     logging.warning("could not import FAISS")
 
-IndexRange = namedtuple('IndexRange', ['start', 'end'])
-
 
 class BaseRetriever(object):
 
@@ -32,7 +31,7 @@ class BaseRetriever(object):
         self.approximate = False
         self.approximator = approximator
         self.net = None
-        self.loaded_entries = {}
+        self.loaded_entries = set()
         self.index, self.files, self.findex = None, {}, 0
         self.support_batching = False
 
@@ -162,17 +161,22 @@ class FaissFlatRetriever(BaseRetriever):
     def __init__(self, name, components, metric='Flat'):
         super(FaissFlatRetriever, self).__init__(name=name, algorithm="FAISS_{}".format(metric))
         self.name = name
+        self.tree = IntervalTree()
         self.components = components
         self.algorithm = "FAISS_{}".format(metric)
         self.faiss_index = faiss.index_factory(components, metric)
+        self.index_entries_index = 0
+        self.index_entries = defaultdict(dict)
 
     def load_index(self, numpy_matrix, entries, video_id, entry_type):
         if len(entries):
+            self.tree.addi(self.findex, self.findex + len(entries), {"type": entry_type, "video": video_id,
+                                                                     'index_entries_index':self.index_entries_index})
+            self.findex += len(entries)
             logging.info("Adding {}".format(numpy_matrix.shape))
             numpy_matrix = np.atleast_2d(numpy_matrix.squeeze())
             for i, e in enumerate(entries):
-                self.files[self.findex] = {"id":e,"type":entry_type,"video":video_id}
-                self.findex += 1
+                self.index_entries[self.index_entries_index][i] = e
             self.faiss_index.add(numpy_matrix)
             logging.info("Index size {}".format(self.faiss_index.ntotal))
 
@@ -183,9 +187,15 @@ class FaissFlatRetriever(BaseRetriever):
         results = []
         dist, ids = self.faiss_index.search(vector, n)
         for i, k in enumerate(ids[0]):
-            temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
             if k >= 0:
-                temp.update(self.files[k])
+                index_entry = sorted(self.tree[k])[0]
+                data = index_entry.data
+                index_entries_index = data['index_entries_index']
+                offset = k - index_entry.begin
+                temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i]),
+                        'video': data['video'],
+                        'type': data['type'],
+                        'id':self.index_entries[index_entries_index][offset]}
                 results.append(temp)
         return results
 
