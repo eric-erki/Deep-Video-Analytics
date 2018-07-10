@@ -118,13 +118,13 @@ class Retrievers(object):
                 qr.frame_index = dd.frame_index
                 qr.video_id = dd.video_id
             elif r['type'] == 'frames':
-                qr.frame_index = r['id']
+                qr.frame_index = int(r['id'])
                 qr.video_id = r['video']
             else:
                 raise ValueError("No key found {}".format(r))
             qr.algorithm = dr.algorithm
-            qr.rank = r.get('rank', rank)
-            qr.distance = r.get('dist', rank)
+            qr.rank = int(r.get('rank', rank+1))
+            qr.distance = int(r.get('dist', rank+1))
             qr_batch.append(qr)
         if region_pk:
             event.finalize_query({"QueryResult":qr_batch},results={region_pk:{"retriever_state":index_retriever.findex}})

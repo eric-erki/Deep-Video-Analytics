@@ -1,6 +1,6 @@
-import logging, json, uuid, tempfile, os
-from PIL import Image
+import logging, uuid, tempfile
 from django.conf import settings
+import lmdb
 
 try:
     from dvalib import indexer, retriever
@@ -91,6 +91,12 @@ class Indexers(object):
             uid = str(uuid.uuid1()).replace('-','_')
             event.create_dir()
             feat_fname = "{}/{}.npy".format(event.get_dir(),uid)
+            entries_fname = "{}/{}".format(event.get_dir(),uid)
+            env = lmdb.open(entries_fname, max_dbs=0, subdir=False)
+            with env.begin(write=True) as txn:
+                for k, v in enumerate(entries):
+                    txn.put(str(k),str(v))
+            env.close()
             with open(feat_fname, 'w') as feats:
                 np.save(feats, np.array(features))
             i = IndexEntries()

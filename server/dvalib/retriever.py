@@ -74,7 +74,7 @@ class LOPQRetriever(BaseRetriever):
         super(LOPQRetriever, self).__init__(name=name, approximator=approximator, algorithm="LOPQ")
         self.approximate = True
         self.name = name
-        self.loaded_entries = {}
+        self.loaded_entries = set()
         self.entries = []
         self.support_batching = False
         self.approximator = approximator
