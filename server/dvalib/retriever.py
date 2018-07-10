@@ -172,13 +172,13 @@ class FaissFlatRetriever(BaseRetriever):
         if len(entries):
             self.tree.addi(self.findex, self.findex + len(entries), {"type": entry_type, "video": video_id,
                                                                      'index_entries_index':self.index_entries_index})
-            self.findex += len(entries)
             logging.info("Adding {}".format(numpy_matrix.shape))
             numpy_matrix = np.atleast_2d(numpy_matrix.squeeze())
             for i, e in enumerate(entries):
                 self.index_entries[self.index_entries_index][i] = e
             self.faiss_index.add(numpy_matrix)
             logging.info("Index size {}".format(self.faiss_index.ntotal))
+            self.findex += len(entries)
             self.index_entries_index += 1
 
     def nearest(self, vector=None, n=12):
