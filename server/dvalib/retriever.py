@@ -179,6 +179,7 @@ class FaissFlatRetriever(BaseRetriever):
                 self.index_entries[self.index_entries_index][i] = e
             self.faiss_index.add(numpy_matrix)
             logging.info("Index size {}".format(self.faiss_index.ntotal))
+            self.index_entries_index += 1
 
     def nearest(self, vector=None, n=12):
         vector = np.atleast_2d(vector)

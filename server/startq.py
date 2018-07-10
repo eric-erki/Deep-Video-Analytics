@@ -30,15 +30,10 @@ if __name__ == "__main__":
     else:
         conc = 3
     mute = '--without-gossip --without-mingle --without-heartbeat' if 'CELERY_MUTE' in os.environ else ''
-    # TODO(akshay): remove this once merged into stable
-    try:
-        import sortedcontainers
-    except ImportError:
-        subprocess.check_output(['pip','install','sortedcontainers==2.0.4'])
-        pass
     if queue_name == settings.Q_MANAGER:
         command = 'celery -A dva worker -l info {} -c 1 -Q qmanager -n manager.%h -f ../logs/qmanager.log'.format(mute)
     elif queue_name == settings.Q_EXTRACTOR:
+        #TODO: Fix this mess
         try:
             subprocess.check_output(['youtube-dl', '-U'])
         except:
@@ -50,11 +45,6 @@ if __name__ == "__main__":
                                                                                        queue_name, queue_name,
                                                                                        log_output(queue_name, settings))
     elif queue_name == settings.Q_STREAMER:
-        try:
-            subprocess.check_output(['pip', 'install', '--upgrade', 'streamlink', 'psutil'])
-        except:
-            logging.exception("Could not install streamlink")
-            pass
         if settings.KUBE_MODE:
             command = 'celery -A dva worker -l info {} -P solo -c 1 -Q {} -n {}.%h'.format(mute, queue_name, queue_name)
         else:
