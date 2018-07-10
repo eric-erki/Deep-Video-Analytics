@@ -38,3 +38,4 @@ streamlink
 psutil
 jsonschema
 opencv-python==3.4.1.15
+sortedcontainers==2.0.4

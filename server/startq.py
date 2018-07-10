@@ -30,6 +30,12 @@ if __name__ == "__main__":
     else:
         conc = 3
     mute = '--without-gossip --without-mingle --without-heartbeat' if 'CELERY_MUTE' in os.environ else ''
+    # TODO(akshay): remove this once merged into stable
+    try:
+        import sortedcontainers
+    except ImportError:
+        subprocess.check_output(['pip','install','sortedcontainers==2.0.4'])
+        pass
     if queue_name == settings.Q_MANAGER:
         command = 'celery -A dva worker -l info {} -c 1 -Q qmanager -n manager.%h -f ../logs/qmanager.log'.format(mute)
     elif queue_name == settings.Q_EXTRACTOR:
