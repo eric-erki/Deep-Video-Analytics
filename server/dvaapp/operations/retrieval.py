@@ -38,7 +38,7 @@ class Retrievers(object):
             elif dr.algorithm == Retriever.EXACT:
                 cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name)
             elif dr.algorithm == Retriever.FAISS and dr.approximator_shasum is None:
-                di = Indexers.get_trained_model({"trainedmodel_selector":{"shasum":dr.indexer_shasum}})
+                _, di = Indexers.get_trained_model({"trainedmodel_selector":{"shasum":dr.indexer_shasum}})
                 cls._visual_retriever[retriever_pk] = retriever.FaissFlatRetriever(name=dr.name,
                                                                                    components=di.arguments['components'])
             elif dr.algorithm == Retriever.FAISS:
