@@ -20,7 +20,7 @@ if __name__ == '__main__':
             {
                 'operation': 'perform_indexing',
                 'arguments': {
-                    'index': 'inception',
+                    'trainedmodel_selector': {"name":'inception'},
                     'target': 'query',
                     'map': [
                         {'operation': 'perform_retrieval',
