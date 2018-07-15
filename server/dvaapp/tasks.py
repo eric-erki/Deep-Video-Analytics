@@ -198,15 +198,15 @@ def perform_retrieval(task_id):
         return 0
     args = dt.arguments
     target = args.get('target', 'query')  # by default target is query
+    index_retriever, dr = Retrievers.get_retriever(args)
     if target == 'query':
         vector = np.load(io.BytesIO(redis_client.get("query_vector_{}".format(dt.parent_id))))
-        Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20))
+        Retrievers.retrieve(dt, index_retriever, dr, vector, args.get('count', 20))
     elif target == 'query_region_index_vectors':
         qr_pk_vector = redis_client.hgetall("query_region_vectors_{}".format(dt.parent_id))
         for query_region_pk, vector in qr_pk_vector.items():
             vector = np.load(io.BytesIO(vector))
-            Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20),
-                                region_pk=query_region_pk)
+            Retrievers.retrieve(dt, index_retriever, dr, vector, args.get('count', 20), region_pk=query_region_pk)
     else:
         raise NotImplementedError(target)
     mark_as_completed(dt)

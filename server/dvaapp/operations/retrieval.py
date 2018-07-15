@@ -16,37 +16,42 @@ from ..models import IndexEntries, QueryResult, Region, Retriever
 class Retrievers(object):
     _visual_retriever = {}
     _retriever_object = {}
+    _selector_to_dr = {}
     _index_count = defaultdict(int)
 
     @classmethod
-    def get_retriever(cls, retriever_pk):
+    def get_retriever(cls, args):
+        selector = args['retriever_selector']
+        if str(selector) in cls._selector_to_dr:
+            dr = cls._selector_to_dr[selector]
+        else:
+            dr = Retriever.objects.get(**selector)
+            cls._selector_to_dr[str(selector)] = dr
+        retriever_pk = dr.pk
         if retriever_pk not in cls._visual_retriever:
-            dr = Retriever.objects.get(pk=retriever_pk)
             cls._retriever_object[retriever_pk] = dr
             if dr.algorithm == Retriever.EXACT and dr.approximator_shasum and dr.approximator_shasum.strip():
-                approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
+                approximator, da = Approximators.get_trained_model({"trainedmodel_selector":{"shasum":dr.approximator_shasum}})
                 da.ensure()
                 approximator.load()
                 cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name, approximator=approximator)
             elif dr.algorithm == Retriever.EXACT:
                 cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name)
             elif dr.algorithm == Retriever.FAISS and dr.approximator_shasum is None:
-                di = Indexers.get_indexer_by_shasum(dr.indexer_shasum)
+                di = Indexers.get_trained_model({"trainedmodel_selector":{"shasum":dr.indexer_shasum}})
                 cls._visual_retriever[retriever_pk] = retriever.FaissFlatRetriever(name=dr.name,
-                                                                                   components=di.arguments[
-                                                                                       'components'])
+                                                                                   components=di.arguments['components'])
             elif dr.algorithm == Retriever.FAISS:
-                approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
+                approximator, da = Approximators.get_trained_model({"trainedmodel_selector":{"shasum":dr.approximator_shasum}})
                 da.ensure()
                 approximator.load()
                 cls._visual_retriever[retriever_pk] = retriever.FaissApproximateRetriever(name=dr.name,
                                                                                           approximator=approximator)
             elif dr.algorithm == Retriever.LOPQ:
-                approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
+                approximator, da = Approximators.get_trained_model({"trainedmodel_selector":{"shasum":dr.approximator_shasum}})
                 da.ensure()
                 approximator.load()
-                cls._visual_retriever[retriever_pk] = retriever.LOPQRetriever(name=dr.name,
-                                                                              approximator=approximator)
+                cls._visual_retriever[retriever_pk] = retriever.LOPQRetriever(name=dr.name, approximator=approximator)
 
             else:
                 raise ValueError("{} not valid retriever algorithm".format(dr.algorithm))
@@ -101,8 +106,7 @@ class Retrievers(object):
                         logging.info("finished {} in {}".format(index_entry.pk, visual_index.name))
 
     @classmethod
-    def retrieve(cls, event, retriever_pk, vector, count, region_pk=None):
-        index_retriever, dr = cls.get_retriever(retriever_pk)
+    def retrieve(cls, event, index_retriever, dr, vector, count, region_pk=None):
         cls.refresh_index(dr)
         results = index_retriever.nearest(vector=vector, n=count)
         qr_batch = []

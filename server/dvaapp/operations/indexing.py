@@ -14,12 +14,16 @@ from ..models import IndexEntries, TrainedModel
 
 class Indexers(object):
     _visual_indexer = {}
+    _selector_to_model = {}
     _session = None
 
     @classmethod
     def get_trained_model(cls,args):
-        di = TrainedModel.objects.get(**args['trainedmodel_selector'])
-        return cls.get_index(di),di
+        selector = args['trainedmodel_selector']
+        if not str(selector) in cls._selector_to_model:
+            di = TrainedModel.objects.get(**selector)
+            cls._selector_to_model[str(selector)] = (cls.get_index(di), di)
+        return cls._selector_to_model[str(selector)]
 
     @classmethod
     def get_index(cls,di):

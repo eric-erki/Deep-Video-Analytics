@@ -13,14 +13,16 @@ from ..models import TrainedModel, IndexEntries
 
 class Approximators(object):
     _index_approximator = {}
+    _selector_to_model = {}
     _session = None
 
     @classmethod
     def get_trained_model(cls,args):
-        di = TrainedModel.objects.get(**args['trainedmodel_selector'])
-        if di.model_type != TrainedModel.APPROXIMATOR:
-            raise ValueError("Model {} id: {} is not an Approximator".format(di.name,di.pk))
-        return cls.get_approximator(di),di
+        selector = args['trainedmodel_selector']
+        if not str(selector) in cls._selector_to_model:
+            di = TrainedModel.objects.get(**selector)
+            cls._selector_to_model[str(selector)] = (cls.get_approximator(di), di)
+        return cls._selector_to_model[str(selector)]
     
     @classmethod
     def get_approximator(cls,di):
