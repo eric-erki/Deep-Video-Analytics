@@ -226,6 +226,15 @@ def configure_compose(mode):
                        " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
     if process.strip():
         init_models = models
+    if mode == 'cpu' or mode == 'gpu':
+        branch_input = raw_input("Please specify upstream branch (stable, master, etc.) or press enter to keep default"
+                                 " ( stable ) >>").strip()
+        if branch_input.strip():
+            branch = branch_input.strip()
+        else:
+            branch = "stable"
+    else:
+        branch = "master" # dev mode does not pulls from git
     envs = {}
     gpu_compose_filename = None
     gpu_config = None
@@ -248,7 +257,8 @@ def configure_compose(mode):
         print "Memory fraction and gpu allocation for individual workers has been written to config.json, please edit" \
               "the file to optionally specify custom allocation"
     return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models,
-            'credentials': envs, 'gpu_compose_filename': gpu_compose_filename, 'gpu_config': gpu_config}
+            'credentials': envs, 'gpu_compose_filename': gpu_compose_filename, 'gpu_config': gpu_config,
+            'branch':branch}
 
 
 def configure(mode=None):
@@ -334,4 +344,4 @@ if __name__ == '__main__':
                 compose.handle_compose_operations(args, mode_dict['mode'], mode_dict['gpus'], mode_dict['init_process'],
                                               mode_dict['init_models'], mode_dict['credentials'],
                                               gpu_compose_filename=mode_dict['gpu_compose_filename'],
-                                              gpu_config=mode_dict['gpu_config'])
+                                              gpu_config=mode_dict['gpu_config'], branch=mode_dict['branch'])

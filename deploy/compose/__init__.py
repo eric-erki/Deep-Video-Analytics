@@ -32,8 +32,8 @@ def load_envs(path):
     return {line.split('=')[0]: line.split('=')[1].strip() for line in file(path)}
 
 
-def create_custom_env(init_process, init_models, cred_envs):
-    envs = {'INIT_PROCESS': init_process, 'INIT_MODELS': init_models}
+def create_custom_env(init_process, init_models, cred_envs, branch):
+    envs = {'INIT_PROCESS': init_process, 'INIT_MODELS': init_models, 'BRANCH': "origin/{}".format(branch)}
     envs.update(cred_envs)
     with open('custom.env', 'w') as out:
         out.write(file('default.env').read())
@@ -42,14 +42,14 @@ def create_custom_env(init_process, init_models, cred_envs):
             out.write("{}={}\n".format(k, v))
 
 
-def start_docker_compose(deployment_type, gpu_count, init_process, init_models, cred_envs):
+def start_docker_compose(deployment_type, gpu_count, init_process, init_models, cred_envs, branch):
     print "Checking if docker-compose is available"
     max_minutes = 20
     if deployment_type == 'gpu':
         fname = 'docker-compose-{}-gpus.yaml'.format(gpu_count)
     else:
         fname = 'docker-compose-{}.yaml'.format(deployment_type)
-    create_custom_env(init_process, init_models, cred_envs)
+    create_custom_env(init_process, init_models, cred_envs, branch)
     print "Starting deploy/compose/{}".format(fname)
     try:
         # Fixed to dev since deployment directory does not matters for checking if docker-compose exists.
@@ -122,13 +122,14 @@ def get_auth():
     print "token and server information are stored in creds.json"
 
 
-def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_envs, gpu_compose_filename, gpu_config):
+def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_envs, gpu_compose_filename, gpu_config,
+                              branch):
     if mode == 'gpu':
         generate_multi_gpu_compose(gpu_compose_filename, gpu_config)
     if args.action == 'stop':
         stop_docker_compose(mode, gpus)
     elif args.action == 'start':
-        start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
+        start_docker_compose(mode, gpus, init_process, init_models, cred_envs, branch)
         get_auth()
     elif args.action == 'auth':
         get_auth()
@@ -136,6 +137,6 @@ def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_
         stop_docker_compose(mode, gpus, clean=True)
     elif args.action == 'restart':
         stop_docker_compose(mode, gpus)
-        start_docker_compose(mode, gpus, init_process, init_models, cred_envs)
+        start_docker_compose(mode, gpus, init_process, init_models, cred_envs, branch)
     else:
         raise NotImplementedError("{} and {}".format(args.action, mode))
