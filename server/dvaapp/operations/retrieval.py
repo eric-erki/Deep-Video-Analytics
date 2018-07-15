@@ -23,7 +23,7 @@ class Retrievers(object):
     def get_retriever(cls, args):
         selector = args['retriever_selector']
         if str(selector) in cls._selector_to_dr:
-            dr = cls._selector_to_dr[selector]
+            dr = cls._selector_to_dr[str(selector)]
         else:
             dr = Retriever.objects.get(**selector)
             cls._selector_to_dr[str(selector)] = dr

@@ -337,7 +337,7 @@ def create_query_from_request(p, request):
                                                         'map': [{
                                                             'operation': 'perform_analysis',
                                                             'arguments': {'target': 'query_regions',
-                                                                          'analyzer': 'crnn',
+                                                                          'trainedmodel_selector': {'name':'crnn'},
                                                                           'filters': {'event_id': '__parent_event__'}
                                                                           }
                                                         }]
