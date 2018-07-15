@@ -33,7 +33,11 @@ def load_envs(path):
 
 
 def create_custom_env(init_process, init_models, cred_envs, branch):
-    envs = {'INIT_PROCESS': init_process, 'INIT_MODELS': init_models, 'BRANCH': "origin/{}".format(branch)}
+    envs = {'INIT_PROCESS': init_process, 'INIT_MODELS': init_models}
+    if branch == 'stable':
+        envs['BRANCH'] = 'sleep 1'
+    else:
+        envs['BRANCH'] = "git checkout --track origin/{}".format(branch)
     envs.update(cred_envs)
     with open('custom.env', 'w') as out:
         out.write(file('default.env').read())

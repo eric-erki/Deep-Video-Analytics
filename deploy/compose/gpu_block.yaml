@@ -7,7 +7,7 @@
            - NVIDIA_VISIBLE_DEVICES={gpu_id}
            - GPU_MEMORY={memory_fraction}
            - {env_key}={env_value}
-         command: bash -c "git reset --hard && git checkout --track $${BRANCH} && git pull && sleep 45 && ./start_container.py"
+         command: bash -c "git reset --hard && $${BRANCH} && git pull && sleep 45 && ./start_container.py"
          depends_on:
            - db
            - redis
