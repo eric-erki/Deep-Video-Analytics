@@ -31,11 +31,11 @@ if __name__ == '__main__':
         else:
             arguments = {'sync': True}
             perform_video_segmentation(TEvent.objects.create(video=v, arguments=arguments).pk)
-        arguments = {'index': 'inception', 'target': 'frames'}
+        arguments = {'trainedmodel_selector' : {'name':'inception'}, 'target': 'frames'}
         perform_indexing(TEvent.objects.create(video=v, arguments=arguments).pk)
         if i == 1:  # save travis time by just running detection on first video
             # face_mtcnn
-            arguments = {'detector': 'face'}
+            arguments = {'trainedmodel_selector' : {'name':'face'}}
             dt = TEvent.objects.create(video=v, arguments=arguments)
             perform_detection(dt.pk)
             print "done perform_detection"
@@ -43,7 +43,7 @@ if __name__ == '__main__':
             perform_transformation(TEvent.objects.create(video=v, arguments=arguments).pk)
             print "done perform_transformation"
             # coco_mobilenet
-            arguments = {'detector': 'coco'}
+            arguments = {'trainedmodel_selector' : {'name':'coco'}}
             dt = TEvent.objects.create(video=v, arguments=arguments)
             perform_detection(dt.pk)
             print "done perform_detection"
@@ -51,7 +51,7 @@ if __name__ == '__main__':
             perform_transformation(TEvent.objects.create(video=v, arguments=arguments).pk)
             print "done perform_transformation"
             # inception on crops from detector
-            arguments = {'index': 'inception', 'target': 'regions',
+            arguments = {'trainedmodel_selector' : {'name':'inception'}, 'target': 'regions',
                          'filters': {'event_id': dt.pk, 'w__gte': 50, 'h__gte': 50}}
             perform_indexing(TEvent.objects.create(video=v, arguments=arguments).pk)
             print "done perform_indexing"

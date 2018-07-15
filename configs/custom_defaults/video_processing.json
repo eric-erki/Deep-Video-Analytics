@@ -3,12 +3,12 @@
     "operation": "perform_detection",
     "arguments": {
       "filters": "__parent__",
-      "detector": "coco",
+      "trainedmodel_selector":{"name":"coco"},
       "map": [
         {
           "operation": "perform_indexing",
           "arguments": {
-            "index": "inception",
+            "trainedmodel_selector":{"name":"inception"},
             "target": "regions",
             "filters": {
               "event_id": "__parent_event__",
@@ -20,7 +20,7 @@
                 "operation": "perform_index_approximation",
                 "arguments": {
                   "target": "index_entries",
-                  "approximator_shasum": "86689432ac09d86dd95d7d3ed57227d27eb09c81",
+                  "trainedmodel_selector":{"shasum":"86689432ac09d86dd95d7d3ed57227d27eb09c81"},
                   "filters": {
                     "event_id": "__parent_event__"
                   }
@@ -36,12 +36,12 @@
     "operation": "perform_detection",
     "arguments": {
       "filters": "__parent__",
-      "detector": "face",
+      "trainedmodel_selector":{"name":"face"},
       "map": [
         {
           "operation": "perform_indexing",
           "arguments": {
-            "index": "facenet",
+            "trainedmodel_selector":{"name":"facenet"},
             "target": "regions",
             "filters": {
               "event_id": "__parent_event__"
@@ -51,7 +51,7 @@
                 "operation": "perform_index_approximation",
                 "arguments": {
                   "target": "index_entries",
-                  "approximator_shasum": "93be2f99d432a7ce2d1626107659510755ea3815",
+                  "trainedmodel_selector":{"shasum":"93be2f99d432a7ce2d1626107659510755ea3815"},
                   "filters": {
                     "event_id": "__parent_event__"
                   }
@@ -66,7 +66,7 @@
   {
     "operation": "perform_indexing",
     "arguments": {
-      "index": "inception",
+      "trainedmodel_selector":{"name":"inception"},
       "target": "frames",
       "filters": "__parent__",
       "map": [
@@ -74,7 +74,7 @@
           "operation": "perform_index_approximation",
           "arguments": {
             "target": "index_entries",
-            "approximator_shasum": "86689432ac09d86dd95d7d3ed57227d27eb09c81",
+            "trainedmodel_selector":{"shasum":"86689432ac09d86dd95d7d3ed57227d27eb09c81"},
             "filters": {
               "event_id": "__parent_event__"
             }
@@ -86,7 +86,7 @@
   {
     "operation": "perform_analysis",
     "arguments": {
-      "analyzer": "tagger",
+      "trainedmodel_selector":{"name":"tagger"},
       "target": "frames",
       "filters": "__parent__"
     }

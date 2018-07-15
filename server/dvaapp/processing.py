@@ -15,12 +15,6 @@ from models import Video, DVAPQL, TEvent, TrainedModel, Retriever, Worker, Delet
 from celery.result import AsyncResult
 import fs
 
-ANALYER_NAME_TO_PK = {}
-APPROXIMATOR_NAME_TO_PK = {}
-INDEXER_NAME_TO_PK = {}
-APPROXIMATOR_SHASUM_TO_PK = {}
-RETRIEVER_NAME_TO_PK = {}
-DETECTOR_NAME_TO_PK = {}
 CURRENT_QUEUES = set()
 LAST_UPDATED = None
 
@@ -40,89 +34,14 @@ def get_queues():
 
 def get_model_specific_queue_name(operation, args):
     """
-    TODO simplify this mess by using model_selector
     :param operation:
     :param args:
     :return:
     """
-    if 'detector_pk' in args:
-        queue_name = "q_detector_{}".format(args['detector_pk'])
-    elif 'indexer_pk' in args:
-        queue_name = "q_indexer_{}".format(args['indexer_pk'])
-    elif 'retriever_pk' in args:
-        queue_name = "q_retriever_{}".format(args['retriever_pk'])
-    elif 'analyzer_pk' in args:
-        queue_name = "q_analyzer_{}".format(args['analyzer_pk'])
-    elif 'approximator_pk' in args:
-        queue_name = "q_approximator_{}".format(args['approximator_pk'])
-    elif 'retriever' in args:
-        if args['retriever'] not in RETRIEVER_NAME_TO_PK:
-            RETRIEVER_NAME_TO_PK[args['retriever']] = Retriever.objects.get(name=args['retriever']).pk
-        queue_name = 'q_retriever_{}'.format(RETRIEVER_NAME_TO_PK[args['retriever']])
-    elif 'index' in args:
-        if args['index'] not in INDEXER_NAME_TO_PK:
-            INDEXER_NAME_TO_PK[args['index']] = TrainedModel.objects.get(name=args['index'],
-                                                                         model_type=TrainedModel.INDEXER).pk
-        queue_name = 'q_indexer_{}'.format(INDEXER_NAME_TO_PK[args['index']])
-    elif 'approximator_shasum' in args:
-        ashasum = args['approximator_shasum']
-        if ashasum not in APPROXIMATOR_SHASUM_TO_PK:
-            APPROXIMATOR_SHASUM_TO_PK[ashasum] = TrainedModel.objects.get(shasum=ashasum,
-                                                                          model_type=TrainedModel.APPROXIMATOR).pk
-        queue_name = 'q_approximator_{}'.format(APPROXIMATOR_SHASUM_TO_PK[ashasum])
-    elif 'approximator' in args:
-        ashasum = args['approximator']
-        if args['approximator'] not in APPROXIMATOR_NAME_TO_PK:
-            APPROXIMATOR_NAME_TO_PK[ashasum] = TrainedModel.objects.get(name=args['approximator'],
-                                                                        model_type=TrainedModel.APPROXIMATOR).pk
-        queue_name = 'q_approximator_{}'.format(APPROXIMATOR_NAME_TO_PK[args['approximator']])
-    elif 'analyzer' in args:
-        if args['analyzer'] not in ANALYER_NAME_TO_PK:
-            ANALYER_NAME_TO_PK[args['analyzer']] = TrainedModel.objects.get(name=args['analyzer'],
-                                                                            model_type=TrainedModel.ANALYZER).pk
-        queue_name = 'q_analyzer_{}'.format(ANALYER_NAME_TO_PK[args['analyzer']])
-    elif 'detector' in args:
-        if args['detector'] not in DETECTOR_NAME_TO_PK:
-            DETECTOR_NAME_TO_PK[args['detector']] = TrainedModel.objects.get(name=args['detector'],
-                                                                             model_type=TrainedModel.DETECTOR).pk
-        queue_name = 'q_detector_{}'.format(DETECTOR_NAME_TO_PK[args['detector']])
-    else:
-        raise NotImplementedError("{}, {}".format(operation, args))
-    return queue_name
-
-
-def get_model_pk_from_args(operation, args):
-    if 'detector_pk' in args:
-        return args['detector_pk']
-    if 'approximator_pk' in args:
-        return args['approximator_pk']
-    elif 'indexer_pk' in args:
-        return args['indexer_pk']
-    elif 'retriever_pk' in args:
-        return args['retriever_pk']
-    elif 'analyzer_pk' in args:
-        return ['analyzer_pk']
-    elif 'index' in args:
-        if args['index'] not in INDEXER_NAME_TO_PK:
-            INDEXER_NAME_TO_PK[args['index']] = TrainedModel.objects.get(name=args['index'],
-                                                                         model_type=TrainedModel.INDEXER).pk
-        return INDEXER_NAME_TO_PK[args['index']]
-    elif 'analyzer' in args:
-        if args['analyzer'] not in ANALYER_NAME_TO_PK:
-            ANALYER_NAME_TO_PK[args['analyzer']] = TrainedModel.objects.get(name=args['analyzer'],
-                                                                            model_type=TrainedModel.ANALYZER).pk
-        return ANALYER_NAME_TO_PK[args['analyzer']]
-    elif 'detector' in args:
-        if args['detector'] not in DETECTOR_NAME_TO_PK:
-            DETECTOR_NAME_TO_PK[args['detector']] = TrainedModel.objects.get(name=args['detector'],
-                                                                             model_type=TrainedModel.DETECTOR).pk
-        return DETECTOR_NAME_TO_PK[args['detector']]
-    elif 'approximator_shasum' in args:
-        ashasum = args['approximator_shasum']
-        if ashasum not in APPROXIMATOR_SHASUM_TO_PK:
-            APPROXIMATOR_SHASUM_TO_PK[ashasum] = TrainedModel.objects.get(shasum=ashasum,
-                                                                          model_type=TrainedModel.APPROXIMATOR).pk
-        return APPROXIMATOR_SHASUM_TO_PK[ashasum]
+    if 'trainedmodel_selector' in args:
+        return 'q_model_{}'.format(TrainedModel.objects.filter(**args['trainedmodel_selector']).first().shasum)
+    elif 'retriever_selector' in args:
+        return 'q_retriever_{}'.format(Retriever.objects.filter(**args['retriever_selector']).first().pk)
     else:
         raise NotImplementedError("{}, {}".format(operation, args))
 

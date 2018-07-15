@@ -36,13 +36,13 @@ def model_apply(model_pk, video_pks, filters, target, segments_batch_size, frame
     trained_model = dvaapp.models.TrainedModel.objects.get(pk=model_pk)
     if trained_model.model_type == dvaapp.models.TrainedModel.INDEXER:
         operation = 'perform_indexing'
-        args = {"indexer_pk": model_pk, 'filters': filters, 'target': target}
+        args = {"trainedmodel_selector": {"pk":model_pk}, 'filters': filters, 'target': target}
     elif trained_model.model_type == dvaapp.models.TrainedModel.DETECTOR:
         operation = 'perform_detection'
-        args = {"detector_pk": model_pk, 'filters': filters, 'target': target}
+        args = {"trainedmodel_selector": {"pk":model_pk}, 'filters': filters, 'target': target}
     elif trained_model.model_type == dvaapp.models.TrainedModel.ANALYZER:
         operation = 'perform_analysis'
-        args = {"analyzer_pk": model_pk, 'filters': filters, 'target': target}
+        args = {"trainedmodel_selector": {"pk":model_pk}, 'filters': filters, 'target': target}
     else:
         operation = ""
         args = {}
@@ -315,7 +315,7 @@ def create_query_from_request(p, request):
         di = dvaapp.models.TrainedModel.objects.get(pk=i, model_type=dvaapp.models.TrainedModel.INDEXER)
         rtasks = []
         for r in indexer_tasks[i]:
-            rtasks.append({'operation': 'perform_retrieval', 'arguments': {'count': int(count), 'retriever_pk': r}})
+            rtasks.append({'operation': 'perform_retrieval', 'arguments': {'count': int(count), 'retriever_selector': {"pk":r}}})
         query_json['map'].append(
             {
                 'operation': 'perform_indexing',
@@ -332,7 +332,7 @@ def create_query_from_request(p, request):
             dd = dvaapp.models.TrainedModel.objects.get(pk=int(d), model_type=dvaapp.models.TrainedModel.DETECTOR)
             if dd.name == 'textbox':
                 query_json['map'].append({'operation': 'perform_detection',
-                                          'arguments': {'detector_pk': int(d),
+                                          'arguments': {'trainedmodel_selector':{'pk': int(d)},
                                                         'target': 'query',
                                                         'map': [{
                                                             'operation': 'perform_analysis',
@@ -349,16 +349,16 @@ def create_query_from_request(p, request):
                 else:
                     dr = dvaapp.models.Retriever.objects.get(name='facenet', algorithm=dvaapp.models.Retriever.EXACT)
                 query_json['map'].append({'operation': 'perform_detection',
-                                          'arguments': {'detector_pk': int(d),
+                                          'arguments': {'trainedmodel_selector':{'pk': int(d)},
                                                         'target': 'query',
                                                         'map': [{
                                                             'operation': 'perform_indexing',
                                                             'arguments': {'target': 'query_regions',
-                                                                          'index': 'facenet',
+                                                                          'trainedmodel_selector': {'name': 'facenet'},
                                                                           'filters': {'event_id': '__parent_event__'},
                                                                           'map': [{
                                                                               'operation': 'perform_retrieval',
-                                                                              'arguments': {'retriever_pk': dr.pk,
+                                                                              'arguments': {'retriever_selector':{"pk":dr.pk},
                                                                                             'filters': {
                                                                                                 'event_id': '__parent_event__'},
                                                                                             'target': 'query_region_index_vectors',
@@ -369,7 +369,7 @@ def create_query_from_request(p, request):
                                           })
             else:
                 query_json['map'].append({'operation': 'perform_detection',
-                                          'arguments': {'detector_pk': int(d), 'target': 'query', }})
+                                          'arguments': {'trainedmodel_selector': {'pk': int(d)}, 'target': 'query', }})
     user = request.user if request.user.is_authenticated else None
     p.create_from_json(query_json, user)
     return p.process
@@ -427,12 +427,12 @@ def get_query_region_json(rd):
 
 def get_retrieval_event_name(r, rids_to_names):
     if r.retrieval_event_id not in rids_to_names:
-        retriever = dvaapp.models.Retriever.objects.get(pk=r.retrieval_event.arguments['retriever_pk'])
+        retriever = dvaapp.models.Retriever.objects.get(**r.retrieval_event.arguments['retriever_selector'])
         if 'index' in r.retrieval_event.parent.arguments:
             indexer = dvaapp.models.TrainedModel.objects.get(name=r.retrieval_event.parent.arguments['index'],
                                                              model_type=dvaapp.models.TrainedModel.INDEXER)
         else:
-            indexer = dvaapp.models.TrainedModel.objects.get(pk=r.retrieval_event.parent.arguments['indexer_pk'])
+            indexer = dvaapp.models.TrainedModel.objects.get(**r.retrieval_event.parent.arguments['trainedmodel_selector'])
         rids_to_names[r.retrieval_event_id] = get_sequence_name(indexer, retriever)
     return rids_to_names[r.retrieval_event_id]
 

@@ -101,7 +101,7 @@ class ProcessVideoURL(DVAQuery):
                                                 {
                                                     "operation": "perform_indexing",
                                                     "arguments": {
-                                                        "index": "inception",
+                                                        "trainedmodel_selector":{"name":"inception"},
                                                         "target": "frames",
                                                         "filters": "__parent__"
                                                     }
@@ -110,12 +110,12 @@ class ProcessVideoURL(DVAQuery):
                                                     "operation": "perform_detection",
                                                     "arguments": {
                                                         "filters": "__parent__",
-                                                        "detector": "coco",
+                                                        "trainedmodel_selector":{"name":"coco"},
                                                         "map": [
                                                             {
                                                                 "operation": "perform_indexing",
                                                                 "arguments": {
-                                                                    "index": "inception",
+                                                                    "trainedmodel_selector":{"name":"inception"},
                                                                     "target": "regions",
                                                                     "filters": {
                                                                         "event_id": "__parent_event__",
@@ -131,12 +131,12 @@ class ProcessVideoURL(DVAQuery):
                                                     "operation": "perform_detection",
                                                     "arguments": {
                                                         "filters": "__parent__",
-                                                        "detector": "face",
+                                                        "trainedmodel_selector":{"name":"face"},
                                                         "map": [
                                                             {
                                                                 "operation": "perform_indexing",
                                                                 "arguments": {
-                                                                    "index": "facenet",
+                                                                    "trainedmodel_selector":{"name":"facenet"},
                                                                     "target": "regions",
                                                                     "filters": {
                                                                         "event_id": "__parent_event__"
