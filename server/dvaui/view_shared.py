@@ -304,7 +304,7 @@ def create_query_from_request(p, request):
     indexer_tasks = defaultdict(list)
     if generate_tags and generate_tags != 'false':
         query_json['map'].append({'operation': 'perform_analysis',
-                                  'arguments': {'analyzer': 'tagger', 'target': 'query', }
+                                  'arguments': {'trainedmodel_selector':{"name":"tagger"}, 'target': 'query', }
                                   })
 
     if selected_indexers:
@@ -320,7 +320,7 @@ def create_query_from_request(p, request):
             {
                 'operation': 'perform_indexing',
                 'arguments': {
-                    'index': di.name,
+                    'trainedmodel_selector': {"name": di.name},
                     'target': 'query',
                     'map': rtasks
                 }
@@ -428,11 +428,7 @@ def get_query_region_json(rd):
 def get_retrieval_event_name(r, rids_to_names):
     if r.retrieval_event_id not in rids_to_names:
         retriever = dvaapp.models.Retriever.objects.get(**r.retrieval_event.arguments['retriever_selector'])
-        if 'index' in r.retrieval_event.parent.arguments:
-            indexer = dvaapp.models.TrainedModel.objects.get(name=r.retrieval_event.parent.arguments['index'],
-                                                             model_type=dvaapp.models.TrainedModel.INDEXER)
-        else:
-            indexer = dvaapp.models.TrainedModel.objects.get(**r.retrieval_event.parent.arguments['trainedmodel_selector'])
+        indexer = dvaapp.models.TrainedModel.objects.get(**r.retrieval_event.parent.arguments['trainedmodel_selector'])
         rids_to_names[r.retrieval_event_id] = get_sequence_name(indexer, retriever)
     return rids_to_names[r.retrieval_event_id]
 
