@@ -13,34 +13,16 @@ from ..models import TrainedModel, IndexEntries
 
 class Approximators(object):
     _index_approximator = {}
-    _name_to_index = {}
-    _shasum_to_index = {}
+    _selector_to_model = {}
     _session = None
 
     @classmethod
-    def get_approximator_by_name(cls,name):
-        if name not in Approximators._name_to_index:
-            di = TrainedModel.objects.get(name=name,model_type=TrainedModel.APPROXIMATOR)
-            Approximators._name_to_index[name] = di
-        else:
-            di = Approximators._name_to_index[name]
-        return cls.get_approximator(di),di
-
-    @classmethod
-    def get_approximator_by_shasum(cls,shasum):
-        if shasum not in Approximators._shasum_to_index:
-            di = TrainedModel.objects.get(shasum=shasum,model_type=TrainedModel.APPROXIMATOR)
-            Approximators._shasum_to_index[shasum] = di
-        else:
-            di = Approximators._shasum_to_index[shasum]
-        return cls.get_approximator(di),di
-
-    @classmethod
-    def get_approximator_by_pk(cls,pk):
-        di = TrainedModel.objects.get(pk=pk)
-        if di.model_type != TrainedModel.APPROXIMATOR:
-            raise ValueError("Model {} id: {} is not an Indexer".format(di.name,di.pk))
-        return cls.get_approximator(di),di
+    def get_trained_model(cls,args):
+        selector = args['trainedmodel_selector']
+        if not str(selector) in cls._selector_to_model:
+            di = TrainedModel.objects.get(**selector)
+            cls._selector_to_model[str(selector)] = (cls.get_approximator(di), di)
+        return cls._selector_to_model[str(selector)]
     
     @classmethod
     def get_approximator(cls,di):
@@ -72,14 +54,16 @@ class Approximators(object):
                 approx_ind.features_file_name = ""
             elif da.algorithm == 'PCA':
                 # TODO optimize this by doing matmul rather than calling for each entry
+                event.create_dir()
                 approx_vectors = np.array([approx.approximate(vectors[i, :]) for i, e in enumerate(entries)])
-                feat_fname = "{}/{}/indexes/{}.npy".format(settings.MEDIA_ROOT, index_entry.video_id, uid)
+                feat_fname = "{}/{}.npy".format(event.get_dir(), uid)
                 with open(feat_fname, 'w') as featfile:
                     np.save(featfile, approx_vectors)
                 approx_ind.features_file_name = "{}.npy".format(uid)
                 approx_ind.entries = entries
             elif da.algorithm == "FAISS":
-                feat_fname = "{}/{}/indexes/{}.index".format(settings.MEDIA_ROOT, index_entry.video_id, uid)
+                event.create_dir()
+                feat_fname = "{}/{}.index".format(event.get_dir(), uid)
                 approx.approximate_batch(np.atleast_2d(vectors.squeeze()),feat_fname)
                 approx_ind.features_file_name = "{}.index".format(uid)
                 approx_ind.entries = entries

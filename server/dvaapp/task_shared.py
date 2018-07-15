@@ -32,9 +32,6 @@ def restart_task(dt, exception_traceback):
             return None
         else:
             logging.info("Restarting {}".format(dt.pk))
-            for model_name in settings.RESTARTABLE_TASKS[dt.operation]['delete_models']:
-                m = apps.get_model(app_label='dvaapp', model_name=model_name)
-                m.objects.filter(event_id=dt.pk).delete()
             new_dt = TEvent.objects.create(parent_process=dt.parent_process,
                                            task_group_id=dt.task_group_id,
                                            parent=dt.parent,
@@ -247,7 +244,6 @@ def load_frame_list(dv, event, frame_index__gte=0, frame_index__lt=-1):
     frame_list = dv.get_frame_list()
     temp_path = "{}.jpg".format(uuid.uuid1()).replace('-', '_')
     video_id = dv.pk
-    frame_index_to_regions = {}
     frames = []
     regions = []
     for i, f in enumerate(frame_list['frames']):
@@ -267,8 +263,7 @@ def load_frame_list(dv, event, frame_index__gte=0, frame_index__lt=-1):
                 regions.extend(drs)
                 frames.append(df)
                 shutil.move(temp_path, df.path())
-    _ = Frame.objects.bulk_create(frames, 1000)
-    event.finalize({'Region':regions})
+    event.finalize({'Region':regions,'Frame':frames})
 
 
 def download_and_get_query_path(start):
@@ -357,41 +352,6 @@ def import_frame_regions_json(regions_json, video, event):
             raise ValueError('invalid target: {}'.format(k['target']))
     logging.info("{} filenames not found in the dataset".format(not_found))
     event.finalize({"Region":regions})
-
-
-def get_sync_paths(dirname, task_id):
-    if dirname == 'indexes':
-        f = [k.npy_path(media_root="") for k in IndexEntries.objects.filter(event_id=task_id) if k.features_file_name]
-    elif dirname == 'frames':
-        f = [k.path(media_root="") for k in Frame.objects.filter(event_id=task_id)]
-    elif dirname == 'segments':
-        f = []
-        for k in Segment.objects.filter(event_id=task_id):
-            f.append(k.path(media_root=""))
-    elif dirname == 'regions':
-        e = TEvent.objects.get(pk=task_id)
-        if e.operation == 'perform_transformation':
-            fargs = copy.deepcopy(e.arguments['filters'])
-            fargs['video_id'] = e.video_id
-            f = [k.path(media_root="") for k in Region.objects.filter(**fargs)]
-        else:
-            # todo fix this for the case where a region has an associated pixel wise information.
-            f = [k.path(media_root="") for k in Region.objects.filter(event_id=task_id) if k.png]
-    else:
-        raise NotImplementedError("dirname : {} not configured".format(dirname))
-    return f
-
-
-def upload(dirname, event_id, video_id):
-    if dirname:
-        fnames = get_sync_paths(dirname, event_id)
-        logging.info("Syncing {} containing {} files".format(dirname, len(fnames)))
-        for fp in fnames:
-            upload_file_to_remote(fp)
-        if fnames:  # if files are uploaded, sleep three seconds to ensure that files are available before launching
-            time.sleep(3)
-    else:
-        upload_video_to_remote(video_id)
 
 
 def generate_tpu_training_set(event):

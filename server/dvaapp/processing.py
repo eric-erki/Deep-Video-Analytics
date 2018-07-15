@@ -14,33 +14,7 @@ from django.apps import apps
 from models import Video, DVAPQL, TEvent, TrainedModel, Retriever, Worker, DeletedVideo, TrainingSet
 from celery.result import AsyncResult
 import fs
-import task_shared
 
-SYNC_TASKS = {
-    "perform_dataset_extraction": [{'operation': 'perform_sync', 'arguments': {'dirname': 'frames'}}, ],
-    "perform_video_segmentation": [{'operation': 'perform_sync', 'arguments': {'dirname': 'segments'}}, ],
-    "perform_video_decode": [{'operation': 'perform_sync', 'arguments': {'dirname': 'frames'}}, ],
-    "perform_frame_download": [{'operation': 'perform_sync', 'arguments': {'dirname': 'frames'}}, ],
-    'perform_detection': [],
-    'perform_matching': [],
-    'perform_region_import': [],
-    'perform_transformation': [{'operation': 'perform_sync', 'arguments': {'dirname': 'regions'}}, ],
-    'perform_indexing': [{'operation': 'perform_sync', 'arguments': {'dirname': 'indexes'}}, ],
-    'perform_index_approximation': [{'operation': 'perform_sync', 'arguments': {'dirname': 'indexes'}}, ],
-    'perform_import': [{'operation': 'perform_sync', 'arguments': {}}, ],
-    'perform_training': [],
-    'perform_stream_capture': [],
-    'perform_reduce': [],
-    'perform_test': [],
-    'perform_detector_import': [],
-}
-
-ANALYER_NAME_TO_PK = {}
-APPROXIMATOR_NAME_TO_PK = {}
-INDEXER_NAME_TO_PK = {}
-APPROXIMATOR_SHASUM_TO_PK = {}
-RETRIEVER_NAME_TO_PK = {}
-DETECTOR_NAME_TO_PK = {}
 CURRENT_QUEUES = set()
 LAST_UPDATED = None
 
@@ -60,96 +34,21 @@ def get_queues():
 
 def get_model_specific_queue_name(operation, args):
     """
-    TODO simplify this mess by using model_selector
     :param operation:
     :param args:
     :return:
     """
-    if 'detector_pk' in args:
-        queue_name = "q_detector_{}".format(args['detector_pk'])
-    elif 'indexer_pk' in args:
-        queue_name = "q_indexer_{}".format(args['indexer_pk'])
-    elif 'retriever_pk' in args:
-        queue_name = "q_retriever_{}".format(args['retriever_pk'])
-    elif 'analyzer_pk' in args:
-        queue_name = "q_analyzer_{}".format(args['analyzer_pk'])
-    elif 'approximator_pk' in args:
-        queue_name = "q_approximator_{}".format(args['approximator_pk'])
-    elif 'retriever' in args:
-        if args['retriever'] not in RETRIEVER_NAME_TO_PK:
-            RETRIEVER_NAME_TO_PK[args['retriever']] = Retriever.objects.get(name=args['retriever']).pk
-        queue_name = 'q_retriever_{}'.format(RETRIEVER_NAME_TO_PK[args['retriever']])
-    elif 'index' in args:
-        if args['index'] not in INDEXER_NAME_TO_PK:
-            INDEXER_NAME_TO_PK[args['index']] = TrainedModel.objects.get(name=args['index'],
-                                                                         model_type=TrainedModel.INDEXER).pk
-        queue_name = 'q_indexer_{}'.format(INDEXER_NAME_TO_PK[args['index']])
-    elif 'approximator_shasum' in args:
-        ashasum = args['approximator_shasum']
-        if ashasum not in APPROXIMATOR_SHASUM_TO_PK:
-            APPROXIMATOR_SHASUM_TO_PK[ashasum] = TrainedModel.objects.get(shasum=ashasum,
-                                                                          model_type=TrainedModel.APPROXIMATOR).pk
-        queue_name = 'q_approximator_{}'.format(APPROXIMATOR_SHASUM_TO_PK[ashasum])
-    elif 'approximator' in args:
-        ashasum = args['approximator']
-        if args['approximator'] not in APPROXIMATOR_NAME_TO_PK:
-            APPROXIMATOR_NAME_TO_PK[ashasum] = TrainedModel.objects.get(name=args['approximator'],
-                                                                        model_type=TrainedModel.APPROXIMATOR).pk
-        queue_name = 'q_approximator_{}'.format(APPROXIMATOR_NAME_TO_PK[args['approximator']])
-    elif 'analyzer' in args:
-        if args['analyzer'] not in ANALYER_NAME_TO_PK:
-            ANALYER_NAME_TO_PK[args['analyzer']] = TrainedModel.objects.get(name=args['analyzer'],
-                                                                            model_type=TrainedModel.ANALYZER).pk
-        queue_name = 'q_analyzer_{}'.format(ANALYER_NAME_TO_PK[args['analyzer']])
-    elif 'detector' in args:
-        if args['detector'] not in DETECTOR_NAME_TO_PK:
-            DETECTOR_NAME_TO_PK[args['detector']] = TrainedModel.objects.get(name=args['detector'],
-                                                                             model_type=TrainedModel.DETECTOR).pk
-        queue_name = 'q_detector_{}'.format(DETECTOR_NAME_TO_PK[args['detector']])
-    else:
-        raise NotImplementedError("{}, {}".format(operation, args))
-    return queue_name
-
-
-def get_model_pk_from_args(operation, args):
-    if 'detector_pk' in args:
-        return args['detector_pk']
-    if 'approximator_pk' in args:
-        return args['approximator_pk']
-    elif 'indexer_pk' in args:
-        return args['indexer_pk']
-    elif 'retriever_pk' in args:
-        return args['retriever_pk']
-    elif 'analyzer_pk' in args:
-        return ['analyzer_pk']
-    elif 'index' in args:
-        if args['index'] not in INDEXER_NAME_TO_PK:
-            INDEXER_NAME_TO_PK[args['index']] = TrainedModel.objects.get(name=args['index'],
-                                                                         model_type=TrainedModel.INDEXER).pk
-        return INDEXER_NAME_TO_PK[args['index']]
-    elif 'analyzer' in args:
-        if args['analyzer'] not in ANALYER_NAME_TO_PK:
-            ANALYER_NAME_TO_PK[args['analyzer']] = TrainedModel.objects.get(name=args['analyzer'],
-                                                                            model_type=TrainedModel.ANALYZER).pk
-        return ANALYER_NAME_TO_PK[args['analyzer']]
-    elif 'detector' in args:
-        if args['detector'] not in DETECTOR_NAME_TO_PK:
-            DETECTOR_NAME_TO_PK[args['detector']] = TrainedModel.objects.get(name=args['detector'],
-                                                                             model_type=TrainedModel.DETECTOR).pk
-        return DETECTOR_NAME_TO_PK[args['detector']]
-    elif 'approximator_shasum' in args:
-        ashasum = args['approximator_shasum']
-        if ashasum not in APPROXIMATOR_SHASUM_TO_PK:
-            APPROXIMATOR_SHASUM_TO_PK[ashasum] = TrainedModel.objects.get(shasum=ashasum,
-                                                                          model_type=TrainedModel.APPROXIMATOR).pk
-        return APPROXIMATOR_SHASUM_TO_PK[ashasum]
+    if 'trainedmodel_selector' in args:
+        return 'q_model_{}'.format(TrainedModel.objects.filter(**args['trainedmodel_selector']).first().pk)
+    elif 'retriever_selector' in args:
+        return 'q_retriever_{}'.format(Retriever.objects.filter(**args['retriever_selector']).first().pk)
     else:
         raise NotImplementedError("{}, {}".format(operation, args))
 
 
 def get_queue_name_and_operation(operation, args):
     global CURRENT_QUEUES
-    if operation == 'perform_test':
+    if 'queue' in args:
         return args['queue'], operation
     elif operation in settings.TASK_NAMES_TO_QUEUE:
         # Here we return directly since queue name is not per model
@@ -280,18 +179,15 @@ def launch_tasks(k, dt, inject_filters, map_filters=None, launch_type=""):
 def process_next(dt, inject_filters=None, custom_next_tasks=None, sync=True, launch_next=True, map_filters=None):
     if custom_next_tasks is None:
         custom_next_tasks = []
-    task_id = dt.pk
     launched = []
     args = copy.deepcopy(dt.arguments)
     logging.info("next tasks for {}".format(dt.operation))
     next_tasks = args.get('map', []) if args and launch_next else []
     if sync and settings.MEDIA_BUCKET:
-        for k in SYNC_TASKS.get(dt.operation, []):
-            if settings.ENABLE_CLOUDFS:
-                dirname = k['arguments'].get('dirname', None)
-                task_shared.upload(dirname, task_id, dt.video_id)
-            else:
-                launched += launch_tasks(k, dt, inject_filters, None, 'sync')
+        if settings.ENABLE_CLOUDFS:
+            dt.upload()
+        else:
+            launched += launch_tasks(dt, inject_filters, None, 'sync')
     for k in next_tasks + custom_next_tasks:
         if map_filters is None:
             map_filters = get_map_filters(k, dt.video)

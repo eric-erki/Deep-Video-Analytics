@@ -1,6 +1,6 @@
-import logging, json, uuid, tempfile, os
-from PIL import Image
+import logging, uuid, tempfile
 from django.conf import settings
+import lmdb
 
 try:
     from dvalib import indexer, retriever
@@ -14,34 +14,16 @@ from ..models import IndexEntries, TrainedModel
 
 class Indexers(object):
     _visual_indexer = {}
-    _shasum_to_index = {}
-    _name_to_index = {}
+    _selector_to_model = {}
     _session = None
 
     @classmethod
-    def get_index_by_name(cls,name):
-        if name not in Indexers._name_to_index:
-            di = TrainedModel.objects.get(name=name,model_type=TrainedModel.INDEXER)
-            Indexers._name_to_index[name] = di
-        else:
-            di = Indexers._name_to_index[name]
-        return cls.get_index(di),di
-    
-    @classmethod
-    def get_index_by_pk(cls,pk):
-        di = TrainedModel.objects.get(pk=pk)
-        if di.model_type != TrainedModel.INDEXER:
-            raise ValueError("Model {} id: {} is not an Indexer".format(di.name,di.pk))
-        return cls.get_index(di),di
-    
-    @classmethod
-    def get_indexer_by_shasum(cls,shasum):
-        if shasum not in Indexers._shasum_to_index:
-            di = TrainedModel.objects.get(shasum=shasum,model_type=TrainedModel.INDEXER)
-            Indexers._shasum_to_index[shasum] = di
-        else:
-            di = Indexers._shasum_to_index[shasum]
-        return di
+    def get_trained_model(cls,args):
+        selector = args['trainedmodel_selector']
+        if not str(selector) in cls._selector_to_model:
+            di = TrainedModel.objects.get(**selector)
+            cls._selector_to_model[str(selector)] = (cls.get_index(di), di)
+        return cls._selector_to_model[str(selector)]
 
     @classmethod
     def get_index(cls,di):
@@ -89,16 +71,14 @@ class Indexers(object):
             # TODO Ensure that "full frame"/"regions" are not repeatedly indexed.
             features = visual_index.index_paths(paths)
             uid = str(uuid.uuid1()).replace('-','_')
-            dirnames = ['{}/{}/'.format(settings.MEDIA_ROOT,event.video_id),
-                        '{}/{}/indexes/'.format(settings.MEDIA_ROOT,event.video_id)]
-            for dirname in dirnames:
-                if not os.path.isdir(dirname):
-                    try:
-                        os.mkdir(dirname)
-                    except:
-                        logging.exception("error creating {}".format(dirname))
-                        pass
-            feat_fname = "{}/{}/indexes/{}.npy".format(settings.MEDIA_ROOT,event.video_id,uid)
+            event.create_dir()
+            feat_fname = "{}/{}.npy".format(event.get_dir(),uid)
+            entries_fname = "{}/{}".format(event.get_dir(),uid)
+            env = lmdb.open(entries_fname, max_dbs=0, subdir=False)
+            with env.begin(write=True) as txn:
+                for k, v in enumerate(entries):
+                    txn.put(str(k),str(v))
+            env.close()
             with open(feat_fname, 'w') as feats:
                 np.save(feats, np.array(features))
             i = IndexEntries()

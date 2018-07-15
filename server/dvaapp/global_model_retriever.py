@@ -34,7 +34,7 @@ def run_task_in_new_process(start):
     :param start:
     :return:
     """
-    trained_model = TrainedModel.objects.get(pk=processing.get_model_pk_from_args(start.operation,start.arguments))
+    trained_model = TrainedModel.objects.get(**start.arguments['trainedmodel_selector'])
     new_envs = os.environ.copy()
     for k in {'PYTORCH_MODE','CAFFE_MODE','MXNET_MODE'}:
         if k in new_envs:
@@ -61,7 +61,7 @@ def run_task_in_model_specific_flask_server(start):
     global GLOBAL_FLASK_SERVER_PROCESS
     global LAST_GLOBAL_QUEUE_NAME
     model_specific_queue_name = processing.get_model_specific_queue_name(start.operation, start.arguments)
-    trained_model = TrainedModel.objects.get(pk=processing.get_model_pk_from_args(start.operation,start.arguments))
+    trained_model = TrainedModel.objects.get(**start.arguments['trainedmodel_selector'])
     new_envs = os.environ.copy()
     for k in {'PYTORCH_MODE','CAFFE_MODE','MXNET_MODE'}:
         if k in new_envs:

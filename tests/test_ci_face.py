@@ -11,6 +11,6 @@ if __name__ == '__main__':
         if i == 0:  # save travis time by just running detection on first video
             args = {
                 'filter': {'object_name__startswith': 'MTCNN_face'},
-                'index': 'facenet',
+                'trainedmodel_selector':{'name':'facenet'},
                 'target': 'regions'}
             perform_indexing(TEvent.objects.create(video=v, arguments=args).pk)

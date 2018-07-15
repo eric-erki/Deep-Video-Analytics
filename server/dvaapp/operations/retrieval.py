@@ -1,6 +1,7 @@
 import logging
 from .approximation import Approximators
 from .indexing import Indexers
+from collections import defaultdict
 
 try:
     from dvalib import indexer, retriever
@@ -9,43 +10,48 @@ except ImportError:
     np = None
     logging.warning("Could not import indexer / clustering assuming running in front-end mode")
 
-from ..models import IndexEntries, QueryResult, Region, Retriever, Frame
+from ..models import IndexEntries, QueryResult, Region, Retriever
 
 
 class Retrievers(object):
     _visual_retriever = {}
     _retriever_object = {}
-    _index_count = 0
+    _selector_to_dr = {}
+    _index_count = defaultdict(int)
 
     @classmethod
-    def get_retriever(cls, retriever_pk):
+    def get_retriever(cls, args):
+        selector = args['retriever_selector']
+        if str(selector) in cls._selector_to_dr:
+            dr = cls._selector_to_dr[str(selector)]
+        else:
+            dr = Retriever.objects.get(**selector)
+            cls._selector_to_dr[str(selector)] = dr
+        retriever_pk = dr.pk
         if retriever_pk not in cls._visual_retriever:
-            dr = Retriever.objects.get(pk=retriever_pk)
             cls._retriever_object[retriever_pk] = dr
             if dr.algorithm == Retriever.EXACT and dr.approximator_shasum and dr.approximator_shasum.strip():
-                approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
+                approximator, da = Approximators.get_trained_model({"trainedmodel_selector":{"shasum":dr.approximator_shasum}})
                 da.ensure()
                 approximator.load()
                 cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name, approximator=approximator)
             elif dr.algorithm == Retriever.EXACT:
                 cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name)
             elif dr.algorithm == Retriever.FAISS and dr.approximator_shasum is None:
-                di = Indexers.get_indexer_by_shasum(dr.indexer_shasum)
+                _, di = Indexers.get_trained_model({"trainedmodel_selector":{"shasum":dr.indexer_shasum}})
                 cls._visual_retriever[retriever_pk] = retriever.FaissFlatRetriever(name=dr.name,
-                                                                                   components=di.arguments[
-                                                                                       'components'])
+                                                                                   components=di.arguments['components'])
             elif dr.algorithm == Retriever.FAISS:
-                approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
+                approximator, da = Approximators.get_trained_model({"trainedmodel_selector":{"shasum":dr.approximator_shasum}})
                 da.ensure()
                 approximator.load()
                 cls._visual_retriever[retriever_pk] = retriever.FaissApproximateRetriever(name=dr.name,
                                                                                           approximator=approximator)
             elif dr.algorithm == Retriever.LOPQ:
-                approximator, da = Approximators.get_approximator_by_shasum(dr.approximator_shasum)
+                approximator, da = Approximators.get_trained_model({"trainedmodel_selector":{"shasum":dr.approximator_shasum}})
                 da.ensure()
                 approximator.load()
-                cls._visual_retriever[retriever_pk] = retriever.LOPQRetriever(name=dr.name,
-                                                                              approximator=approximator)
+                cls._visual_retriever[retriever_pk] = retriever.LOPQRetriever(name=dr.name, approximator=approximator)
 
             else:
                 raise ValueError("{} not valid retriever algorithm".format(dr.algorithm))
@@ -53,15 +59,12 @@ class Retrievers(object):
 
     @classmethod
     def refresh_index(cls, dr):
-        # This has a BUG where total count of index entries remains unchanged
-        # TODO: Waiting for https://github.com/celery/celery/issues/3620 to be resolved to enabel ASYNC index updates
-        # TODO improve this by either having a seperate broadcast queues or using last update timestampl
-        last_count = cls._index_count
+        # TODO improve this by either having a separate broadcast queues or using redis
+        last_count = cls._index_count[dr.pk]
         current_count = IndexEntries.objects.count()
         visual_index = cls._visual_retriever[dr.pk]
         if last_count == 0 or last_count != current_count or len(visual_index.loaded_entries) == 0:
-            # update the count
-            cls._index_count = current_count
+            cls._index_count[dr.pk] = current_count
             cls.update_index(dr)
 
     @classmethod
@@ -82,26 +85,20 @@ class Retrievers(object):
                 if visual_index.algorithm == "LOPQ":
                     vectors, entries = index_entry.load_index()
                     logging.info("loading approximate index {}".format(index_entry.pk))
-                    start_index = len(visual_index.entries)
                     visual_index.load_index(None,entries,index_entry.video_id,index_entry.target)
-                    visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
-                                                                                     end=len(visual_index.entries) - 1)
+                    visual_index.loaded_entries.add(index_entry.pk)
                 elif visual_index.algorithm == 'FAISS':
                     index_file_path, entries = index_entry.load_index()
                     logging.info("loading FAISS index {}".format(index_entry.pk))
-                    start_index = visual_index.findex
                     visual_index.load_index(index_file_path, entries, index_entry.video_id, index_entry.target)
-                    visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
-                                                                                     end=visual_index.findex - 1)
+                    visual_index.loaded_entries.add(index_entry.pk)
                 else:
                     vectors, entries = index_entry.load_index()
                     logging.info("Starting {} in {} with shape {}".format(index_entry.video_id, visual_index.name,
                                                                           vectors.shape))
                     try:
-                        start_index = visual_index.findex
                         visual_index.load_index(vectors, entries, index_entry.video_id, index_entry.target)
-                        visual_index.loaded_entries[index_entry.pk] = indexer.IndexRange(start=start_index,
-                                                                                         end=visual_index.findex - 1)
+                        visual_index.loaded_entries.add(index_entry.pk)
                     except:
                         logging.info("ERROR Failed to load {} vectors shape {} entries {}".format(
                             index_entry.video_id, vectors.shape, len(entries)))
@@ -109,8 +106,7 @@ class Retrievers(object):
                         logging.info("finished {} in {}".format(index_entry.pk, visual_index.name))
 
     @classmethod
-    def retrieve(cls, event, retriever_pk, vector, count, region_pk=None):
-        index_retriever, dr = cls.get_retriever(retriever_pk)
+    def retrieve(cls, event, index_retriever, dr, vector, count, region_pk=None):
         cls.refresh_index(dr)
         results = index_retriever.nearest(vector=vector, n=count)
         qr_batch = []
@@ -126,13 +122,13 @@ class Retrievers(object):
                 qr.frame_index = dd.frame_index
                 qr.video_id = dd.video_id
             elif r['type'] == 'frames':
-                qr.frame_index = r['id']
+                qr.frame_index = int(r['id'])
                 qr.video_id = r['video']
             else:
                 raise ValueError("No key found {}".format(r))
             qr.algorithm = dr.algorithm
-            qr.rank = r.get('rank', rank)
-            qr.distance = r.get('dist', rank)
+            qr.rank = int(r.get('rank', rank+1))
+            qr.distance = int(r.get('dist', rank+1))
             qr_batch.append(qr)
         if region_pk:
             event.finalize_query({"QueryResult":qr_batch},results={region_pk:{"retriever_state":index_retriever.findex}})

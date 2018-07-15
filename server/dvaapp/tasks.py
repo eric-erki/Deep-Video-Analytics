@@ -198,15 +198,15 @@ def perform_retrieval(task_id):
         return 0
     args = dt.arguments
     target = args.get('target', 'query')  # by default target is query
+    index_retriever, dr = Retrievers.get_retriever(args)
     if target == 'query':
         vector = np.load(io.BytesIO(redis_client.get("query_vector_{}".format(dt.parent_id))))
-        Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20))
+        Retrievers.retrieve(dt, index_retriever, dr, vector, args.get('count', 20))
     elif target == 'query_region_index_vectors':
         qr_pk_vector = redis_client.hgetall("query_region_vectors_{}".format(dt.parent_id))
         for query_region_pk, vector in qr_pk_vector.items():
             vector = np.load(io.BytesIO(vector))
-            Retrievers.retrieve(dt, args.get('retriever_pk', 20), vector, args.get('count', 20),
-                                region_pk=query_region_pk)
+            Retrievers.retrieve(dt, index_retriever, dr, vector, args.get('count', 20), region_pk=query_region_pk)
     else:
         raise NotImplementedError(target)
     mark_as_completed(dt)
@@ -270,7 +270,8 @@ def perform_video_segmentation(task_id):
     dv.create_directory(create_subdirs=True)
     v = VideoDecoder(dvideo=dv, media_dir=settings.MEDIA_ROOT)
     v.get_metadata()
-    v.segment_video(task_id)
+    segments_batch = v.segment_video(task_id)
+    dt.finalize({"Segment":segments_batch})
     if args.get('sync', False):
         next_args = {'rescale': args['rescale'], 'rate': args['rate']}
         next_task = models.TEvent.objects.create(video=dv, operation='perform_video_decode', arguments=next_args,
@@ -301,8 +302,10 @@ def perform_video_decode(task_id):
     if target != 'segments':
         raise NotImplementedError("Cannot decode target:{}".format(target))
     task_shared.ensure_files(queryset, target)
+    frame_batch = []
     for ds in queryset:
-        v.decode_segment(ds=ds, denominator=args.get('rate', 30), event_id=task_id)
+        frame_batch += v.decode_segment(ds,dt.pk,denominator=args.get('rate', 30))
+    dt.finalize({"Frame":frame_batch})
     process_next(dt)
     mark_as_completed(dt)
     return task_id
@@ -470,15 +473,8 @@ def perform_sync(task_id):
     dt = get_and_check_task(task_id)
     if dt is None:
         return 0
-    args = dt.arguments
-    if settings.MEDIA_BUCKET:
-        dirname = args.get('dirname', None)
-        task_shared.upload(dirname, dt.parent_id, dt.video_id)
-    else:
-        logging.info("Media bucket name not specified, nothing was synced.")
-        dt.error_message = "Media bucket name is empty".format(settings.MEDIA_BUCKET)
+    dt.parent.upload()
     mark_as_completed(dt)
-    return
 
 
 @app.task(track_started=True, name="perform_deletion")
@@ -602,8 +598,19 @@ def perform_test(task_id):
     if dt is None:
         return 0
     args = dt.arguments
+    try:
+        current_attempt = models.TaskRestart.objects.get(launched_event_pk=task_id).attempts
+    except:
+        current_attempt = 0
     if 'sleep_seconds' in args:
         time.sleep(args['sleep_seconds'])
+    if 'kill' in args:
+        os.kill(os.getpid(), 9)
+    if 'throw_error_until' in args:
+        throw_error_until = int(args['throw_error_until'])
+        if current_attempt < throw_error_until:
+            raise ValueError("Throwing error until attempt {}, current attempt {} ".format(throw_error_until,
+                                                                                           current_attempt))
     process_next(dt)
     mark_as_completed(dt)
     return 0

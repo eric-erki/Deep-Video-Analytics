@@ -274,6 +274,12 @@ def download_video_from_remote_to_local(dv):
     else:
         dv.create_directory()
         for blob in BUCKET.list_blobs(prefix='{}/'.format(dv.pk)):
+            dirname = os.path.dirname("{}/{}".format(settings.MEDIA_ROOT,blob.name))
+            if 'events' in dirname and not os.path.isdir(dirname):
+                try:
+                    os.mkdir(dirname)
+                except:
+                    pass
             with open("{}/{}".format(settings.MEDIA_ROOT,blob.name), 'w') as fout:
                 blob.download_to_file(fout)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import django, json, sys, os, logging, time, random
+import django, json, sys, os, logging, subprocess
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
@@ -85,6 +85,12 @@ def init_process():
 
 
 if __name__ == "__main__":
+    # TODO(akshay): remove this once merged into stable
+    try:
+        import sortedcontainers
+    except ImportError:
+        subprocess.check_output(['pip','install','sortedcontainers==2.0.4'])
+        pass
     if 'SUPERUSER' in os.environ and not User.objects.filter(is_superuser=True).exists():
         try:
             User.objects.create_superuser(username=os.environ['SUPERUSER'],

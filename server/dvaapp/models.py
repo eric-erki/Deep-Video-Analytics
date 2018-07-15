@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-import os, json, gzip, sys, shutil, zipfile, uuid, hashlib
+import os, json, gzip, sys, shutil, zipfile, uuid, hashlib, logging
 
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              "../../client/"))  # This ensures that the constants are same between client and server
@@ -11,6 +11,7 @@ from django.utils import timezone
 from dvaclient import constants
 from . import fs
 from PIL import Image
+import time
 
 try:
     import numpy as np
@@ -138,7 +139,7 @@ class Video(models.Model):
             except OSError:
                 pass
         if create_subdirs:
-            for s in ['video', 'frames', 'segments', 'indexes', 'regions', 'transforms', 'audio']:
+            for s in ['video', 'frames', 'segments', 'events', 'audio']:
                 d = '{}/{}/{}/'.format(settings.MEDIA_ROOT, self.pk, s)
                 if not os.path.exists(d):
                     try:
@@ -169,6 +170,35 @@ class TEvent(models.Model):
     task_group_id = models.IntegerField(default=-1)
     results = JSONField(blank=True, null=True)
 
+    def create_dir(self,media_root=None):
+        if self.video_id:
+            dirnames = ['{}/{}/'.format(settings.MEDIA_ROOT, self.video_id),
+                        '{}/{}/events/'.format(settings.MEDIA_ROOT, self.video_id), self.get_dir(media_root)]
+        elif self.training_set_id:
+            dirnames = ['{}/{}/'.format(settings.MEDIA_ROOT, self.training_set_id),
+                        '{}/{}/events/'.format(settings.MEDIA_ROOT, self.training_set_id), self.get_dir(media_root)]
+        else:
+            dirnames = [self.get_dir(media_root),]
+        for dirname in dirnames:
+            if not os.path.isdir(dirname):
+                try:
+                    os.mkdir(dirname)
+                except:
+                    error_message = "error creating {}".format(dirname)
+                    self.error_message += error_message
+                    logging.exception(error_message)
+                    pass
+
+    def get_dir(self,media_root=None):
+        if media_root is None:
+            media_root = settings.MEDIA_ROOT
+        if self.video_id:
+            return "{}/{}/events/{}/".format(media_root,self.video_id,self.pk)
+        elif self.training_set_id:
+            return "{}/{}/events/{}/".format(media_root,self.training_set_id,self.pk)
+        else:
+            return None
+
     def finalize(self, bulk_create, results=None):
         created_regions = []
         created_tubes = []
@@ -183,6 +213,18 @@ class TEvent(models.Model):
                 temp.append(d)
             created_exports = Export.objects.bulk_create(temp, batch_size=1000)
             self.results['created_objects']['Export'] = len(created_exports)
+        if 'Frame' in bulk_create:
+            temp = []
+            for i, d in enumerate(bulk_create['Frame']):
+                temp.append(d)
+            created_frames = Frame.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['Frame'] = len(created_frames)
+        if 'Segment' in bulk_create:
+            temp = []
+            for i, d in enumerate(bulk_create['Segment']):
+                temp.append(d)
+            created_segments = Segment.objects.bulk_create(temp, batch_size=1000)
+            self.results['created_objects']['Segment'] = len(created_segments)
         if 'IndexEntries' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['IndexEntries']):
@@ -287,6 +329,35 @@ class TEvent(models.Model):
             self.results['created_objects']['QueryResult'] += len(created_query_results)
         if results:
             self.results.update(results)
+
+    def upload(self):
+        if self.operation == 'perform_import' and self.video_id:
+            fs.upload_video_to_remote(self.video_id)
+        else:
+            fnames = []
+            created_type_count = 0
+            if self.results and 'created_objects' in self.results:
+                if 'Frame' in self.results['created_objects']:
+                    fnames += [k.path(media_root="") for k in Frame.objects.filter(event_id=self.pk)]
+                    created_type_count += 1
+                if 'Segment' in self.results['created_objects']:
+                    fnames += [k.path(media_root="") for k in Segment.objects.filter(event_id=self.pk)]
+                    created_type_count += 1
+                # If anything else has been created then sync the directory
+                if len(self.results['created_objects']) > created_type_count:
+                    event_dir = self.get_dir()
+                    if event_dir and os.path.isdir(event_dir):
+                        for fname in os.listdir(event_dir):
+                            path = "{}{}".format(event_dir,fname)
+                            if os.path.isfile(path):
+                                fnames.append("{}{}".format(self.get_dir(media_root=""),fname))
+                            else:
+                                raise ValueError("{} is directory, event specific directory can only contain files")
+                for fp in fnames:
+                    fs.upload_file_to_remote(fp)
+                # TODO(akshay): Remove this
+                if fnames:
+                    time.sleep(2)
 
 
 class TrainedModel(models.Model):
@@ -656,20 +727,19 @@ class IndexEntries(models.Model):
         return "{} in {} index by {}".format(self.target, self.algorithm, self.video.name)
 
     def npy_path(self, media_root=None):
-        if not (media_root is None):
-            return "{}/{}/indexes/{}".format(media_root, self.video_id, self.features_file_name)
-        else:
-            return "{}/{}/indexes/{}".format(settings.MEDIA_ROOT, self.video_id, self.features_file_name)
+        if media_root is None:
+            media_root = settings.MEDIA_ROOT
+        return "{}/{}/events/{}/{}".format(media_root, self.video_id, self.event_id, self.features_file_name)
 
     def load_index(self, media_root=None):
         if media_root is None:
             media_root = settings.MEDIA_ROOT
         video_dir = "{}/{}".format(media_root, self.video_id)
         if not os.path.isdir(video_dir):
-            os.mkdir(video_dir)
-        index_dir = "{}/{}/indexes".format(media_root, self.video_id)
-        if not os.path.isdir(index_dir):
-            os.mkdir(index_dir)
+            self.video.create_directory()
+        event_dir = "{}/{}".format(media_root, self.video_id, self.event_id)
+        if not os.path.isdir(event_dir):
+            self.event.create_dir()
         dirnames = {}
         if self.features_file_name.strip():
             fs.ensure(self.npy_path(media_root=''), dirnames, media_root)

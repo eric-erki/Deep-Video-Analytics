@@ -80,7 +80,7 @@ class VideoDecoder(object):
         self.dvideo.width = self.width
         self.dvideo.save()
 
-    def decode_segment(self,ds,denominator=None,event_id=None,frame_indexes=None):
+    def decode_segment(self,ds,event_id, denominator=None,frame_indexes=None):
         existing_frame_indexes = { f.frame_index
                                    for f in Frame.objects.filter(video_id=ds.video_id,segment_index=ds.segment_index)}
         existing_count = len(existing_frame_indexes)
@@ -141,7 +141,7 @@ class VideoDecoder(object):
                 df.event_id = event_id
                 df.w = frame_width
                 df_list.append(df)
-        _ = Frame.objects.bulk_create(df_list, batch_size=1000)
+        return df_list
 
     def segment_video(self,event_id):
         segments_dir = "{}/{}/{}/".format(self.media_dir, self.primary_key, 'segments')
@@ -151,6 +151,7 @@ class VideoDecoder(object):
         logging.info(command)
         segmentor = sp.Popen(shlex.split(command))
         segmentor.wait()
+        segments_batch = []
         if segmentor.returncode != 0:
             raise ValueError
         else:
@@ -180,10 +181,10 @@ class VideoDecoder(object):
                 ds.video_id = self.dvideo.pk
                 ds.event_id = event_id
                 ds.metadata = segment_json
-                ds.save()
+                segments_batch.append(ds)
             logging.info("Took {} seconds to process {} segments".format(time.time() - timer_start,len(self.segment_frames_dict)))
         self.dvideo.frames = sum([len(c) for c in self.segment_frames_dict.itervalues()])
         self.dvideo.segments = len(self.segment_frames_dict)
         self.dvideo.save()
         self.detect_csv_segment_format() # detect and save
-
+        return segments_batch

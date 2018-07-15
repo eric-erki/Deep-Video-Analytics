@@ -472,6 +472,7 @@ def index(request, query_pk=None, frame_pk=None, detection_pk=None):
     context['frame_count'] = Frame.objects.count()
     context['query_count'] = DVAPQL.objects.filter(process_type=DVAPQL.QUERY).count()
     context['process_count'] = DVAPQL.objects.filter(process_type=DVAPQL.PROCESS).count()
+    context['restart_count'] = TaskRestart.objects.filter().count()
     context['index_entries_count'] = IndexEntries.objects.count()
     context['task_events_count'] = TEvent.objects.count()
     context['pending_tasks'] = TEvent.objects.all().filter(started=False, errored=False).count()

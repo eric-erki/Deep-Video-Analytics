@@ -20,13 +20,13 @@ if __name__ == '__main__':
             {
                 'operation': 'perform_indexing',
                 'arguments': {
-                    'index': 'inception',
+                    'trainedmodel_selector': {"name":'inception'},
                     'target': 'query',
                     'map': [
                         {'operation': 'perform_retrieval',
-                         'arguments': {'count': 15, 'retriever_pk': Retriever.objects.get(name='inception',
+                         'arguments': {'count': 15, 'retriever_selector':{'pk':Retriever.objects.get(name='inception',
                                                                                           algorithm=algo,
-                                                                                          approximator_shasum=None).pk}
+                                                                                          approximator_shasum=None).pk}}
                          }
                     ]
                 }
@@ -35,7 +35,7 @@ if __name__ == '__main__':
             {
                 'operation': 'perform_detection',
                 'arguments': {
-                    'detector': 'coco',
+                    'trainedmodel_selector': {'name':'coco'},
                     'target': 'query',
                 }
 
