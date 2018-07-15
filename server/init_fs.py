@@ -5,7 +5,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
                     filename='../logs/init_fs.log',
-                    filemode='a')
+                    filemode='w')
 sys.path.append(os.path.dirname(__file__))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dva.settings")
 django.setup()
