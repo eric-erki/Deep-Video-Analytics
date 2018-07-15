@@ -16,11 +16,7 @@ except ImportError:
 def handle_perform_indexing(start):
     json_args = start.arguments
     target = json_args.get('target', 'frames')
-    if 'index' in json_args:
-        index_name = json_args['index']
-        visual_index, di = indexing.Indexers.get_index_by_name(index_name)
-    else:
-        visual_index, di = indexing.Indexers.get_index_by_pk(json_args['indexer_pk'])
+    visual_index, di = indexing.Indexers.get_trained_model(json_args)
     sync = True
     if target == 'query':
         local_path = task_shared.download_and_get_query_path(start)
@@ -59,14 +55,7 @@ def handle_perform_indexing(start):
 
 def handle_perform_index_approximation(start):
     args = start.arguments
-    if 'approximator_pk' in args:
-        approx, da = approximation.Approximators.get_approximator_by_pk(args['approximator_pk'])
-    elif 'approximator_shasum' in args:
-        approx, da = approximation.Approximators.get_approximator_by_shasum(args['approximator_shasum'])
-    elif 'approximator' in args:
-        approx, da = approximation.Approximators.get_approximator_by_name(args['approximator'])
-    else:
-        raise ValueError("Could not find approximator {}".format(args))
+    approx, da = approximation.Approximators.get_trained_model(args)
     if args['target'] == 'index_entries':
         queryset, target = task_shared.build_queryset(args, start.video_id, start.parent_process_id)
         approximation.Approximators.approximate_queryset(approx, da, queryset, start)
@@ -82,13 +71,8 @@ def handle_perform_detection(start):
     dv = None
     dd_list = []
     query_flow = ('target' in args and args['target'] == 'query')
-    if 'detector_pk' in args:
-        detector_pk = int(args['detector_pk'])
-        cd = models.TrainedModel.objects.get(pk=detector_pk, model_type=models.TrainedModel.DETECTOR)
-        detector_name = cd.name
-    else:
-        detector_name = args['detector']
-        cd = models.TrainedModel.objects.get(name=detector_name, model_type=models.TrainedModel.DETECTOR)
+    cd = models.TrainedModel.objects.get(**args['trainedmodel_selector'])
+    detector_name = cd.name
     detection.Detectors.load_detector(cd)
     detector = detection.Detectors._detectors[cd.pk]
     if detector.session is None:
@@ -153,11 +137,9 @@ def handle_perform_analysis(start):
     task_id = start.pk
     video_id = start.video_id
     args = start.arguments
-    analyzer_name = args['analyzer']
-    if analyzer_name not in analysis.Analyzers._analyzers:
-        da = models.TrainedModel.objects.get(name=analyzer_name, model_type=models.TrainedModel.ANALYZER)
-        analysis.Analyzers.load_analyzer(da)
-    analyzer = analysis.Analyzers._analyzers[analyzer_name]
+    da = models.TrainedModel.objects.get(**args['trainedmodel_selector'])
+    analysis.Analyzers.load_analyzer(da)
+    analyzer = analysis.Analyzers._analyzers[da.name]
     regions_batch = []
     relations_batch = []
     queryset, target = task_shared.build_queryset(args, video_id, start.parent_process_id)
@@ -262,7 +244,7 @@ def handle_perform_matching(dt):
             print mat.shape
             if retriever is None:
                 if approximator_shasum:
-                    approximator, da = approximation.Approximators.get_approximator_by_shasum(approximator_shasum)
+                    approximator, da = approximation.Approximators.get_trained_model({'shasum':approximator_shasum})
                     da.ensure()
                     approximator.load()
                     retriever = retrieval.retriever.FaissApproximateRetriever(name="approx_matcher",

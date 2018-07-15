@@ -39,7 +39,7 @@ def get_model_specific_queue_name(operation, args):
     :return:
     """
     if 'trainedmodel_selector' in args:
-        return 'q_model_{}'.format(TrainedModel.objects.filter(**args['trainedmodel_selector']).first().shasum)
+        return 'q_model_{}'.format(TrainedModel.objects.filter(**args['trainedmodel_selector']).first().pk)
     elif 'retriever_selector' in args:
         return 'q_retriever_{}'.format(Retriever.objects.filter(**args['retriever_selector']).first().pk)
     else:
