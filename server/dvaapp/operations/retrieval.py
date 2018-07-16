@@ -17,6 +17,7 @@ class Retrievers(object):
     _visual_retriever = {}
     _retriever_object = {}
     _selector_to_dr = {}
+    _index_entries = {}
     _index_count = defaultdict(int)
 
     @classmethod
@@ -82,28 +83,34 @@ class Retrievers(object):
         visual_index = cls._visual_retriever[dr.pk]
         for index_entry in index_entries:
             if index_entry.pk not in visual_index.loaded_entries and index_entry.count > 0:
-                if visual_index.algorithm == "LOPQ":
-                    vectors, entries = index_entry.load_index()
-                    logging.info("loading approximate index {}".format(index_entry.pk))
-                    visual_index.load_index(None,entries,index_entry.video_id,index_entry.target)
-                    visual_index.loaded_entries.add(index_entry.pk)
-                elif visual_index.algorithm == 'FAISS':
-                    index_file_path, entries = index_entry.load_index()
-                    logging.info("loading FAISS index {}".format(index_entry.pk))
-                    visual_index.load_index(index_file_path, entries, index_entry.video_id, index_entry.target)
-                    visual_index.loaded_entries.add(index_entry.pk)
-                else:
-                    vectors, entries = index_entry.load_index()
-                    logging.info("Starting {} in {} with shape {}".format(index_entry.video_id, visual_index.name,
-                                                                          vectors.shape))
-                    try:
-                        visual_index.load_index(vectors, entries, index_entry.video_id, index_entry.target)
-                        visual_index.loaded_entries.add(index_entry.pk)
-                    except:
-                        logging.info("ERROR Failed to load {} vectors shape {} entries {}".format(
-                            index_entry.video_id, vectors.shape, len(entries)))
-                    else:
-                        logging.info("finished {} in {}".format(index_entry.pk, visual_index.name))
+                cls.add_index_entry(index_entry,visual_index)
+
+    @classmethod
+    def add_index_entry(cls,index_entry,visual_index):
+        if index_entry.pk not in cls._index_entries:
+            cls._index_entries[index_entry.pk] = index_entry
+        if visual_index.algorithm == "LOPQ":
+            vectors, entries = index_entry.load_index()
+            logging.info("loading approximate index {}".format(index_entry.pk))
+            visual_index.load_index(None, entries, index_entry.pk)
+            visual_index.loaded_entries.add(index_entry.pk)
+        elif visual_index.algorithm == 'FAISS':
+            index_file_path, entries = index_entry.load_index()
+            logging.info("loading FAISS index {}".format(index_entry.pk))
+            visual_index.load_vectors(index_file_path, index_entry.count, index_entry.pk)
+        else:
+            vectors, entries = index_entry.load_index()
+            logging.info("Starting {} in {} with shape {}".format(index_entry.video_id, visual_index.name,
+                                                                  vectors.shape))
+            try:
+                visual_index.load_index(vectors, entries, index_entry.video_id, index_entry.target)
+                visual_index.loaded_entries.add(index_entry.pk)
+            except:
+                logging.info("ERROR Failed to load {} vectors shape {} entries {}".format(
+                    index_entry.video_id, vectors.shape, len(entries)))
+            else:
+                logging.info("finished {} in {}".format(index_entry.pk, visual_index.name))
+
 
     @classmethod
     def retrieve(cls, event, index_retriever, dr, vector, count, region_pk=None):
@@ -111,6 +118,11 @@ class Retrievers(object):
         results = index_retriever.nearest(vector=vector, n=count)
         qr_batch = []
         for rank, r in enumerate(results):
+            if 'indexentries_pk' in r:
+                di = cls._index_entries[r['indexentries_pk']]
+                r['type'] = di.target
+                r['video'] = di.video
+                r['id'] = di.get_entry(r['offset'])
             qr = QueryResult()
             if region_pk:
                 qr.query_region_id = region_pk

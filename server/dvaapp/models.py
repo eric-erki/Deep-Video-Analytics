@@ -751,6 +751,9 @@ class IndexEntries(models.Model):
             vectors = None
         return vectors, self.entries
 
+    def get_entry(self, offset):
+        return self.entries[offset]
+
 
 class Tube(models.Model):
     """
