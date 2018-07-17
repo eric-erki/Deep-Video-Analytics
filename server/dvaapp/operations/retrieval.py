@@ -32,24 +32,28 @@ class Retrievers(object):
         if retriever_pk not in cls._visual_retriever:
             cls._retriever_object[retriever_pk] = dr
             if dr.algorithm == Retriever.EXACT and dr.approximator_shasum and dr.approximator_shasum.strip():
-                approximator, da = Approximators.get_trained_model({"trainedmodel_selector":{"shasum":dr.approximator_shasum}})
+                approximator, da = Approximators.get_trained_model(
+                    {"trainedmodel_selector": {"shasum": dr.approximator_shasum}})
                 da.ensure()
                 approximator.load()
-                cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name, approximator=approximator)
+                cls._visual_retriever[retriever_pk] = retriever.SimpleRetriever(name=dr.name, approximator=approximator)
             elif dr.algorithm == Retriever.EXACT:
-                cls._visual_retriever[retriever_pk] = retriever.BaseRetriever(name=dr.name)
+                cls._visual_retriever[retriever_pk] = retriever.SimpleRetriever(name=dr.name)
             elif dr.algorithm == Retriever.FAISS and dr.approximator_shasum is None:
-                _, di = Indexers.get_trained_model({"trainedmodel_selector":{"shasum":dr.indexer_shasum}})
+                _, di = Indexers.get_trained_model({"trainedmodel_selector": {"shasum": dr.indexer_shasum}})
                 cls._visual_retriever[retriever_pk] = retriever.FaissFlatRetriever(name=dr.name,
-                                                                                   components=di.arguments['components'])
+                                                                                   components=di.arguments[
+                                                                                       'components'])
             elif dr.algorithm == Retriever.FAISS:
-                approximator, da = Approximators.get_trained_model({"trainedmodel_selector":{"shasum":dr.approximator_shasum}})
+                approximator, da = Approximators.get_trained_model(
+                    {"trainedmodel_selector": {"shasum": dr.approximator_shasum}})
                 da.ensure()
                 approximator.load()
                 cls._visual_retriever[retriever_pk] = retriever.FaissApproximateRetriever(name=dr.name,
                                                                                           approximator=approximator)
             elif dr.algorithm == Retriever.LOPQ:
-                approximator, da = Approximators.get_trained_model({"trainedmodel_selector":{"shasum":dr.approximator_shasum}})
+                approximator, da = Approximators.get_trained_model(
+                    {"trainedmodel_selector": {"shasum": dr.approximator_shasum}})
                 da.ensure()
                 approximator.load()
                 cls._visual_retriever[retriever_pk] = retriever.LOPQRetriever(name=dr.name, approximator=approximator)
@@ -83,34 +87,32 @@ class Retrievers(object):
         visual_index = cls._visual_retriever[dr.pk]
         for index_entry in index_entries:
             if index_entry.pk not in visual_index.loaded_entries and index_entry.count > 0:
-                cls.add_index_entry(index_entry,visual_index)
+                cls.add_index_entry(index_entry, visual_index)
 
     @classmethod
-    def add_index_entry(cls,index_entry,visual_index):
+    def add_index_entry(cls, index_entry, visual_index):
         if index_entry.pk not in cls._index_entries:
             cls._index_entries[index_entry.pk] = index_entry
         if visual_index.algorithm == "LOPQ":
-            vectors, entries = index_entry.load_index()
+            entries = index_entry.get_vectors()
             logging.info("loading approximate index {}".format(index_entry.pk))
-            visual_index.load_index(None, entries, index_entry.pk)
+            visual_index.add_entries(entries, index_entry.pk, index_entry.video_id, index_entry.target)
             visual_index.loaded_entries.add(index_entry.pk)
         elif visual_index.algorithm == 'FAISS':
-            index_file_path, entries = index_entry.load_index()
+            index_file_path = index_entry.get_vectors()
             logging.info("loading FAISS index {}".format(index_entry.pk))
-            visual_index.load_vectors(index_file_path, index_entry.count, index_entry.pk)
+            visual_index.add_vectors(index_file_path, index_entry.count, index_entry.pk)
         else:
-            vectors, entries = index_entry.load_index()
+            vectors = index_entry.get_vectors()
             logging.info("Starting {} in {} with shape {}".format(index_entry.video_id, visual_index.name,
                                                                   vectors.shape))
             try:
-                visual_index.load_index(vectors, entries, index_entry.video_id, index_entry.target)
-                visual_index.loaded_entries.add(index_entry.pk)
+                visual_index.add_vectors(vectors, index_entry.count, index_entry.pk)
             except:
                 logging.info("ERROR Failed to load {} vectors shape {} entries {}".format(
-                    index_entry.video_id, vectors.shape, len(entries)))
+                    index_entry.video_id, vectors.shape, index_entry.count))
             else:
                 logging.info("finished {} in {}".format(index_entry.pk, visual_index.name))
-
 
     @classmethod
     def retrieve(cls, event, index_retriever, dr, vector, count, region_pk=None):
@@ -139,13 +141,14 @@ class Retrievers(object):
             else:
                 raise ValueError("No key found {}".format(r))
             qr.algorithm = dr.algorithm
-            qr.rank = int(r.get('rank', rank+1))
-            qr.distance = int(r.get('dist', rank+1))
+            qr.rank = int(r.get('rank', rank + 1))
+            qr.distance = int(r.get('dist', rank + 1))
             qr_batch.append(qr)
         if region_pk:
-            event.finalize_query({"QueryResult":qr_batch},results={region_pk:{"retriever_state":index_retriever.findex}})
+            event.finalize_query({"QueryResult": qr_batch},
+                                 results={region_pk: {"retriever_state": index_retriever.findex}})
         else:
-            event.finalize_query({"QueryResult":qr_batch},results={"retriever_state":index_retriever.findex})
+            event.finalize_query({"QueryResult": qr_batch}, results={"retriever_state": index_retriever.findex})
         event.parent_process.results_available = True
         event.parent_process.save()
         return 0

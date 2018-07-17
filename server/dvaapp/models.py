@@ -731,7 +731,7 @@ class IndexEntries(models.Model):
             media_root = settings.MEDIA_ROOT
         return "{}/{}/events/{}/{}".format(media_root, self.video_id, self.event_id, self.features_file_name)
 
-    def load_index(self, media_root=None):
+    def get_vectors(self, media_root=None):
         if media_root is None:
             media_root = settings.MEDIA_ROOT
         video_dir = "{}/{}".format(media_root, self.video_id)
@@ -748,8 +748,8 @@ class IndexEntries(models.Model):
             else:
                 vectors = self.npy_path(media_root)
         else:
-            vectors = None
-        return vectors, self.entries
+            return self.entries
+        return vectors
 
     def get_entry(self, offset):
         return self.entries[offset]
