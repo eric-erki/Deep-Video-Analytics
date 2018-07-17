@@ -123,7 +123,7 @@ class Retrievers(object):
             if 'indexentries_pk' in r:
                 di = cls._index_entries[r['indexentries_pk']]
                 r['type'] = di.target
-                r['video'] = di.video
+                r['video'] = di.video_id
                 r['id'] = di.get_entry(r['offset'])
             qr = QueryResult()
             if region_pk:
