@@ -752,7 +752,16 @@ class IndexEntries(models.Model):
         return vectors
 
     def get_entry(self, offset):
+        # TODO implement case where index is stoed in an LMDB databse
         return self.entries[offset]
+
+    def copy_entries(self, other_index_entries, event):
+        # TODO implement case where index is stoed in an LMDB databse
+        other_index_entries.entries = self.entries
+
+    def iter_entries(self):
+        # TODO implement case where index is stoed in an LMDB databse
+        return self.entries
 
 
 class Tube(models.Model):

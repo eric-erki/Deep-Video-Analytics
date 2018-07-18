@@ -45,28 +45,27 @@ class Approximators(object):
         for index_entry in queryset:
             uid = str(uuid.uuid1()).replace('-', '_')
             approx_ind = IndexEntries()
-            vectors, entries = index_entry.load_index()
+            vectors = index_entry.get_vectors()
+            index_entry.copy_entries(approx_ind, event)
             if da.algorithm == 'LOPQ':
                 new_entries = []
-                for i, e in enumerate(entries):
+                for i, e in enumerate(index_entry.iter_entries()):
                     new_entries.append((e,approx.approximate(vectors[i, :])))
-                approx_ind.entries = new_entries
                 approx_ind.features_file_name = ""
             elif da.algorithm == 'PCA':
                 # TODO optimize this by doing matmul rather than calling for each entry
                 event.create_dir()
-                approx_vectors = np.array([approx.approximate(vectors[i, :]) for i, e in enumerate(entries)])
+                approx_vectors = np.array([approx.approximate(vectors[i, :]) for i in range(index_entry.count)])
                 feat_fname = "{}/{}.npy".format(event.get_dir(), uid)
                 with open(feat_fname, 'w') as featfile:
                     np.save(featfile, approx_vectors)
                 approx_ind.features_file_name = "{}.npy".format(uid)
-                approx_ind.entries = entries
+
             elif da.algorithm == "FAISS":
                 event.create_dir()
                 feat_fname = "{}/{}.index".format(event.get_dir(), uid)
                 approx.approximate_batch(np.atleast_2d(vectors.squeeze()),feat_fname)
                 approx_ind.features_file_name = "{}.index".format(uid)
-                approx_ind.entries = entries
             else:
                 raise NotImplementedError("unknown approximation algorithm {}".format(da.algorithm))
             approx_ind.indexer_shasum = index_entry.indexer_shasum
