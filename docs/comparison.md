@@ -3,7 +3,7 @@
 In addition to Deep Video Analytics currently there are two other open source video & visual data analytics being
 actively developed. They are
 
-- KWIVER Kitware Video Exploitation and Retrieval (Developed by Kitware)
+- KWIVER Kitware Image and Video Exploitation and Retrieval (Developed by Kitware)
 - Scanner (Developed by students at CMU & Stanford)
 
 Deep Video Analytics differs substantially from both of them in following ways
