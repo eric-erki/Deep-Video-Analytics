@@ -19,7 +19,7 @@ def train_lopq(start,args):
     index_list = []
     for f in dt.files:
         di = IndexEntries.objects.get(pk=f['pk'])
-        vecs, _ = di.load_index()
+        vecs= di.get_vectors()
         if di.count:
             index_list.append(np.atleast_2d(vecs))
             logging.info("loaded {}".format(index_list[-1].shape))
@@ -52,7 +52,7 @@ def train_faiss(start,args):
     vecs = None
     for f in dt.files:
         di = IndexEntries.objects.get(pk=f['pk'])
-        vecs, _ = di.load_index()
+        vecs = di.get_vectors()
         if di.count:
             index_list.append(np.atleast_2d(vecs))
             logging.info("loaded {}".format(index_list[-1].shape))
