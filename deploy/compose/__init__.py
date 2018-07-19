@@ -17,12 +17,12 @@ def generate_multi_gpu_compose(fname, config):
             blocks.append(
                 file('deploy/compose/gpu_block.yaml').read().format(worker_name=worker_name, gpu_id=gpu_id,
                                                                  memory_fraction=fraction, env_key=env_key,
-                                                                 env_value=1))
+                                                                 env_value=1,BRANCH='{BRANCH}'))
         else:
             blocks.append(
-                file('deploy/compose/gpu_cpu_block.yaml').read().format(worker_name=worker_name, env_key=env_key, env_value=1))
+                file('deploy/compose/gpu_cpu_block.yaml').read().format(worker_name=worker_name, env_key=env_key, env_value=1,BRANCH='{BRANCH}'))
     with open(fname, 'w') as out:
-        out.write(file('deploy/compose/gpu_skeleton.yaml').read().format(gpu_workers="\n".join(blocks),
+        out.write(file('deploy/compose/gpu_skeleton.yaml').read().format(gpu_workers="\n".join(blocks),BRANCH='{BRANCH}',
                                                                   global_model_gpu_id=config['global_model_gpu_id'],
                                                                   global_model_memory_fraction=config[
                                                                       'global_model_memory_fraction']))

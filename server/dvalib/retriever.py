@@ -76,6 +76,7 @@ class LOPQRetriever(object):
     def __init__(self, name, approximator):
         self.approximate = True
         self.name = name
+        self.algorithm = "LOPQ"
         self.loaded_entries = set()
         self.entries = []
         self.support_batching = False
