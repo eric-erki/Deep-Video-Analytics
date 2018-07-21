@@ -8,6 +8,9 @@ import os
 import json
 import webbrowser
 
+DOCKER_COMPOSE = 'docker-compose.exe' if os.name == 'nt' else 'docker-compose'
+DOCKER = 'docker.exe' if os.name == 'nt' else 'docker'
+
 
 def generate_multi_gpu_compose(fname, config):
     blocks = []
@@ -57,7 +60,7 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
     print "Starting deploy/compose/{}".format(fname)
     try:
         # Fixed to dev since deployment directory does not matters for checking if docker-compose exists.
-        subprocess.check_call(["docker-compose", '--help'],
+        subprocess.check_call([DOCKER_COMPOSE, '--help'],
                               cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/'))
     except:
         raise SystemError("Docker-compose is not available")
@@ -70,14 +73,14 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
             except:
                 print "Error could not set persistence mode pleae manually run 'sudo nvidia-smi -pm 1'"
                 pass
-            subprocess.check_call(["docker", 'pull', 'akshayubhat/dva-auto:gpu'])
+            subprocess.check_call([DOCKER, 'pull', 'akshayubhat/dva-auto:gpu'])
         else:
-            subprocess.check_call(["docker", 'pull', 'akshayubhat/dva-auto:latest'])
+            subprocess.check_call([DOCKER, 'pull', 'akshayubhat/dva-auto:latest'])
     except:
         raise SystemError("Docker is not running / could not pull akshayubhat/dva-auto:latest image from docker hub")
     print "Trying to launch containers"
     try:
-        args = ["docker-compose", '-f', fname, 'up', '-d']
+        args = [DOCKER_COMPOSE, '-f', fname, 'up', '-d']
         print " ".join(args)
         compose_process = subprocess.Popen(args, cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/'))
     except:
@@ -111,7 +114,7 @@ def stop_docker_compose(deployment_type, gpu_count, clean=False):
         fname = 'docker-compose-{}.yaml'.format(deployment_type)
     print "Stopping deploy/compose/{}".format(fname)
     try:
-        subprocess.check_call(["docker-compose", '-f', fname, 'down'] + extra_args,
+        subprocess.check_call([DOCKER_COMPOSE, '-f', fname, 'down'] + extra_args,
                               cwd=os.path.join(os.path.dirname(os.path.curdir),
                                                'deploy/compose'))
     except:
@@ -119,7 +122,7 @@ def stop_docker_compose(deployment_type, gpu_count, clean=False):
 
 
 def get_auth():
-    token = subprocess.check_output(["docker", "exec", "-it", "webserver", "scripts/generate_testing_token.py"]).strip()
+    token = subprocess.check_output([DOCKER, "exec", "-it", "webserver", "scripts/generate_testing_token.py"]).strip()
     server = 'http://localhost:8000/api/'
     with open('creds.json', 'w') as fh:
         json.dump({'server': server, 'token': token}, fh)
