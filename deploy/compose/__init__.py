@@ -8,8 +8,8 @@ import os
 import json
 import webbrowser
 
-DOCKER_COMPOSE = 'docker-compose.exe' if os.name == 'nt' else 'docker-compose'
-DOCKER = 'docker.exe' if os.name == 'nt' else 'docker'
+DOCKER_COMPOSE = 'docker-compose.exe' if 'WSL' in os.environ else 'docker-compose'
+DOCKER = 'docker.exe' if 'WSL' in os.environ else 'docker'
 
 
 def generate_multi_gpu_compose(fname, config):
