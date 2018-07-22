@@ -786,7 +786,11 @@ class IndexEntries(models.Model):
         uid = str(self.uuid).replace('-', '_')
         feat_fname = "{}/{}.npy".format(dirname, uid)
         entries_fname = "{}/{}".format(dirname, uid)
-        self.metadata = {'shape':list(features.shape)}
+        if features is list:
+            if features:
+                self.metadata = {'shape':[len(features),]+list(features[0].shape)}
+        else:
+            self.metadata = {'shape': list(features.shape)}
         if use_lmdb:
             self.storage_type = self.LMDB
             env = lmdb.open(entries_fname, max_dbs=0, subdir=False)
