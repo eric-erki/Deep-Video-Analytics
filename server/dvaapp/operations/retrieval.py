@@ -96,7 +96,7 @@ class Retrievers(object):
         if visual_index.algorithm == "LOPQ":
             entries = index_entry.get_vectors()
             logging.info("loading approximate index {}".format(index_entry.pk))
-            visual_index.add_entries(entries, index_entry.pk, index_entry.video_id, index_entry.target)
+            visual_index.add_entries(entries, index_entry.video_id, index_entry.target)
             visual_index.loaded_entries.add(index_entry.pk)
         elif visual_index.algorithm == 'FAISS':
             index_file_path = index_entry.get_vectors()
