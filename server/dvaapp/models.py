@@ -12,6 +12,7 @@ from dvaclient import constants
 from . import fs
 from PIL import Image
 import time
+import lmdb
 
 try:
     import numpy as np
@@ -710,10 +711,18 @@ class QueryRegion(models.Model):
 class IndexEntries(models.Model):
     id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
-    features_file_name = models.CharField(max_length=100)
+    uuid = models.UUIDField(default=uuid.uuid4, null=True)
+    LMDB = constants.LMDB
+    RAW = constants.RAW
+    STORAGE_TYPES = (
+        (LMDB, 'LMDB database'),
+        (RAW, 'Entries'),
+    )
+    storage_type = models.CharField(max_length=1, choices=STORAGE_TYPES, db_index=True, default=RAW)
     entries = JSONField(blank=True, null=True)
     metadata = JSONField(blank=True, null=True)
     algorithm = models.CharField(max_length=100)
+    features = models.CharField(max_length=40,null=True)
     indexer_shasum = models.CharField(max_length=40)
     approximator_shasum = models.CharField(max_length=40, null=True)
     target = models.CharField(max_length=100)
@@ -729,7 +738,7 @@ class IndexEntries(models.Model):
     def npy_path(self, media_root=None):
         if media_root is None:
             media_root = settings.MEDIA_ROOT
-        return "{}/{}/events/{}/{}".format(media_root, self.video_id, self.event_id, self.features_file_name)
+        return "{}/{}/events/{}/{}.{}".format(media_root, self.video_id, self.event_id, self.uuid, self.features)
 
     def get_vectors(self, media_root=None):
         if media_root is None:
@@ -741,9 +750,9 @@ class IndexEntries(models.Model):
         if not os.path.isdir(event_dir):
             self.event.create_dir()
         dirnames = {}
-        if self.features_file_name.strip():
+        if self.features:
             fs.ensure(self.npy_path(media_root=''), dirnames, media_root)
-            if self.features_file_name.endswith('.npy'):
+            if self.features.endswith('.npy'):
                 vectors = np.load(self.npy_path(media_root))
             else:
                 vectors = self.npy_path(media_root)
@@ -762,6 +771,26 @@ class IndexEntries(models.Model):
     def iter_entries(self):
         # TODO implement case where index is stoed in an LMDB databse
         return self.entries
+
+    def store_numpy_features(self, features, entries, event, use_lmdb=True):
+        event.create_dir()
+        self.features = '.npy'
+        dirname = event.get_dir()
+        uid = str(self.uuid).replace('-', '_')
+        feat_fname = "{}/{}.npy".format(dirname, uid)
+        entries_fname = "{}/{}".format(dirname, uid)
+        self.metadata = {'shape':list(features.shape)}
+        if use_lmdb:
+            self.storage_type = self.LMDB
+            env = lmdb.open(entries_fname, max_dbs=0, subdir=False)
+            with env.begin(write=True) as txn:
+                for k, v in enumerate(entries):
+                    txn.put(str(k), str(v))
+            env.close()
+        else:
+            self.entries = entries
+        with open(feat_fname, 'w') as feats:
+            np.save(feats, np.array(features))
 
 
 class Tube(models.Model):
