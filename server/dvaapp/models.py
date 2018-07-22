@@ -738,7 +738,8 @@ class IndexEntries(models.Model):
     def npy_path(self, media_root=None):
         if media_root is None:
             media_root = settings.MEDIA_ROOT
-        return "{}/{}/events/{}/{}.{}".format(media_root, self.video_id, self.event_id, self.uuid, self.features)
+        return "{}/{}/events/{}/{}.{}".format(media_root, self.video_id, self.event_id, str(self.uuid).replace('-','_'),
+                                              self.features)
 
     def get_vectors(self, media_root=None):
         if media_root is None:
@@ -762,14 +763,20 @@ class IndexEntries(models.Model):
 
     def get_entry(self, offset):
         # TODO implement case where index is stoed in an LMDB databse
+        if self.STORAGE_TYPES == self.LMDB:
+            raise NotImplementedError("get entry not implemented for LMDB yet")
         return self.entries[offset]
 
     def copy_entries(self, other_index_entries, event):
         # TODO implement case where index is stoed in an LMDB databse
+        if self.STORAGE_TYPES == self.LMDB:
+            raise NotImplementedError("copy entries not implemented for LMDB yet")
         other_index_entries.entries = self.entries
 
     def iter_entries(self):
         # TODO implement case where index is stoed in an LMDB databse
+        if self.STORAGE_TYPES == self.LMDB:
+            raise NotImplementedError("iter entries not implemented for LMDB yet")
         return self.entries
 
     def store_numpy_features(self, features, entries, event, use_lmdb=True):

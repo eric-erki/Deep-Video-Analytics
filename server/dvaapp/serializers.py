@@ -493,7 +493,9 @@ class VideoImporter(object):
             di.approximate = i['approximate']
             di.created = i['created']
             di.event_id = i['event']
-            di.features_file_name = i['features_file_name']
+            di.storage_type = i['storage_type']
+            di.features = i['features']
+            di.uuid = i['uuid']
             di.entries = i['entries']
             di.target = i['target']
             di.metadata = i.get('metadata', {})

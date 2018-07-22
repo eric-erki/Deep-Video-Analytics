@@ -43,7 +43,9 @@
                         <th>Video name</th>
                         <th>Target</th>
                         <th>Approximate</th>
-                        <th>Features filename</th>
+                        <th>UUID</th>
+                        <th>Features</th>
+                        <th>Storage</th>
                         <th>Indexer shasum</th>
                         <th>Approximator shasum</th>
                         <th>count</th>
@@ -58,7 +60,9 @@
                             <td>{{ k.video.name }} </td>
                             <td>{{ k.target }} </td>
                             <td>{{ k.approximate }} </td>
-                            <td>{{ k.features_file_name }} </td>
+                            <td>{{ k.uuid }} </td>
+                            <td>{{ k.features }} </td>
+                            <td>{{ k.storage_type }} </td>
                             <td>{{ k.indexer_shasum }} </td>
                             <td>{{ k.approximator_shasum }} </td>
                             <td class="text-right">{{ k.count }}</td>
