@@ -82,12 +82,14 @@ class LOPQRetriever(object):
         self.support_batching = False
         self.approximator = approximator
         self.approximator.load()
+        self.findex = 0
         self.searcher = LOPQSearcher(model=self.approximator.model)
 
     def add_entries(self, entries, video_id, entry_type):
         codes = []
         ids = []
         last_index = len(self.entries)
+        self.findex = last_index
         for i, e in enumerate(entries):
             codes.append((tuple(e[1][0]), tuple(e[1][1])))
             ids.append(i + last_index)
