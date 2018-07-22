@@ -786,7 +786,7 @@ class IndexEntries(models.Model):
         uid = str(self.uuid).replace('-', '_')
         feat_fname = "{}/{}.npy".format(dirname, uid)
         entries_fname = "{}/{}".format(dirname, uid)
-        if features is list:
+        if type(features) is list:
             if features:
                 self.metadata = {'shape':[len(features),]+list(features[0].shape)}
         else:
