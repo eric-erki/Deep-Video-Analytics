@@ -767,7 +767,7 @@ class IndexEntries(models.Model):
                 dirname = self.event.get_dir()
                 entries_fname = "{}{}".format(dirname, str(self.uuid).replace('-', '_'))
                 OPENED_DBS[self.pk] = lmdb.open(entries_fname, max_dbs=0, subdir=False, readonly=True).begin(buffers=True)
-            return json.loads(OPENED_DBS[self.pk].get(str(offset)))
+            return json.loads(str(OPENED_DBS[self.pk].get(str(offset))))
         else:
             return self.entries[offset]
 
@@ -789,7 +789,7 @@ class IndexEntries(models.Model):
             with env.begin() as txn:
                 with txn.cursor() as curs:
                     for k,v in curs:
-                        entries.append((int(k),json.loads(v)))
+                        entries.append((int(k),json.loads(str(v))))
             return [e for i,e in sorted(entries)]
         else:
             return self.entries
