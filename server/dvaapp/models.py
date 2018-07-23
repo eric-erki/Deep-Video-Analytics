@@ -772,6 +772,7 @@ class IndexEntries(models.Model):
             return self.entries[offset]
 
     def copy_entries(self, other_index_entries, event):
+        other_index_entries.storage_type = self.storage_type
         if self.STORAGE_TYPES == self.LMDB:
             event.create_dir()
             this_entries_fname = "{}{}".format(self.event.get_dir(), str(self.uuid).replace('-', '_'))
