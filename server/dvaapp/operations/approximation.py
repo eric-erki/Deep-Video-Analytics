@@ -57,10 +57,8 @@ class Approximators(object):
                 approx_ind.store_numpy_features(approx_vectors,None,event,use_lmdb=False)
                 index_entry.copy_entries(approx_ind, event)
             elif da.algorithm == "FAISS":
-                event.create_dir()
-                feat_fname = "{}/{}.index".format(event.get_dir(), str(approx_ind.uuid).replace('-', '_'))
+                feat_fname = approx_ind.store_faiss_features(event)
                 approx.approximate_batch(np.atleast_2d(vectors.squeeze()),feat_fname)
-                approx_ind.features = 'index'
                 index_entry.copy_entries(approx_ind, event)
             else:
                 raise NotImplementedError("unknown approximation algorithm {}".format(da.algorithm))

@@ -753,7 +753,7 @@ class IndexEntries(models.Model):
         dirnames = {}
         if self.features:
             fs.ensure(self.npy_path(media_root=''), dirnames, media_root)
-            if self.features.endswith('.npy'):
+            if self.features.endswith('npy'):
                 vectors = np.load(self.npy_path(media_root))
             else:
                 vectors = self.npy_path(media_root)
@@ -781,7 +781,7 @@ class IndexEntries(models.Model):
 
     def store_numpy_features(self, features, entries, event, use_lmdb=True):
         event.create_dir()
-        self.features = '.npy'
+        self.features = 'npy'
         dirname = event.get_dir()
         uid = str(self.uuid).replace('-', '_')
         feat_fname = "{}/{}.npy".format(dirname, uid)
@@ -802,6 +802,12 @@ class IndexEntries(models.Model):
             self.entries = entries
         with open(feat_fname, 'w') as feats:
             np.save(feats, np.array(features))
+
+    def store_faiss_features(self, event):
+        event.create_dir()
+        feat_fname = "{}/{}.index".format(event.get_dir(), str(self.uuid).replace('-', '_'))
+        self.features = 'index'
+        return feat_fname
 
 
 class Tube(models.Model):
