@@ -22,7 +22,7 @@ from uuid import UUID
 from json import JSONEncoder
 
 JSONEncoder_old = JSONEncoder.default
-
+OPENED_DBS = {}
 
 def JSONEncoder_new(self, o):
     if isinstance(o, UUID): return str(o)
@@ -762,22 +762,37 @@ class IndexEntries(models.Model):
         return vectors
 
     def get_entry(self, offset):
-        # TODO implement case where index is stoed in an LMDB databse
         if self.STORAGE_TYPES == self.LMDB:
-            raise NotImplementedError("get entry not implemented for LMDB yet")
-        return self.entries[offset]
+            if self.pk not in OPENED_DBS:
+                dirname = self.event.get_dir()
+                entries_fname = "{}/{}".format(dirname, self.uuid)
+                OPENED_DBS[self.pk] = lmdb.open(entries_fname, max_dbs=0, subdir=False, readonly=True).begin(buffers=True)
+            return json.loads(OPENED_DBS[self.pk].get(str(offset)))
+        else:
+            return self.entries[offset]
 
     def copy_entries(self, other_index_entries, event):
-        # TODO implement case where index is stoed in an LMDB databse
         if self.STORAGE_TYPES == self.LMDB:
-            raise NotImplementedError("copy entries not implemented for LMDB yet")
-        other_index_entries.entries = self.entries
+            event.create_dir()
+            this_entries_fname = "{}/{}.mdb".format(self.event.get_dir(), self.uuid)
+            other_entries_fname = "{}/{}.mdb".format(event.get_dir(), other_index_entries.uuid)
+            shutil.copy(this_entries_fname,other_entries_fname)
+        else:
+            other_index_entries.entries = self.entries
 
     def iter_entries(self):
-        # TODO implement case where index is stoed in an LMDB databse
         if self.STORAGE_TYPES == self.LMDB:
-            raise NotImplementedError("iter entries not implemented for LMDB yet")
-        return self.entries
+            dirname = self.event.get_dir()
+            entries_fname = "{}/{}".format(dirname, self.uuid)
+            env = lmdb.open(entries_fname, max_dbs=0, subdir=False, readonly=True)
+            entries = []
+            with env.begin() as txn:
+                with txn.cursor() as curs:
+                    for k,v in curs:
+                        entries.append((int(k),json.loads(v)))
+            return [e for i,e in sorted(entries)]
+        else:
+            return self.entries
 
     def store_numpy_features(self, features, entries, event, use_lmdb=True):
         event.create_dir()
@@ -796,7 +811,7 @@ class IndexEntries(models.Model):
             env = lmdb.open(entries_fname, max_dbs=0, subdir=False)
             with env.begin(write=True) as txn:
                 for k, v in enumerate(entries):
-                    txn.put(str(k), str(v))
+                    txn.put(str(k), json.dumps(v))
             env.close()
         else:
             self.entries = entries

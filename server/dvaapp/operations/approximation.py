@@ -54,7 +54,7 @@ class Approximators(object):
                 # TODO optimize this by doing matmul rather than calling for each entry
                 event.create_dir()
                 approx_vectors = np.array([approx.approximate(vectors[i, :]) for i in range(index_entry.count)])
-                approx_ind.store_numpy_features(approx_vectors,None,event,use_lmdb=False)
+                approx_ind.store_numpy_features(approx_vectors,None,event)
                 index_entry.copy_entries(approx_ind, event)
             elif da.algorithm == "FAISS":
                 feat_fname = approx_ind.store_faiss_features(event)
