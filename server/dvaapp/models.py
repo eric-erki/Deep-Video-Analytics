@@ -783,7 +783,7 @@ class IndexEntries(models.Model):
     def iter_entries(self):
         if self.storage_type == self.LMDB:
             dirname = self.event.get_dir()
-            entries_fname = "{}{}.mdb".format(dirname, self.uuid)
+            entries_fname = "{}{}".format(dirname, self.uuid)
             env = lmdb.open(entries_fname, max_dbs=0, subdir=False, readonly=True)
             entries = []
             with env.begin() as txn:
