@@ -806,7 +806,7 @@ class IndexEntries(models.Model):
                 self.metadata = {'shape':[len(features),]+list(features[0].shape)}
         else:
             self.metadata = {'shape': list(features.shape)}
-        if use_lmdb:
+        if use_lmdb and entries:
             self.storage_type = self.LMDB
             env = lmdb.open(entries_fname, max_dbs=0, subdir=False)
             with env.begin(write=True) as txn:
