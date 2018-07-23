@@ -762,7 +762,7 @@ class IndexEntries(models.Model):
         return vectors
 
     def get_entry(self, offset):
-        if self.STORAGE_TYPES == self.LMDB:
+        if self.storage_type == self.LMDB:
             if self.pk not in OPENED_DBS:
                 dirname = self.event.get_dir()
                 entries_fname = "{}/{}".format(dirname, self.uuid)
@@ -781,7 +781,7 @@ class IndexEntries(models.Model):
             other_index_entries.entries = self.entries
 
     def iter_entries(self):
-        if self.STORAGE_TYPES == self.LMDB:
+        if self.storage_type == self.LMDB:
             dirname = self.event.get_dir()
             entries_fname = "{}/{}".format(dirname, self.uuid)
             env = lmdb.open(entries_fname, max_dbs=0, subdir=False, readonly=True)
