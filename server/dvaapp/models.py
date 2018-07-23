@@ -765,7 +765,7 @@ class IndexEntries(models.Model):
         if self.storage_type == self.LMDB:
             if self.pk not in OPENED_DBS:
                 dirname = self.event.get_dir()
-                entries_fname = "{}/{}".format(dirname, self.uuid)
+                entries_fname = "{}{}".format(dirname, str(self.uuid).replace('-', '_'))
                 OPENED_DBS[self.pk] = lmdb.open(entries_fname, max_dbs=0, subdir=False, readonly=True).begin(buffers=True)
             return json.loads(OPENED_DBS[self.pk].get(str(offset)))
         else:
@@ -774,8 +774,8 @@ class IndexEntries(models.Model):
     def copy_entries(self, other_index_entries, event):
         if self.STORAGE_TYPES == self.LMDB:
             event.create_dir()
-            this_entries_fname = "{}/{}.mdb".format(self.event.get_dir(), self.uuid)
-            other_entries_fname = "{}/{}.mdb".format(event.get_dir(), other_index_entries.uuid)
+            this_entries_fname = "{}{}".format(self.event.get_dir(), str(self.uuid).replace('-', '_'))
+            other_entries_fname = "{}{}".format(event.get_dir(), str(other_index_entries.uuid).replace('-', '_'))
             shutil.copy(this_entries_fname,other_entries_fname)
         else:
             other_index_entries.entries = self.entries
@@ -783,7 +783,7 @@ class IndexEntries(models.Model):
     def iter_entries(self):
         if self.storage_type == self.LMDB:
             dirname = self.event.get_dir()
-            entries_fname = "{}/{}.mdb".format(dirname, self.uuid).replace('//','/')
+            entries_fname = "{}{}.mdb".format(dirname, self.uuid)
             env = lmdb.open(entries_fname, max_dbs=0, subdir=False, readonly=True)
             entries = []
             with env.begin() as txn:
@@ -794,18 +794,23 @@ class IndexEntries(models.Model):
         else:
             return self.entries
 
-    def store_numpy_features(self, features, entries, event, use_lmdb=True):
+    def store_numpy_features(self, features, event):
         event.create_dir()
         self.features = 'npy'
         dirname = event.get_dir()
-        uid = str(self.uuid).replace('-', '_')
-        feat_fname = "{}/{}.npy".format(dirname, uid)
-        entries_fname = "{}/{}".format(dirname, uid)
+        feat_fname = "{}/{}.npy".format(dirname, str(self.uuid).replace('-', '_'))
         if type(features) is list:
             if features:
                 self.metadata = {'shape':[len(features),]+list(features[0].shape)}
         else:
             self.metadata = {'shape': list(features.shape)}
+        with open(feat_fname, 'w') as feats:
+            np.save(feats, np.array(features))
+
+    def store_entries(self, entries, event, use_lmdb=True):
+        event.create_dir()
+        dirname = event.get_dir()
+        entries_fname = "{}/{}".format(dirname, str(self.uuid).replace('-', '_'))
         if use_lmdb and entries:
             self.storage_type = self.LMDB
             env = lmdb.open(entries_fname, max_dbs=0, subdir=False)
@@ -815,8 +820,6 @@ class IndexEntries(models.Model):
             env.close()
         else:
             self.entries = entries
-        with open(feat_fname, 'w') as feats:
-            np.save(feats, np.array(features))
 
     def store_faiss_features(self, event):
         event.create_dir()

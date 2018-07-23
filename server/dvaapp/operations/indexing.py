@@ -71,7 +71,8 @@ class Indexers(object):
             # TODO Ensure that "full frame"/"regions" are not repeatedly indexed.
             features = visual_index.index_paths(paths)
             i = IndexEntries()
-            i.store_numpy_features(features,entries,event)
+            i.store_numpy_features(features,event)
+            i.store_entries(entries,event)
             i.video_id = event.video_id
             i.count = len(entries)
             i.target = target
