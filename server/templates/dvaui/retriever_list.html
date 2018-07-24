@@ -24,6 +24,7 @@
                 <table class="table dataTables-dict">
                 <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Name</th>
                     <th>Algorithm</th>
                     <th>Source filter</th>
@@ -36,6 +37,7 @@
                 <tbody>
                 {% for r in object_list %}
                     <tr>
+                        <td>{{ r.pk }} </td>
                         <td>{{ r.name }} </td>
                         <td>{{ r.get_algorithm_display }}</td>
                         <td>{{ r.source_filters}}</td>

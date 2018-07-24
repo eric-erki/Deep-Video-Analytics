@@ -780,7 +780,7 @@ class IndexEntries(models.Model):
 
     def copy_entries(self, other_index_entries, event, media_root=None):
         other_index_entries.storage_type = self.storage_type
-        if self.STORAGE_TYPES == self.LMDB:
+        if self.storage_type == self.LMDB:
             event.create_dir()
             this_entries_fname = self.lmdb_path(media_root)
             other_entries_fname = "{}{}".format(event.get_dir(), str(other_index_entries.uuid).replace('-', '_'))
