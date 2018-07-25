@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dva-tpu
+spec:
+  template:
+    metadata:
+      annotations:
+        # The Cloud TPUs that will be created for this Job must support
+        # TensorFlow 1.9. This version MUST match
+        # the TensorFlow version that your model is built on.
+        tf-version.cloud-tpus.google.com: "1.9"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: dva-tpu
+        # The official TensorFlow 1.9 TPU model image built from
+        # https://github.com/tensorflow/tpu/blob/r1.9/tools/docker/Dockerfile.
+        image: gcr.io/tensorflow/tpu-models:r1.9
+        command:
+        - python
+        - /tensorflow_tpu_models/models/official/resnet/resnet_main.py
+        - --data_dir=gs://{data_bucket}/{train_dir}
+        - --model_dir=gs://{data_bucket}/resnet
+        resources:
+          limits:
+            # Request a single v2-8 Cloud TPU device to train the model.
+            # A single v2-8 Cloud TPU device consists of 4 chips, each of which
+            # has 2 cores, so there are 8 cores in total.
+            cloud-tpus.google.com/v2: 8

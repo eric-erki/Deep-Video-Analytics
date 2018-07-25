@@ -98,7 +98,7 @@ class Retrievers(object):
             logging.info("loading approximate index {}".format(index_entry.pk))
             visual_index.add_entries(entries, index_entry.video_id, index_entry.target)
             visual_index.loaded_entries.add(index_entry.pk)
-        elif visual_index.algorithm == 'FAISS':
+        elif visual_index.algorithm == 'FAISS_APPROXIMATE':
             index_file_path = index_entry.get_vectors()
             logging.info("loading FAISS index {}".format(index_entry.pk))
             visual_index.add_vectors(index_file_path, index_entry.count, index_entry.pk)
