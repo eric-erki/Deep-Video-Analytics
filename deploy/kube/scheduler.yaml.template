@@ -16,7 +16,7 @@ spec:
         role: cpuworker
     spec:
       containers:
-      - image: akshayubhat/dva-auto:latest
+      - image: {cpu_image}
         imagePullPolicy: "IfNotPresent"
         name: scheduler
         env:

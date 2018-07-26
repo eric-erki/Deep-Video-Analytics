@@ -159,6 +159,8 @@ GPU_CONFIG = {
 def configure_kube():
     config_template = {
         "dbusername": "pguser",
+        "cpu_image": "akshayubhat/dva-auto:latest",
+        "gpu_image": "akshayubhat/dva-auto:gpu",
         "dbpassword": "pgpass",
         "rabbithost": "rbbit",
         "rabbitusername": "rabbituser",
@@ -222,6 +224,12 @@ def configure_compose(mode):
                         " ( /root/DVA/configs/custom_defaults/init_process.json ) >>").strip()
     if process.strip():
         init_process = process
+    refresh = raw_input("Refresh docker images by pulling before start: Y/N ,"
+                        " press enter to keep default (Y) >>").strip()
+    if refresh.strip().lower() == 'n':
+        refresh = False
+    else:
+        refresh = True
     cpu_image = raw_input("Please specify docker CPU image or press enter to keep default"
                           " ( akshayubhat/dva-auto:latest ) >>").strip()
     if cpu_image.strip():
@@ -271,7 +279,7 @@ def configure_compose(mode):
               "the file to optionally specify custom allocation"
     return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models,
             'credentials': envs, 'gpu_compose_filename': gpu_compose_filename, 'gpu_config': gpu_config,
-            'cpu_image':cpu_image, 'gpu_image':gpu_image, 'branch':branch}
+            'refresh': refresh, 'cpu_image':cpu_image, 'gpu_image':gpu_image, 'branch':branch}
 
 
 def configure(mode=None):
@@ -351,10 +359,10 @@ if __name__ == '__main__':
                 else:
                     raise ValueError("{} is not in list of currently running containers {}".format(args.container,
                                                                                                    list(containers)))
-
-
             else:
                 compose.handle_compose_operations(args, mode_dict['mode'], mode_dict['gpus'], mode_dict['init_process'],
-                                              mode_dict['init_models'], mode_dict['credentials'],
-                                              gpu_compose_filename=mode_dict['gpu_compose_filename'],
-                                              gpu_config=mode_dict['gpu_config'], branch=mode_dict['branch'])
+                                                  mode_dict['init_models'], mode_dict['credentials'],
+                                                  gpu_compose_filename=mode_dict['gpu_compose_filename'],
+                                                  gpu_config=mode_dict['gpu_config'], branch=mode_dict['branch'],
+                                                  refresh=mode_dict['refresh'],cpu_image=mode_dict['cpu_image'],
+                                                  gpu_image=mode_dict['gpu_image'])

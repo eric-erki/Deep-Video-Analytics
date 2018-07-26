@@ -1,5 +1,5 @@
    {worker_name}:
-         image: akshayubhat/dva-auto:latest
+         image: {cpu_image}
          env_file:
            - ../../custom.env
          environment:

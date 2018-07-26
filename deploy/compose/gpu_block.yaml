@@ -1,5 +1,5 @@
    {worker_name}:
-         image: akshayubhat/dva-auto:gpu
+         image: {gpu_image}
          env_file:
            - ../../custom.env
          environment:

@@ -2,13 +2,18 @@
 import shlex
 import subprocess
 import argparse
-
+import time
 GCP_IMAGE_COMMAND = "gcloud compute instances create 'dvaimager' --zone='us-west1-b' --image-family='tf-latest-cu92' " \
-"--image-project=deeplearning-platform-release  --maintenance-policy=TERMINATE  " \
+"--image-project=deeplearning-platform-release " \
 "--accelerator='type=nvidia-tesla-p100,count=1'  --metadata='install-nvidia-driver=True'"
 
 GCP_INSTALLER_COPY = "gcloud compute scp installer.sh {username}@dvaimager:~/installer.sh "
 GCP_INSTALLER_EXEC = "gcloud compute ssh {username}@dvaimager --command 'sudo sh installer.sh'"
+GCP_PULL_CPU = "gcloud compute ssh {username}@dvaimager --command 'docker pull akshayubhat/dva-auto:latest'"
+GCP_PULL_GPU = "gcloud compute ssh {username}@dvaimager --command 'docker pull akshayubhat/dva-auto:gpu'"
+GCP_STOP = "gcloud compute instances stop dvaimager"
+GCP_IMAGE = "gcloud compute images create dvagpuimage --source-image=dvaimager"
+GCP_DELETE = "gcloud compute instances delete dvaimager"
 
 GCP_IMAGE_INSTALLER = """
 #!/usr/bin/env sh
@@ -40,13 +45,29 @@ exit
 def create_gpu_image(username):
     command = shlex.split(GCP_IMAGE_COMMAND)
     print ' '.join(command)
-    # subprocess.check_output(command)
+    subprocess.check_output(command)
+    time.sleep(300)
     with open('installer.sh','w') as installer:
         installer.write(GCP_IMAGE_INSTALLER)
     command = shlex.split(GCP_INSTALLER_COPY.format(username=username))
     print ' '.join(command)
     subprocess.check_output(command)
     command = shlex.split(GCP_INSTALLER_EXEC.format(username=username))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(GCP_PULL_CPU.format(username=username))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(GCP_PULL_GPU.format(username=username))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(GCP_STOP)
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(GCP_IMAGE)
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(GCP_DELETE)
     print ' '.join(command)
     subprocess.check_output(command)
 

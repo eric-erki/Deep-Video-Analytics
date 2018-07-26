@@ -22,7 +22,7 @@
      volumes:
        - dvaredis:/bitnami
    dva:
-     image: akshayubhat/dva-auto:latest
+     image: {cpu_image}
      container_name: webserver
      env_file:
        - ../../custom.env
@@ -43,23 +43,18 @@
        - LAUNCH_Q_qtrainer=1
        - LAUNCH_Q_qstreamer=1
        - LAUNCH_SCHEDULER=1
-       - LAUNCH_SERVER=1 # This supersedes NGINX and launches django development server with auto-reload
-       - LAUNCH_NOTEBOOK=1 # Run a jupyter notebook server inside the container to enable easy debugging
-       - ENABLE_DEBUG=1 # Enables django debug mode
-     command: bash -c "cd /root/DVA/repos/tf_ctpn_cpu/lib/utils/ && ./make.sh && cd /root/DVA/server/ && sleep 10 && ./start_container.py"
+     command: bash -c "git reset --hard && $${BRANCH} && git pull && sleep 10 && ./start_container.py"
      ports:
-       - "127.0.0.1:8000:80"
-       - "127.0.0.1:8889:8888"
+       - "127.0.0.1:8000:80" # Since Docker messes up iptables, ufw has no effect as a result bind to localhost and tunnel / Port forward through SSH
+       - "127.0.0.1:8889:8888" # Since Docker messes up iptables, ufw has no effect as a result bind to localhost and tunnel / Port forward through SSH
      depends_on:
        - db
        - rabbit
        - redis
      volumes:
-       - ../../:/root/DVA/
-       - ../../configs/custom_defaults:/root/DVA/configs/custom_defaults
-     tmpfs:
-       - /root/media
+       - dvadata:/root/media
  volumes:
   dvapgdata:
+  dvadata:
   dvarabbit:
   dvaredis:

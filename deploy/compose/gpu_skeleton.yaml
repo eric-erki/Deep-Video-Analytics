@@ -22,7 +22,7 @@
      volumes:
        - dvaredis:/bitnami
    webserver:
-     image: akshayubhat/dva-auto:gpu
+     image: {cpu_image}
      container_name: webserver
      env_file:
        - ../../custom.env
@@ -39,7 +39,7 @@
      volumes:
        - dvadata:/root/media
    non-gpu-workers:
-     image: akshayubhat/dva-auto:gpu
+     image: {cpu_image}
      env_file:
        - ../../custom.env
      environment:
@@ -58,7 +58,7 @@
        - dvadata:/root/media
 {gpu_workers}
    global-model:
-     image: akshayubhat/dva-auto:gpu
+     image: {gpu_image}
      env_file:
        - ../../custom.env
      environment:
