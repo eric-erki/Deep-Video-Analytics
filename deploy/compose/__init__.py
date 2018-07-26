@@ -38,9 +38,11 @@ def generate_multi_gpu_compose(fname, config, cpu_image, gpu_image):
 
 def generate_cpu_compose(cpu_image):
     with open('deploy/compose/docker-compose-cpu.yaml', 'w') as out:
-        out.write(file('deploy/compose/docker-compose-cpu.yaml.template').read().format(cpu_image=cpu_image))
+        out.write(file('deploy/compose/docker-compose-cpu.yaml.template').read().format(cpu_image=cpu_image,
+                                                                                        BRANCH='{BRANCH}'))
     with open('deploy/compose/docker-compose-dev.yaml', 'w') as out:
-        out.write(file('deploy/compose/docker-compose-dev.yaml.template').read().format(cpu_image=cpu_image))
+        out.write(file('deploy/compose/docker-compose-dev.yaml.template').read().format(cpu_image=cpu_image,
+                                                                                        BRANCH='{BRANCH}'))
 
 
 def load_envs(path):
