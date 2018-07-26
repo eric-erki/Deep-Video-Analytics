@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+import shlex
+import subprocess
+import argparse
+
+GCP_IMAGE_COMMAND = "gcloud compute instances create 'dvaimager' --zone='us-west1-b' --image-family='tf-latest-cu92' " \
+"--image-project=deeplearning-platform-release  --maintenance-policy=TERMINATE  " \
+"--accelerator='type=nvidia-tesla-p100,count=1'  --metadata='install-nvidia-driver=True'"
+
+GCP_INSTALLER_COPY = "gcloud compute scp installer.sh {username}@dvaimager:~/installer.sh "
+GCP_INSTALLER_EXEC = "gcloud compute ssh {username}@dvaimager --command 'sudo sh installer.sh'"
+
+GCP_IMAGE_INSTALLER = """
+#!/usr/bin/env sh
+sudo apt-get -y update
+sudo apt-get -y install apt-transport-https ca-certificates curl gnupg2 software-properties-common
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+sudo apt-key fingerprint 0EBFCD88
+sudo add-apt-repository  "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+sudo apt-get -y update
+sudo apt-get -y install docker-ce
+sudo docker run hello-world
+curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+sudo apt-get -y update
+sudo apt-get -y install nvidia-docker2
+sudo pkill -SIGHUP dockerd
+sudo curl -L https://github.com/docker/compose/releases/download/1.17.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+echo '{"runtimes": {"nvidia": {"path": "nvidia-container-runtime","runtimeArgs": []}},"default-runtime":"nvidia"}' > temp.json
+sudo mv temp.json /etc/docker/daemon.json
+sudo nvidia-smi -pm 1
+sudo service docker restart
+sudo usermod -aG docker `whoami`
+exit
+"""
+
+
+def create_gpu_image(username):
+    command = shlex.split(GCP_IMAGE_COMMAND)
+    print ' '.join(command)
+    # subprocess.check_output(command)
+    with open('installer.sh','w') as installer:
+        installer.write(GCP_IMAGE_INSTALLER)
+    command = shlex.split(GCP_INSTALLER_COPY.format(username=username))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(GCP_INSTALLER_EXEC.format(username=username))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def tunnel(username,instance):
+    command = "gcloud compute ssh {username}@{instance} --zone us-west1-b -- -L 8000:localhost:8000 -L 8888:localhost:8888 -L 8889:localhost:8889"
+    with open('tunnel.sh','w') as out:
+        out.write("#!/usr/bin/env sh\n{}".format(command.format(username=username,instance=instance)))
+
+
+if __name__ == '__main__':
+    """
+    gcpctl used for launing 
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("username", help="username")
+    args = parser.parse_args()
+    create_gpu_image(args.username)

@@ -17,37 +17,6 @@ def get_mode():
         return configure()
     return json.load(file("config.json"))
 
-GCP_IMAGE_COMMAND = "gcloud compute instances create 'dvaimager' --zone='us-west1-b' --image-family='tf-latest-cu92' " \
-"--image-project=deeplearning-platform-release  --maintenance-policy=TERMINATE  " \
-"--accelerator='type=nvidia-tesla-p100,count=1'  --metadata='install-nvidia-driver=True'"
-
-GCP_IMAGE_INSTALLER = """
-#!/usr/bin/env sh
-sudo apt-get update
-sudo apt-get install apt-transport-https ca-certificates curl gnupg2 software-properties-common
-curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
-sudo apt-key fingerprint 0EBFCD88
-sudo add-apt-repository  "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
-sudo apt-get update
-sudo apt-get install docker-ce
-sudo docker run hello-world
-curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-sudo apt-get update
-sudo apt-get install nvidia-docker2
-sudo pkill -SIGHUP dockerd
-sudo curl -L https://github.com/docker/compose/releases/download/1.17.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-sudo python fix_docker_compose.py
-echo '{"runtimes": {"nvidia": {"path": "nvidia-container-runtime","runtimeArgs": []}},"default-runtime":"nvidia"}' > temp.json
-sudo mv temp.json /etc/docker/daemon.json
-sudo nvidia-smi -pm 1
-sudo service docker restart
-sudo usermod -aG docker `whoami`
-exit
-"""
-
 
 DEFAULT_KUBE_WORKERS = [
     {'name': 'coco',
@@ -253,6 +222,13 @@ def configure_compose(mode):
                         " ( /root/DVA/configs/custom_defaults/init_process.json ) >>").strip()
     if process.strip():
         init_process = process
+    cpu_image = raw_input("Please specify docker CPU image source or press enter to keep default"
+                          " ( akshayubhat/dva-auto:latest ) >>").strip()
+    if cpu_image.strip():
+        cpu_image = cpu_image.strip()
+    else:
+        cpu_image = 'akshayubhat/dva-auto:latest'
+    gpu_image = ''
     models = raw_input("Please specify default models or press enter to keep default"
                        " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
     if process.strip():
@@ -285,11 +261,17 @@ def configure_compose(mode):
         gpu_count = int(raw_input("Please select number of GPUs >>").strip())
         gpu_compose_filename = GPU_CONFIG[gpu_count]['compose_filename']
         gpu_config = GPU_CONFIG[gpu_count]['config']
+        gpu_image = raw_input("Please specify docker GPU image or press enter to keep default "
+                              "( akshayubhat/dva-auto:gpu ) >>").strip()
+        if gpu_image.strip():
+            gpu_image = gpu_image.strip()
+        else:
+            gpu_image = 'akshayubhat/dva-auto:gpu'
         print "Memory fraction and gpu allocation for individual workers has been written to config.json, please edit" \
               "the file to optionally specify custom allocation"
     return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models,
             'credentials': envs, 'gpu_compose_filename': gpu_compose_filename, 'gpu_config': gpu_config,
-            'branch':branch}
+            'cpu_image':cpu_image, 'gpu_image':gpu_image, 'branch':branch}
 
 
 def configure(mode=None):
