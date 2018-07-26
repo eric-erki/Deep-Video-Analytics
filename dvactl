@@ -222,7 +222,7 @@ def configure_compose(mode):
                         " ( /root/DVA/configs/custom_defaults/init_process.json ) >>").strip()
     if process.strip():
         init_process = process
-    cpu_image = raw_input("Please specify docker CPU image source or press enter to keep default"
+    cpu_image = raw_input("Please specify docker CPU image or press enter to keep default"
                           " ( akshayubhat/dva-auto:latest ) >>").strip()
     if cpu_image.strip():
         cpu_image = cpu_image.strip()
