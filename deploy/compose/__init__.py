@@ -64,6 +64,7 @@ def create_custom_env(init_process, init_models, cred_envs, branch):
 
 
 def pull_latest_images(deployment_type, cpu_image, gpu_image):
+    print "Pulling/Refreshing container images, first time it might take a while to download the image"
     try:
         if deployment_type == 'gpu':
             subprocess.check_call([DOCKER, 'pull', gpu_image])
@@ -94,7 +95,6 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
                               cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/'))
     except:
         raise SystemError("Docker-compose is not available")
-    print "Pulling/Refreshing container images, first time it might take a while to download the image"
     if refresh:
         pull_latest_images(deployment_type, cpu_image, gpu_image)
     print "Trying to launch containers"
