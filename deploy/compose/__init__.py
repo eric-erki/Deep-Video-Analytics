@@ -164,11 +164,7 @@ def stop_docker_compose(deployment_type, gpu_count, clean=False):
 
 
 def get_auth():
-    if 'WSL' in os.environ:
-        token = subprocess.check_output([DOCKER, "exec", "webserver", "scripts/generate_testing_token.py"]).strip()
-    else:
-        token = subprocess.check_output(
-            [DOCKER, "exec", '-it', "webserver", "scripts/generate_testing_token.py"]).strip()
+    token = subprocess.check_output([DOCKER, "exec", "webserver", "scripts/generate_testing_token.py"]).strip()
     server = 'http://localhost:8000/api/'
     with open('creds.json', 'w') as fh:
         json.dump({'server': server, 'token': token}, fh)
