@@ -53,10 +53,10 @@ INSTANCE_CREATE= "gcloud beta compute instances create {instance}" \
                  "--boot-disk-type=pd-ssd --boot-disk-device-name={instance}"
 INSTANCE_CLONE = "gcloud compute ssh {username}@{instance} --command 'git clone https://github.com/AKSHAYUBHAT/DeepVideoAnalytics'"
 INSTANCE_COPY = "gcloud compute scp config.json {username}@{instance}:~/DeepVideoAnalytics/config.json"
-INSTANCE_START = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvatl start'"
-INSTANCE_AUTH = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvatl auth'"
+INSTANCE_START = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl start'"
+INSTANCE_AUTH = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl auth'"
 INSTANCE_AUTH_COPY = "gcloud compute scp {username}@{instance}:~/DeepVideoAnalytics/creds.json creds.json"
-INSTANCE_CLEAN = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvatl clean'"
+INSTANCE_CLEAN = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl clean'"
 
 INSTANCE_DELETE = "gcloud beta compute instances delete {instance}"
 
@@ -118,7 +118,7 @@ def create(config):
 
 
 def start(config):
-    command = shlex.split(INSTALLER_EXEC.format(**config))
+    command = shlex.split(INSTANCE_CLONE.format(**config))
     print ' '.join(command)
     subprocess.check_output(command)
     command = shlex.split(INSTANCE_COPY.format(**config))
