@@ -57,8 +57,7 @@ INSTANCE_START = "gcloud compute ssh {username}@{instance} --command 'cd DeepVid
 INSTANCE_AUTH = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl auth'"
 INSTANCE_AUTH_COPY = "gcloud compute scp {username}@{instance}:~/DeepVideoAnalytics/creds.json creds.json"
 INSTANCE_CLEAN = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl clean'"
-
-INSTANCE_DELETE = "gcloud beta compute instances delete {instance}"
+INSTANCE_DELETE = "gcloud beta compute instances -q delete {instance}"
 
 
 DEFAULT_CONFIG = {
@@ -160,8 +159,10 @@ def load_config():
 
 if __name__ == '__main__':
     """
-    gcpctl can be for creating GCP GPU images, launching/deleting instance and connecting to 
-    launched instance by tunnelling  
+    gcpctl can be used for creating GCP GPU images, launching/deleting instance and connecting to 
+    launched instance by tunnelling. gcpctl still uses dvactl to orchestrate DVA. Create config.json
+    by running `./dvactl configure` and selecting number of GPU's, init models/processes etc.
+    Edit gcp.json (it will be created if it does not exists.) with information about instance.    
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("action", help="action can be one of { create_image | create | start | auth | clean | connect | delete }")
