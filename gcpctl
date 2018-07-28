@@ -66,7 +66,7 @@ DEFAULT_CONFIG = {
     'zone': 'us-west1-b',
     'username': 'akshayubhat',
     'image_name': 'dvagpuimage',
-    'instance_name': 'dvainstance',
+    'instance': 'dvainstance',
     'gpus': 2,
     'gpu': 'nvidia-tesla-p100',
     'extra_launch_flags':'--preemptible',
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     launched instance by tunnelling  
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", help="action can be one of { create_image | launch | connect | delete }")
+    parser.add_argument("action", help="action can be one of { create_image | create | start | auth | clean | connect | delete }")
     args = parser.parse_args()
     config = load_config()
     if args.action == 'create_image':
@@ -182,6 +182,6 @@ if __name__ == '__main__':
     elif args.action == 'delete':
         delete(config)
     elif args.action == 'connect':
-        connect(config['username'],config['instance_name'])
+        connect(config['username'],config['instance'])
     else:
         raise NotImplementedError(args.action)
