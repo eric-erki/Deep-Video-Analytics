@@ -3,6 +3,9 @@ import shlex
 import subprocess
 import argparse
 import time
+import json
+import os
+
 GCP_IMAGE_COMMAND = "gcloud compute instances create 'dvaimager' --zone='us-west1-b' --image-family='tf-latest-cu92' " \
 "--image-project=deeplearning-platform-release --maintenance-policy TERMINATE " \
 "--accelerator='type=nvidia-tesla-p100,count=1'  --metadata='install-nvidia-driver=True'"
@@ -41,6 +44,29 @@ sudo usermod -aG docker USERNAME
 exit
 """
 
+INSTANCE_LAUNCH = "gcloud beta compute instances create {instance}" \
+                 " --zone={zone} --machine-type={machine_type} --subnet=default --network-tier=PREMIUM" \
+                 " --no-restart-on-failure --maintenance-policy=TERMINATE {extra_launch_flags} " \
+                 " --accelerator=type={gpu},count={gpus} --image={image_name} " \
+                 "--image-project={project} --boot-disk-size=120GB " \
+                 "--boot-disk-type=pd-ssd --boot-disk-device-name={instance}"
+
+
+INSTANCE_DELETE = "gcloud beta compute instances delete {instance}"
+
+
+DEFAULT_GCP_CONFIG = {
+    'project': 'deepvideoanalytics-161408',
+    'zone': 'us-west1-b',
+    'username': 'akshayubhat',
+    'image_name': 'dvagpuimage',
+    'instance_name': 'dvainstance',
+    'gpus': 2,
+    'gpu': 'nvidia-tesla-p100',
+    'extra_launch_flags':'--preemptible',
+    'machine_type':'custom-12-46080'
+}
+
 
 def create_gpu_image(username):
     command = shlex.split(GCP_IMAGE_COMMAND)
@@ -72,17 +98,48 @@ def create_gpu_image(username):
     subprocess.check_output(command)
 
 
-def tunnel(username,instance):
-    command = "gcloud compute ssh {username}@{instance} --zone us-west1-b -- -L 8000:localhost:8000 -L 8888:localhost:8888 -L 8889:localhost:8889"
-    with open('tunnel.sh','w') as out:
-        out.write("#!/usr/bin/env sh\n{}".format(command.format(username=username,instance=instance)))
+def connect(username,instance):
+    command = "gcloud compute ssh {username}@{instance} -- -L 8000:localhost:8000 -L 8888:localhost:8888 -L 8889:localhost:8889"
+    command = command.format(username=username,instance=instance)
+    print command
+    subprocess.check_call(shlex.split(command))
+
+
+def launch(config):
+    command = shlex.split(INSTANCE_LAUNCH.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def delete(config):
+    command = shlex.split(INSTANCE_DELETE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def load_config():
+    if not os.path.isfile('gcp.json'):
+        with open('gcp.json','w') as out:
+            out.write(json.dumps(DEFAULT_GCP_CONFIG))
+        raise ValueError("please edit/verify gcp.json")
+    return json.load(file('gcp.json'))
 
 
 if __name__ == '__main__':
     """
-    gcpctl used for launing 
+    gcpctl can be for creating GCP GPU images, launching/deleting instance and connecting to 
+    launched instance by tunnelling  
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("username", help="username")
+    parser.add_argument("action", help="action can be one of { create_image | launch | connect | delete }")
     args = parser.parse_args()
-    create_gpu_image(args.username)
+    config = load_config()
+    if args.action == 'create_image':
+        print "Important please verify that instance is deleted!"
+        create_gpu_image(config['username'])
+    elif args.action == 'launch':
+        launch(config)
+    elif args.action == 'delete':
+        delete(config)
+    elif args.action == 'connect':
+        connect(config['username'],config['instance_name'])

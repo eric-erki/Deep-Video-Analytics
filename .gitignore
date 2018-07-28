@@ -17,6 +17,8 @@ creds.json
 .ipynb_checkpoints/
 custom.env
 config.json
+installer.sh
+gcp.json
 docs/experiments/private
 docs/experiments/coco/coco_annotations
 docs/experiments/yolo/yolo_test.zip

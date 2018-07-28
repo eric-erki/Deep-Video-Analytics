@@ -9,7 +9,30 @@ import json
 import webbrowser
 
 DOCKER_COMPOSE = 'docker-compose.exe' if 'WSL' in os.environ else 'docker-compose'
+
 DOCKER = 'docker.exe' if 'WSL' in os.environ else 'docker'
+
+DEFAULT_ENV = """GLOBAL_MODEL=1
+DOCKER_MODE=true
+RABBIT_HOST=rabbit
+RABBIT_USER=dvauser
+RABBIT_PASS=localpass
+DB_HOST=db
+DB_NAME=postgres
+DB_USER=pgdbuser
+DB_PASS=pgdbpass
+SUPERUSER=admin
+SUPERPASS=super
+SUPEREMAIL=admin@test.com
+DISABLE_DEBUG=1
+SECRET_KEY=283y312bhv2b13v13
+POSTGRES_USER=pgdbuser
+POSTGRES_PASSWORD=pgdbpass
+RABBITMQ_DEFAULT_USER=dvauser
+RABBITMQ_DEFAULT_PASS=localpass
+REDIS_PASSWORD=redispass
+REDIS_HOST=redis
+"""
 
 
 def generate_multi_gpu_compose(fname, config, cpu_image, gpu_image):
@@ -57,7 +80,7 @@ def create_custom_env(init_process, init_models, cred_envs, branch):
         envs['BRANCH'] = "git checkout --track origin/{}".format(branch)
     envs.update(cred_envs)
     with open('custom.env', 'w') as out:
-        out.write(file('default.env').read())
+        out.write(DEFAULT_ENV)
         out.write('\n')
         for k, v in envs.items():
             out.write("{}={}\n".format(k, v))
