@@ -6,19 +6,20 @@ import time
 import json
 import os
 
-GCP_IMAGE_COMMAND = "gcloud compute instances create 'dvaimager' --zone='us-west1-b' --image-family='tf-latest-cu92' " \
+IMAGE_COMMAND = "gcloud compute instances create 'dvaimager' --zone='us-west1-b' --image-family='tf-latest-cu92' " \
 "--image-project=deeplearning-platform-release --maintenance-policy TERMINATE " \
 "--accelerator='type=nvidia-tesla-p100,count=1'  --metadata='install-nvidia-driver=True'"
 
-GCP_INSTALLER_COPY = "gcloud compute scp installer.sh {username}@dvaimager:~/installer.sh "
-GCP_INSTALLER_EXEC = "gcloud compute ssh {username}@dvaimager --command 'sudo sh installer.sh'"
-GCP_PULL_CPU = "gcloud compute ssh {username}@dvaimager --command 'docker pull akshayubhat/dva-auto:latest'"
-GCP_PULL_GPU = "gcloud compute ssh {username}@dvaimager --command 'docker pull akshayubhat/dva-auto:gpu'"
-GCP_STOP = "gcloud compute instances stop dvaimager"
-GCP_DELETE = "gcloud compute instances -q delete dvaimager --keep-disks boot"
-GCP_IMAGE = "gcloud compute images create dvagpuimage --source-disk dvaimager"
+INSTALLER_COPY = "gcloud compute scp installer.sh {username}@dvaimager:~/installer.sh "
+INSTALLER_EXEC = "gcloud compute ssh {username}@dvaimager --command 'sudo sh installer.sh'"
 
-GCP_IMAGE_INSTALLER = """
+PULL_CPU = "gcloud compute ssh {username}@dvaimager --command 'docker pull akshayubhat/dva-auto:latest'"
+PULL_GPU = "gcloud compute ssh {username}@dvaimager --command 'docker pull akshayubhat/dva-auto:gpu'"
+STOP = "gcloud compute instances stop dvaimager"
+DELETE = "gcloud compute instances -q delete dvaimager --keep-disks boot"
+IMAGE = "gcloud compute images create dvagpuimage --source-disk dvaimager"
+
+IMAGE_INSTALLER = """
 #!/usr/bin/env sh
 sudo apt-get -y update
 sudo apt-get -y install apt-transport-https ca-certificates curl gnupg2 software-properties-common
@@ -44,18 +45,23 @@ sudo usermod -aG docker USERNAME
 exit
 """
 
-INSTANCE_LAUNCH = "gcloud beta compute instances create {instance}" \
+INSTANCE_CREATE= "gcloud beta compute instances create {instance}" \
                  " --zone={zone} --machine-type={machine_type} --subnet=default --network-tier=PREMIUM" \
                  " --no-restart-on-failure --maintenance-policy=TERMINATE {extra_launch_flags} " \
                  " --accelerator=type={gpu},count={gpus} --image={image_name} " \
                  "--image-project={project} --boot-disk-size=120GB " \
                  "--boot-disk-type=pd-ssd --boot-disk-device-name={instance}"
-
+INSTANCE_CLONE = "gcloud compute ssh {username}@{instance} --command 'git clone https://github.com/AKSHAYUBHAT/DeepVideoAnalytics'"
+INSTANCE_COPY = "gcloud compute scp config.json {username}@{instance}:~/DeepVideoAnalytics/config.json"
+INSTANCE_START = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvatl start'"
+INSTANCE_AUTH = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvatl auth'"
+INSTANCE_AUTH_COPY = "gcloud compute scp {username}@{instance}:~/DeepVideoAnalytics/creds.json creds.json"
+INSTANCE_CLEAN = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvatl clean'"
 
 INSTANCE_DELETE = "gcloud beta compute instances delete {instance}"
 
 
-DEFAULT_GCP_CONFIG = {
+DEFAULT_CONFIG = {
     'project': 'deepvideoanalytics-161408',
     'zone': 'us-west1-b',
     'username': 'akshayubhat',
@@ -69,31 +75,31 @@ DEFAULT_GCP_CONFIG = {
 
 
 def create_gpu_image(username):
-    command = shlex.split(GCP_IMAGE_COMMAND)
+    command = shlex.split(IMAGE_COMMAND)
     print ' '.join(command)
     subprocess.check_output(command)
     time.sleep(300)
     with open('installer.sh','w') as installer:
-        installer.write(GCP_IMAGE_INSTALLER.replace('USERNAME',username))
-    command = shlex.split(GCP_INSTALLER_COPY.format(username=username))
+        installer.write(IMAGE_INSTALLER.replace('USERNAME',username))
+    command = shlex.split(INSTALLER_COPY.format(username=username))
     print ' '.join(command)
     subprocess.check_output(command)
-    command = shlex.split(GCP_INSTALLER_EXEC.format(username=username))
+    command = shlex.split(INSTALLER_EXEC.format(username=username))
     print ' '.join(command)
     subprocess.check_output(command)
-    command = shlex.split(GCP_PULL_CPU.format(username=username))
+    command = shlex.split(PULL_CPU.format(username=username))
     print ' '.join(command)
     subprocess.check_output(command)
-    command = shlex.split(GCP_PULL_GPU.format(username=username))
+    command = shlex.split(PULL_GPU.format(username=username))
     print ' '.join(command)
     subprocess.check_output(command)
-    command = shlex.split(GCP_STOP)
+    command = shlex.split(STOP)
     print ' '.join(command)
     subprocess.check_output(command)
-    command = shlex.split(GCP_DELETE)
+    command = shlex.split(DELETE)
     print ' '.join(command)
     subprocess.check_output(command)
-    command = shlex.split(GCP_IMAGE)
+    command = shlex.split(IMAGE)
     print ' '.join(command)
     subprocess.check_output(command)
 
@@ -105,8 +111,35 @@ def connect(username,instance):
     subprocess.check_call(shlex.split(command))
 
 
-def launch(config):
-    command = shlex.split(INSTANCE_LAUNCH.format(**config))
+def create(config):
+    command = shlex.split(INSTANCE_CREATE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)    
+
+
+def start(config):
+    command = shlex.split(INSTALLER_EXEC.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(INSTANCE_COPY.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(INSTANCE_START.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def auth(config):
+    command = shlex.split(INSTANCE_AUTH.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(INSTANCE_AUTH_COPY.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def clean(config):
+    command = shlex.split(INSTANCE_CLEAN.format(**config))
     print ' '.join(command)
     subprocess.check_output(command)
 
@@ -120,7 +153,7 @@ def delete(config):
 def load_config():
     if not os.path.isfile('gcp.json'):
         with open('gcp.json','w') as out:
-            out.write(json.dumps(DEFAULT_GCP_CONFIG))
+            out.write(json.dumps(DEFAULT_CONFIG))
         raise ValueError("please edit/verify gcp.json")
     return json.load(file('gcp.json'))
 
@@ -137,9 +170,18 @@ if __name__ == '__main__':
     if args.action == 'create_image':
         print "Important please verify that instance is deleted!"
         create_gpu_image(config['username'])
-    elif args.action == 'launch':
-        launch(config)
+    elif args.action == 'create':
+        create(config)
+    elif args.action == 'start':
+        start(config)
+        auth(config)
+    elif args.action == 'auth':
+        auth(config)
+    elif args.action == 'clean':
+        clean(config)
     elif args.action == 'delete':
         delete(config)
     elif args.action == 'connect':
         connect(config['username'],config['instance_name'])
+    else:
+        raise NotImplementedError(args.action)
