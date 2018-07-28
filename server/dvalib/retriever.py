@@ -23,7 +23,7 @@ except ImportError:
     logging.warning("could not import FAISS")
 
 
-class BaseRetriever(object):
+class SimpleRetriever(object):
 
     def __init__(self, name, approximator=None, algorithm="EXACT"):
         self.name = name
@@ -32,21 +32,23 @@ class BaseRetriever(object):
         self.approximator = approximator
         self.net = None
         self.loaded_entries = set()
-        self.index, self.files, self.findex = None, {}, 0
+        self.index = None
+        self.findex = 0
+        self.tree = IntervalTree()
         self.support_batching = False
 
-    def load_index(self, numpy_matrix, entries, video_id, entry_type):
-        temp_index = [numpy_matrix, ]
-        for i, e in enumerate(entries):
-            # todo use interval tree
-            self.files[self.findex] = {"id":e,"type":entry_type,"video":video_id}
-            self.findex += 1
-        if self.index is None:
-            self.index = np.atleast_2d(np.concatenate(temp_index).squeeze())
-            logging.info(self.index.shape)
-        else:
-            self.index = np.concatenate([self.index, np.atleast_2d(np.concatenate(temp_index).squeeze())])
-            logging.info(self.index.shape)
+    def add_vectors(self, numpy_matrix, count, pk):
+        self.loaded_entries.add(pk)
+        if count:
+            self.tree.addi(self.findex, self.findex + count, pk)
+            self.findex += count
+            temp_index = [numpy_matrix, ]
+            if self.index is None:
+                self.index = np.atleast_2d(np.concatenate(temp_index).squeeze())
+                logging.info(self.index.shape)
+            else:
+                self.index = np.concatenate([self.index, np.atleast_2d(np.concatenate(temp_index).squeeze())])
+                logging.info(self.index.shape)
 
     def nearest(self, vector=None, n=12):
         dist = None
@@ -57,34 +59,37 @@ class BaseRetriever(object):
             try:
                 dist = spatial.distance.cdist(vector, self.index)
             except:
-                raise ValueError("Could not compute distance Vector shape {} and index shape {}".format(vector.shape,
-                                                                                                        self.index.shape))
+                raise ValueError("Could not compute dist Vector {} and shape {}".format(vector.shape, self.index.shape))
         if dist is not None:
             ranked = np.squeeze(dist.argsort())
             for i, k in enumerate(ranked[:n]):
-                temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, k])}
-                temp.update(self.files[k])
+                index_entry = sorted(self.tree[k])[0]
+                temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i]),
+                        'indexentries_pk':index_entry.data, 'offset':k - index_entry.begin}
                 results.append(temp)
-        return results  # Next also return computed query_vector
+        return results
 
 
-class LOPQRetriever(BaseRetriever):
+class LOPQRetriever(object):
+    """ Deprecated and soon to be removed """
 
     def __init__(self, name, approximator):
-        super(LOPQRetriever, self).__init__(name=name, approximator=approximator, algorithm="LOPQ")
         self.approximate = True
         self.name = name
+        self.algorithm = "LOPQ"
         self.loaded_entries = set()
         self.entries = []
         self.support_batching = False
         self.approximator = approximator
         self.approximator.load()
+        self.findex = 0
         self.searcher = LOPQSearcher(model=self.approximator.model)
 
-    def load_index(self, numpy_matrix, entries, video_id, entry_type):
+    def add_entries(self, entries, video_id, entry_type):
         codes = []
         ids = []
         last_index = len(self.entries)
+        self.findex = last_index
         for i, e in enumerate(entries):
             codes.append((tuple(e[1][0]), tuple(e[1][1])))
             ids.append(i + last_index)
@@ -100,23 +105,28 @@ class LOPQRetriever(BaseRetriever):
         return results
 
 
-class FaissApproximateRetriever(BaseRetriever):
+class FaissApproximateRetriever(object):
 
     def __init__(self, name, approximator):
-        super(FaissApproximateRetriever, self).__init__(name=name, approximator=approximator, algorithm="FAISS")
+        self.name = name
         self.index_path = str(approximator.index_path).replace('//', '/')
         self.ivfs = []
         self.ivf_vector = faiss.InvertedListsPtrVector()
+        self.algorithm = "FAISS_APPROXIMATE"
         self.uuid = str(uuid.uuid4()).replace('-', '_')
         self.faiss_index = None
+        self.tree = IntervalTree()
+        self.loaded_entries = set()
+        self.findex = 0
 
-    def load_index(self, computed_index_path, entries, video_id, entry_type):
-        if len(entries):
+    def add_vectors(self, computed_index_path, count, pk):
+        self.loaded_entries.add(pk)
+        if count:
             computed_index_path = str(computed_index_path).replace('//', '/')
             logging.info("Adding {}".format(computed_index_path))
-            for i, e in enumerate(entries):
-                self.files[self.findex] = {"id":e,"type":entry_type,"video":video_id}
-                self.findex += 1
+            self.tree.addi(self.findex, self.findex + count, pk)
+            self.findex += count
+
             if self.faiss_index is None:
                 self.faiss_index = faiss.read_index(computed_index_path)
             else:
@@ -135,8 +145,9 @@ class FaissApproximateRetriever(BaseRetriever):
         dist, ids = self.faiss_index.search(vector, n)
         for i, k in enumerate(ids[0]):
             if k >= 0:
-                temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i])}
-                temp.update(self.files[k])
+                index_entry = sorted(self.tree[k])[0]
+                temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i]),
+                        'indexentries_pk': index_entry.data, 'offset': k - index_entry.begin}
                 results.append(temp)
         return results
 
@@ -150,36 +161,33 @@ class FaissApproximateRetriever(BaseRetriever):
         for vindex in range(ids.shape[0]):
             for i, k in enumerate(ids[vindex]):
                 if k >= 0:
-                    temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[vindex, i])}
-                    temp.update(self.files[k])
+                    index_entry = sorted(self.tree[k])[0]
+                    temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[vindex, i]),
+                            'indexentries_pk':index_entry.data, 'offset':k - index_entry.begin}
                     results[vindex].append(temp)
         return results
 
 
-class FaissFlatRetriever(BaseRetriever):
+class FaissFlatRetriever(object):
 
     def __init__(self, name, components, metric='Flat'):
-        super(FaissFlatRetriever, self).__init__(name=name, algorithm="FAISS_{}".format(metric))
+        self.findex = 0
         self.name = name
         self.tree = IntervalTree()
         self.components = components
         self.algorithm = "FAISS_{}".format(metric)
+        self.loaded_entries = set()
         self.faiss_index = faiss.index_factory(components, metric)
-        self.index_entries_index = 0
-        self.index_entries = defaultdict(dict)
 
-    def load_index(self, numpy_matrix, entries, video_id, entry_type):
-        if len(entries):
-            self.tree.addi(self.findex, self.findex + len(entries), {"type": entry_type, "video": video_id,
-                                                                     'index_entries_index':self.index_entries_index})
+    def add_vectors(self, numpy_matrix, count, pk):
+        self.loaded_entries.add(pk)
+        if count:
+            self.tree.addi(self.findex, self.findex + count, pk)
+            self.findex += count
             logging.info("Adding {}".format(numpy_matrix.shape))
             numpy_matrix = np.atleast_2d(numpy_matrix.squeeze())
-            for i, e in enumerate(entries):
-                self.index_entries[self.index_entries_index][i] = e
             self.faiss_index.add(numpy_matrix)
             logging.info("Index size {}".format(self.faiss_index.ntotal))
-            self.findex += len(entries)
-            self.index_entries_index += 1
 
     def nearest(self, vector=None, n=12):
         vector = np.atleast_2d(vector)
@@ -190,13 +198,8 @@ class FaissFlatRetriever(BaseRetriever):
         for i, k in enumerate(ids[0]):
             if k >= 0:
                 index_entry = sorted(self.tree[k])[0]
-                data = index_entry.data
-                index_entries_index = data['index_entries_index']
-                offset = k - index_entry.begin
                 temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[0, i]),
-                        'video': data['video'],
-                        'type': data['type'],
-                        'id':self.index_entries[index_entries_index][offset]}
+                        'indexentries_pk':index_entry.data, 'offset':k - index_entry.begin}
                 results.append(temp)
         return results
 
@@ -209,7 +212,8 @@ class FaissFlatRetriever(BaseRetriever):
         for vindex in range(ids.shape[0]):
             for i, k in enumerate(ids[vindex]):
                 if k >= 0:
-                    temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[vindex, i])}
-                    temp.update(self.files[k])
+                    index_entry = sorted(self.tree[k])[0]
+                    temp = {'rank': i + 1, 'algo': self.name, 'dist': float(dist[vindex, i]),
+                            'indexentries_pk':index_entry.data, 'offset':k - index_entry.begin}
                     results[vindex].append(temp)
         return results

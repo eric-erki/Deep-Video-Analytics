@@ -236,10 +236,11 @@ def handle_perform_matching(dt):
         query_set = models.IndexEntries.objects.filter(**target_filters)
     else:
         query_set = models.IndexEntries.objects.filter(**target_filters).exclude(video_id=dt.video_id)
+    index_entries = {}
     for di in query_set:
-        mat, entries = di.load_index()
+        mat = di.get_vectors()
         print mat.shape
-        if entries:
+        if di.count:
             mat = np.atleast_2d(mat.squeeze())
             print mat.shape
             if retriever is None:
@@ -252,15 +253,17 @@ def handle_perform_matching(dt):
                 else:
                     components = mat.shape[1]
                     retriever = retrieval.retriever.FaissFlatRetriever("matcher", components=components)
-            retriever.load_index(mat, entries, di.video_id, di.target)
+            retriever.add_vectors(mat, di.count, di.pk)
+            if di.pk not in index_entries:
+                index_entries[di.pk] = di
     frame_to_region_index = {}
     for di in models.IndexEntries.objects.filter(**source_filters):
-        mat, entries = di.load_index()
-        if entries:
+        mat = di.get_vectors()
+        if di.count:
             mat = np.atleast_2d(mat.squeeze())
             print mat.shape
             results_batch = retriever.nearest_batch(mat, k)
-            for i, entry in enumerate(entries):
+            for i, entry in enumerate(di.iter_entries()):
                 results = results_batch[i]
                 if match_self:
                     pass
@@ -284,6 +287,11 @@ def handle_perform_matching(dt):
                         region_id = entry
                         value_map = {}
                     for result in results:
+                        if 'indexentries_pk' in result:
+                            di = index_entries[result['indexentries_pk']]
+                            result['type'] = di.target
+                            result['video'] = di.video_id
+                            result['id'] = di.get_entry(result['offset'])
                         dr = models.HyperRegionRelation()
                         dr.video_id = video_id
                         dr.metadata = result

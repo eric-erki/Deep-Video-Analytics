@@ -96,6 +96,8 @@ def launch_kube():
         with open(yaml_fname, 'w') as out:
             k['common'] = config['common_env']
             k['command'] = config['command']
+            k['cpu_image'] = config['cpu_image']
+            k['gpu_image'] = config['gpu_image']
             out.write(worker_template.format(**k))
         commands.append("kubectl create -n {} -f {}".format(namespace,yaml_fname))
     run_commands(commands)
@@ -165,7 +167,8 @@ def generate_deployments():
     for fname in glob.glob('./deploy/kube/*.template'):
         if 'worker.yaml' not in fname and 'worker_gpu.yaml' not in fname:
             with open(fname.replace('.template',''),'w') as out:
-                out.write(file(fname).read().format(common=config['common_env'],command=config['command']))
+                out.write(file(fname).read().format(common=config['common_env'],command=config['command'],
+                                                    cpu_image=config['cpu_image'],gpu_image=config['gpu_image']))
 
 
 def setup_kube():

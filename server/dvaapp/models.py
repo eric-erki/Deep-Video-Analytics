@@ -12,6 +12,7 @@ from dvaclient import constants
 from . import fs
 from PIL import Image
 import time
+import lmdb
 
 try:
     import numpy as np
@@ -21,7 +22,7 @@ from uuid import UUID
 from json import JSONEncoder
 
 JSONEncoder_old = JSONEncoder.default
-
+OPENED_DBS = {}
 
 def JSONEncoder_new(self, o):
     if isinstance(o, UUID): return str(o)
@@ -710,10 +711,18 @@ class QueryRegion(models.Model):
 class IndexEntries(models.Model):
     id = models.CharField(max_length=100, primary_key=True)
     video = models.ForeignKey(Video)
-    features_file_name = models.CharField(max_length=100)
+    uuid = models.UUIDField(default=uuid.uuid4, null=True)
+    LMDB = constants.LMDB
+    RAW = constants.RAW
+    STORAGE_TYPES = (
+        (LMDB, 'LMDB database'),
+        (RAW, 'Entries'),
+    )
+    storage_type = models.CharField(max_length=1, choices=STORAGE_TYPES, db_index=True, default=RAW)
     entries = JSONField(blank=True, null=True)
     metadata = JSONField(blank=True, null=True)
     algorithm = models.CharField(max_length=100)
+    features = models.CharField(max_length=40,null=True)
     indexer_shasum = models.CharField(max_length=40)
     approximator_shasum = models.CharField(max_length=40, null=True)
     target = models.CharField(max_length=100)
@@ -729,9 +738,18 @@ class IndexEntries(models.Model):
     def npy_path(self, media_root=None):
         if media_root is None:
             media_root = settings.MEDIA_ROOT
-        return "{}/{}/events/{}/{}".format(media_root, self.video_id, self.event_id, self.features_file_name)
+        return "{}/{}/events/{}/{}.{}".format(media_root, self.video_id, self.event_id, str(self.uuid).replace('-','_'),
+                                              self.features)
 
-    def load_index(self, media_root=None):
+    def lmdb_path(self,media_root):
+        if media_root is None:
+            media_root = settings.MEDIA_ROOT
+        dirname = self.event.get_dir()
+        fs.ensure("{}{}".format(self.event.get_dir(media_root=""), str(self.uuid).replace('-', '_')),
+                  {}, media_root)
+        return "{}{}".format(dirname, str(self.uuid).replace('-', '_'))
+
+    def get_vectors(self, media_root=None):
         if media_root is None:
             media_root = settings.MEDIA_ROOT
         video_dir = "{}/{}".format(media_root, self.video_id)
@@ -741,15 +759,80 @@ class IndexEntries(models.Model):
         if not os.path.isdir(event_dir):
             self.event.create_dir()
         dirnames = {}
-        if self.features_file_name.strip():
+        if self.features:
             fs.ensure(self.npy_path(media_root=''), dirnames, media_root)
-            if self.features_file_name.endswith('.npy'):
+            if self.features.endswith('npy'):
                 vectors = np.load(self.npy_path(media_root))
             else:
                 vectors = self.npy_path(media_root)
         else:
-            vectors = None
-        return vectors, self.entries
+            return self.entries
+        return vectors
+
+    def get_entry(self, offset, media_root=None):
+        if self.storage_type == self.LMDB:
+            if self.pk not in OPENED_DBS:
+                entries_fname = self.lmdb_path(media_root)
+                OPENED_DBS[self.pk] = lmdb.open(entries_fname, max_dbs=0, subdir=False, readonly=True).begin(buffers=True)
+            return json.loads(str(OPENED_DBS[self.pk].get(str(offset))))
+        else:
+            return self.entries[offset]
+
+    def copy_entries(self, other_index_entries, event, media_root=None):
+        other_index_entries.storage_type = self.storage_type
+        if self.storage_type == self.LMDB:
+            event.create_dir()
+            this_entries_fname = self.lmdb_path(media_root)
+            other_entries_fname = "{}{}".format(event.get_dir(), str(other_index_entries.uuid).replace('-', '_'))
+            shutil.copy(this_entries_fname,other_entries_fname)
+        else:
+            other_index_entries.entries = self.entries
+
+    def iter_entries(self,media_root=None):
+        if self.storage_type == self.LMDB:
+            entries_fname = self.lmdb_path(media_root)
+            env = lmdb.open(entries_fname, max_dbs=0, subdir=False, readonly=True)
+            entries = []
+            with env.begin() as txn:
+                with txn.cursor() as curs:
+                    for k,v in curs:
+                        entries.append((int(k),json.loads(str(v))))
+            return [e for i,e in sorted(entries)]
+        else:
+            return self.entries
+
+    def store_numpy_features(self, features, event):
+        event.create_dir()
+        self.features = 'npy'
+        dirname = event.get_dir()
+        feat_fname = "{}/{}.npy".format(dirname, str(self.uuid).replace('-', '_'))
+        if type(features) is list:
+            if features:
+                self.metadata = {'shape':[len(features),]+list(features[0].shape)}
+        else:
+            self.metadata = {'shape': list(features.shape)}
+        with open(feat_fname, 'w') as feats:
+            np.save(feats, np.array(features))
+
+    def store_entries(self, entries, event, use_lmdb=True):
+        event.create_dir()
+        dirname = event.get_dir()
+        entries_fname = "{}/{}".format(dirname, str(self.uuid).replace('-', '_'))
+        if use_lmdb and entries:
+            self.storage_type = self.LMDB
+            env = lmdb.open(entries_fname, max_dbs=0, subdir=False)
+            with env.begin(write=True) as txn:
+                for k, v in enumerate(entries):
+                    txn.put(str(k), json.dumps(v))
+            env.close()
+        else:
+            self.entries = entries
+
+    def store_faiss_features(self, event):
+        event.create_dir()
+        feat_fname = "{}/{}.index".format(event.get_dir(), str(self.uuid).replace('-', '_'))
+        self.features = 'index'
+        return feat_fname
 
 
 class Tube(models.Model):

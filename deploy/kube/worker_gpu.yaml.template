@@ -15,7 +15,7 @@ spec:
         name: {name}
     spec:
       containers:
-      - image: akshayubhat/dva-auto:gpu
+      - image: {gpu_image}
         imagePullPolicy: "IfNotPresent"
         name: {name}
         resources:

@@ -40,13 +40,14 @@ WORKDIR "/root/thirdparty/"
 RUN git clone --recursive https://github.com/DeepVideoAnalytics/pqkmeans.git
 RUN cd pqkmeans && python setup.py install
 WORKDIR "/root/thirdparty/"
-RUN git clone --recursive https://github.com/DeepVideoAnalytics/faiss
+RUN git clone --recursive https://github.com/facebookresearch/faiss
 # install faiss
 WORKDIR "/root/thirdparty/faiss"
+RUN git reset --hard 2dc30e14cfa76985ff8c2821c051f1725fe66afa
 RUN apt-get install -y libopenblas-dev swig
 ENV BLASLDFLAGS /usr/lib/libopenblas.so.0
-RUN mv example_makefiles/makefile.inc.Linux ./makefile.inc
-RUN make -j $(nproc) && make py
+RUN ./configure
+RUN make -j $(nproc) && make install && make py
 #RUN cd tests && ./run_tests.sh && cd ..
 ENV PYTHONPATH /root/DVA/repos/:$PYTHONPATH
 ENV PYTHONPATH /root/DVA/repos/tf_ctpn_cpu/:$PYTHONPATH

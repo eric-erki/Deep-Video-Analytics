@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
                     filename='../logs/startq.log',
-                    filemode='a')
+                    filemode='w')
 
 
 def log_output(queue_name, settings):
