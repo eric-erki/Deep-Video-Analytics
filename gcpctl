@@ -66,6 +66,7 @@ DEFAULT_CONFIG = {
     'username': 'akshayubhat',
     'image_name': 'dvagpuimage',
     'instance': 'dvainstance',
+    'dev_instance': 'dvadev',
     'gpus': 2,
     'gpu': 'nvidia-tesla-p100',
     'extra_launch_flags':'--preemptible',
@@ -184,5 +185,7 @@ if __name__ == '__main__':
         delete(config)
     elif args.action == 'connect':
         connect(config['username'],config['instance'])
+    elif args.action == 'dev':
+        connect(config['username'],config['dev_instance'])
     else:
         raise NotImplementedError(args.action)
