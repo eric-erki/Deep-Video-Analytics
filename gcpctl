@@ -51,6 +51,14 @@ INSTANCE_CREATE= "gcloud beta compute instances create {instance}" \
                  " --accelerator=type={gpu},count={gpus} --image={image_name} " \
                  "--image-project={project} --boot-disk-size=120GB " \
                  "--boot-disk-type=pd-ssd --boot-disk-device-name={instance}"
+
+
+DEV_CREATE = "gcloud beta compute instances create {dev_instance}" \
+             " --zone={zone} --machine-type={machine_type} --subnet=default --network-tier=PREMIUM" \
+             " --no-restart-on-failure --maintenance-policy=TERMINATE --image={image_name} --address {dev_static_ip} " \
+             " --image-project={project} --boot-disk-size=120GB --boot-disk-type=pd-ssd" \
+             " --boot-disk-device-name={dev_instance} {devperms}"
+
 INSTANCE_CLONE = "gcloud compute ssh {username}@{instance} --command 'git clone https://github.com/AKSHAYUBHAT/DeepVideoAnalytics'"
 INSTANCE_COPY = "gcloud compute scp config.json {username}@{instance}:~/DeepVideoAnalytics/config.json"
 INSTANCE_START = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl start'"
@@ -117,6 +125,12 @@ def create(config):
     subprocess.check_output(command)    
 
 
+def create_dev(config):
+    command = shlex.split(DEV_CREATE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
 def start(config):
     command = shlex.split(INSTANCE_CLONE.format(**config))
     print ' '.join(command)
@@ -145,6 +159,13 @@ def clean(config):
 
 
 def delete(config):
+    command = shlex.split(INSTANCE_DELETE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def delete_dev(config):
+    config['instance'] = config['dev_instance']
     command = shlex.split(INSTANCE_DELETE.format(**config))
     print ' '.join(command)
     subprocess.check_output(command)
@@ -186,6 +207,13 @@ if __name__ == '__main__':
     elif args.action == 'connect':
         connect(config['username'],config['instance'])
     elif args.action == 'dev':
+        try:
+            create_dev(config)
+            time.sleep(40)
+        except:
+            pass
         connect(config['username'],config['dev_instance'])
+    elif args.action == 'devdelete':
+        delete_dev(config)
     else:
         raise NotImplementedError(args.action)
