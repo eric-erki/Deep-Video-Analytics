@@ -65,7 +65,9 @@ DEV_CREATE = "gcloud beta compute instances create {dev_instance}" \
              " --no-restart-on-failure --maintenance-policy=MIGRATE --image={image_name} --address {devstaticip} " \
              " --image-project={project} --boot-disk-size=120GB --boot-disk-type=pd-ssd" \
              " --boot-disk-device-name={dev_instance} {devperms}"
-DEV_CLONE =  "gcloud compute ssh {username}@{dev_instance} --command 'git clone https://github.com/AKSHAYUBHAT/DeepVideoAnalytics'"
+DEV_CLONE = "gcloud compute ssh {username}@{dev_instance} --command 'git clone https://github.com/AKSHAYUBHAT/DeepVideoAnalytics'"
+DEV_COPY_AWS_CREDS = "gcloud compute scp ~/aws.env {username}@{dev_instance}:~/aws.env"
+DEV_COPY_DO_CREDS = "gcloud compute scp ~/do.env {username}@{dev_instance}:~/do.env"
 
 
 DEFAULT_CONFIG = {
@@ -130,6 +132,12 @@ def create_dev(config):
     print ' '.join(command)
     subprocess.check_output(command)
     time.sleep(40)
+    command = shlex.split(DEV_COPY_AWS_CREDS.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(DEV_COPY_DO_CREDS.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
     command = shlex.split(DEV_CLONE.format(**config))
     print ' '.join(command)
     subprocess.check_output(command)
