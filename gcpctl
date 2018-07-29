@@ -51,14 +51,6 @@ INSTANCE_CREATE= "gcloud beta compute instances create {instance}" \
                  " --accelerator=type={gpu},count={gpus} --image={image_name} " \
                  "--image-project={project} --boot-disk-size=120GB " \
                  "--boot-disk-type=pd-ssd --boot-disk-device-name={instance}"
-
-
-DEV_CREATE = "gcloud beta compute instances create {dev_instance}" \
-             " --zone={zone} --machine-type={machine_type} --subnet=default --network-tier=PREMIUM" \
-             " --no-restart-on-failure --maintenance-policy=TERMINATE --image={image_name} --address {dev_static_ip} " \
-             " --image-project={project} --boot-disk-size=120GB --boot-disk-type=pd-ssd" \
-             " --boot-disk-device-name={dev_instance} {devperms}"
-
 INSTANCE_CLONE = "gcloud compute ssh {username}@{instance} --command 'git clone https://github.com/AKSHAYUBHAT/DeepVideoAnalytics'"
 INSTANCE_COPY = "gcloud compute scp config.json {username}@{instance}:~/DeepVideoAnalytics/config.json"
 INSTANCE_START = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl start'"
@@ -66,6 +58,14 @@ INSTANCE_AUTH = "gcloud compute ssh {username}@{instance} --command 'cd DeepVide
 INSTANCE_AUTH_COPY = "gcloud compute scp {username}@{instance}:~/DeepVideoAnalytics/creds.json creds.json"
 INSTANCE_CLEAN = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl clean && cd .. && rm -rf DeepVideoAnalytics'"
 INSTANCE_DELETE = "gcloud beta compute instances -q delete {instance}"
+
+
+DEV_CREATE = "gcloud beta compute instances create {dev_instance}" \
+             " --zone={zone} --machine-type=n1-standard-8 --subnet=default --network-tier=PREMIUM" \
+             " --no-restart-on-failure --maintenance-policy=MIGRATE --image={image_name} --address {devstaticip} " \
+             " --image-project={project} --boot-disk-size=120GB --boot-disk-type=pd-ssd" \
+             " --boot-disk-device-name={dev_instance} {devperms}"
+DEV_CLONE =  "gcloud compute ssh {username}@{dev_instance} --command 'git clone https://github.com/AKSHAYUBHAT/DeepVideoAnalytics'"
 
 
 DEFAULT_CONFIG = {
@@ -127,6 +127,9 @@ def create(config):
 
 def create_dev(config):
     command = shlex.split(DEV_CREATE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(DEV_CLONE.format(**config))
     print ' '.join(command)
     subprocess.check_output(command)
 
@@ -211,6 +214,7 @@ if __name__ == '__main__':
             create_dev(config)
             time.sleep(40)
         except:
+            print "Assuming instance already exists, attempting to connect to it"
             pass
         connect(config['username'],config['dev_instance'])
     elif args.action == 'devdelete':
