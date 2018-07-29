@@ -56,7 +56,7 @@ INSTANCE_COPY = "gcloud compute scp config.json {username}@{instance}:~/DeepVide
 INSTANCE_START = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl start'"
 INSTANCE_AUTH = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl auth'"
 INSTANCE_AUTH_COPY = "gcloud compute scp {username}@{instance}:~/DeepVideoAnalytics/creds.json creds.json"
-INSTANCE_CLEAN = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl clean'"
+INSTANCE_CLEAN = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl clean && cd .. && rm -rf DeepVideoAnalytics'"
 INSTANCE_DELETE = "gcloud beta compute instances -q delete {instance}"
 
 
