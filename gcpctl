@@ -129,6 +129,7 @@ def create_dev(config):
     command = shlex.split(DEV_CREATE.format(**config))
     print ' '.join(command)
     subprocess.check_output(command)
+    time.sleep(40)
     command = shlex.split(DEV_CLONE.format(**config))
     print ' '.join(command)
     subprocess.check_output(command)
@@ -212,7 +213,6 @@ if __name__ == '__main__':
     elif args.action == 'dev':
         try:
             create_dev(config)
-            time.sleep(40)
         except:
             print "Assuming instance already exists, attempting to connect to it"
             pass
