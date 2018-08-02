@@ -6,7 +6,6 @@ import time
 import urllib2
 import os
 import json
-import webbrowser
 
 DOCKER_COMPOSE = 'docker-compose.exe' if 'WSL' in os.environ else 'docker-compose'
 
@@ -44,8 +43,6 @@ def wait_to_start(max_minutes=10):
             if r.getcode() == 200:
                 print "Open browser window and go to http://localhost:8000 to access DVA Web UI"
                 print 'For windows you might need to replace "localhost" with ip address of docker-machine'
-                webbrowser.open("http://localhost:8000")
-                webbrowser.open("http://localhost:8888")
                 break
         except:
             pass
