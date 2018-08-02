@@ -4,7 +4,7 @@ steps:
   timeout: 1200s
 - name: 'docker/compose:1.15.0'
   args: ['up', '-d']
-  dir: 'performance/compose/'
+  dir: 'performance/cpu/'
 - name: 'ubuntu'
   args: ['cp', './performance/cpu/perf_config.json', 'config.json']
 - name: 'ubuntu'
