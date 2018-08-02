@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-set -xe
-sudo apt-get update -y
-sudo apt-get install -y python2.7 wget
-which python
-./dvactl wait_to_start
+set -x
+apt-get update -y
+apt-get install -y python2.7 wget
 wget localhost:8000
 wget webserver:80
+which python
+./dvactl wait_to_start
 ./dvactl auth
