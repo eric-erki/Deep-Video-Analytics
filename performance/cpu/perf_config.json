@@ -1,0 +1,13 @@
+{
+    "init_process": "/root/DVA/configs/custom_defaults/init_process.json",
+    "gpu_compose_filename": null,
+    "init_models": "/root/DVA/configs/custom_defaults/trained_models.json",
+    "gpus": 0,
+    "credentials": {},
+    "gpu_image": "",
+    "refresh": false,
+    "gpu_config": null,
+    "mode": "cpu",
+    "branch": "performance",
+    "cpu_image": "akshayubhat/dva-auto:latest"
+}

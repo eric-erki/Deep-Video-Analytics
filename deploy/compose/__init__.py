@@ -35,6 +35,24 @@ REDIS_HOST=redis
 """
 
 
+def wait_to_start(max_minutes=10):
+    while max_minutes:
+        print "Checking if DVA server is running, waiting for another minute and at most {max_minutes} minutes".format(
+            max_minutes=max_minutes)
+        try:
+            r = urllib2.urlopen("http://localhost:8000")
+            if r.getcode() == 200:
+                print "Open browser window and go to http://localhost:8000 to access DVA Web UI"
+                print 'For windows you might need to replace "localhost" with ip address of docker-machine'
+                webbrowser.open("http://localhost:8000")
+                webbrowser.open("http://localhost:8888")
+                break
+        except:
+            pass
+        time.sleep(60)
+        max_minutes -= 1
+
+
 def generate_multi_gpu_compose(fname, config, cpu_image, gpu_image):
     blocks = []
     worker_specs = config['workers']
@@ -127,21 +145,7 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
         compose_process = subprocess.Popen(args, cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/'))
     except:
         raise SystemError("Could not start container")
-    while max_minutes:
-        print "Checking if DVA server is running, waiting for another minute and at most {max_minutes} minutes".format(
-            max_minutes=max_minutes)
-        try:
-            r = urllib2.urlopen("http://localhost:8000")
-            if r.getcode() == 200:
-                print "Open browser window and go to http://localhost:8000 to access DVA Web UI"
-                print 'For windows you might need to replace "localhost" with ip address of docker-machine'
-                webbrowser.open("http://localhost:8000")
-                webbrowser.open("http://localhost:8888")
-                break
-        except:
-            pass
-        time.sleep(60)
-        max_minutes -= 1
+    wait_to_start(max_minutes)
     compose_process.wait()
 
 
@@ -184,6 +188,8 @@ def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_
         get_auth()
     elif args.action == 'auth':
         get_auth()
+    elif args.action == 'wait_to_start':
+        wait_to_start()
     elif args.action == 'clean':
         stop_docker_compose(mode, gpus, clean=True)
     elif args.action == 'restart':
