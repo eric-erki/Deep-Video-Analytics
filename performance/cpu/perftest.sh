@@ -5,6 +5,5 @@ apt-get install -y python2.7 wget
 sleep 420
 wget localhost:8000
 wget webserver:80
-which python
-./dvactl wait_to_start
-./dvactl auth
+python2.7 ./dvactl wait_to_start
+python2.7 ./dvactl auth
