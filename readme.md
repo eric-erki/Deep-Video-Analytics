@@ -7,7 +7,21 @@ Deep Video Analytics is a platform for indexing and extracting information from 
 With latest version of docker installed correctly, you can run Deep Video Analytics in minutes
 locally (even without a GPU) using a single command.
 
-#### For installation instructions & demo please visit [https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com)
+### Architecture
+
+Deep Video Analytics implements a client-server architecture pattern, where clients can access state of the server
+via a "REST" API. For uploading, processing data, training models, performing queries, (i.e. mutating state)
+clients can send directed Acycling Graph of operations formatted as JSON specified in DVAPQL (Deep Video Analytics Processing and Query Language)
+
+### Visual Data Network
+
+A separate repository [VisualDataNetwork/root](https://github.com/VisualDataNetwork/root) maintains examples of
+DVAPQL scripts for performing tasks such as processing MSCOCO, Youtube Videos, Twitch livestreams, training FAISS
+indexers  etc.
+
+### Installation & Demo
+
+Please visit [https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com)
 
 ### Documentation
 
@@ -57,7 +71,6 @@ locally (even without a GPU) using a single command.
 
 | Library  | Link to the license |
 | -------- | ------------------- |
-| pqkmeans |  [MIT License](https://github.com/DwangoMediaVillage/pqkmeans/blob/master/LICENSE) |
 | faiss | [BSD + PATENTS License](https://github.com/facebookresearch/faiss/blob/master/LICENSE) |
 
 
@@ -70,6 +83,7 @@ locally (even without a GPU) using a single command.
 * Numpy
 * Pytorch
 * Docker
+* LMDB
 * Nvidia-docker
 * Docker-compose
 * All packages in [requirements.txt](/requirements.txt)
