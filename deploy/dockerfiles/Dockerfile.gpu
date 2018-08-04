@@ -37,9 +37,6 @@ RUN mkdir media
 RUN mkdir thirdparty
 RUN apt-get install -y cmake
 WORKDIR "/root/thirdparty/"
-RUN git clone --recursive https://github.com/DeepVideoAnalytics/pqkmeans.git
-RUN cd pqkmeans && python setup.py install
-WORKDIR "/root/thirdparty/"
 RUN git clone --recursive https://github.com/facebookresearch/faiss
 # install faiss
 WORKDIR "/root/thirdparty/faiss"
