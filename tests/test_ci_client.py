@@ -3,8 +3,7 @@ sys.path.append('client/') #add DVA client to python path
 import dvaclient
 import json
 creds = json.load(file('creds.json'))
-print creds
-server, token = creds['server'], creds['token']
+server, token = 'http://localhost:8000/api/', creds['token']
 ctx = dvaclient.context.DVAContext(server=server,token=token)
 for v in ctx.list_videos():
     print "{name} with ID: {vid}".format(name=v['name'],vid=v['id'])
