@@ -37,6 +37,12 @@ RUN mkdir media
 RUN apt-get install -y cmake
 RUN mkdir thirdparty
 WORKDIR "/root/thirdparty/"
+# install dlib
+RUN git clone --recursive https://github.com/davisking/dlib
+WORKDIR "/root/thirdparty/dlib"
+RUN git reset --hard 929c630b381d444bbf5d7aa622e3decc7785ddb2
+RUN python setup.py install --yes USE_AVX_INSTRUCTIONS
+WORKDIR "/root/thirdparty/"
 RUN git clone --recursive https://github.com/facebookresearch/faiss
 # install faiss
 WORKDIR "/root/thirdparty/faiss"

@@ -72,6 +72,7 @@ Please visit [https://www.deepvideoanalytics.com](https://www.deepvideoanalytics
 | Library  | Link to the license |
 | -------- | ------------------- |
 | faiss | [BSD + PATENTS License](https://github.com/facebookresearch/faiss/blob/master/LICENSE) |
+| dlib | [Boost Software License](https://github.com/davisking/dlib/blob/master/dlib/LICENSE.txt) |
 
 
 
