@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.conf import settings
+from collections import defaultdict
 from django.http import JsonResponse
 import json
 from django.views.generic import ListView, DetailView
@@ -106,7 +107,16 @@ class TEventList(UserPassesTestMixin, ListView):
     def get_context_data(self, **kwargs):
         view_shared.refresh_task_status()
         context = super(TEventList, self).get_context_data(**kwargs)
-        context['header'] = ""
+        series = {}
+        points = defaultdict(list)
+        for k in context['object_list']:
+            series_name = '{} on {}'.format(k.operation, k.queue)
+            if k.start_ts:
+                if series_name not in series:
+                    series[series_name] = {'name':series_name, 'type': "scatter",'x':[],'y':[],"mode":"markers"}
+                series[series_name]['x'].append(str(k.start_ts))
+                series[series_name]['y'].append(k.duration)
+        context['plot_data'] = json.dumps(series.values())
         if self.kwargs.get('pk', None):
             context['video'] = Video.objects.get(pk=self.kwargs['pk'])
             context['header'] = "video/dataset : {}".format(context['video'].name)
