@@ -134,13 +134,9 @@ class Retrievers(object):
                 dd = Region.objects.get(pk=r['id'])
                 qr.region = dd
                 qr.frame_index = dd.frame_index
-                qr.segment_index = dd.segment_index
                 qr.video_id = dd.video_id
             elif r['type'] == 'frames':
                 qr.frame_index = int(r['id'])
-                qr.video_id = r['video']
-            elif r['type'] == 'segments':
-                qr.segment_index = int(r['id'])
                 qr.video_id = r['video']
             else:
                 raise ValueError("No key found {}".format(r))
