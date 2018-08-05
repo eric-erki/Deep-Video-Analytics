@@ -200,7 +200,7 @@ class QueryResultsExportSerializer(serializers.ModelSerializer):
 
 
 class QueryRegionExportSerializer(serializers.ModelSerializer):
-    query_results = QueryResultsExportSerializer(source='queryresults_set', read_only=True, many=True)
+    query_results = QueryResultsExportSerializer(source='queryresult_set', read_only=True, many=True)
 
     class Meta:
         model = QueryRegion
@@ -210,7 +210,7 @@ class QueryRegionExportSerializer(serializers.ModelSerializer):
 
 
 class TaskExportSerializer(serializers.ModelSerializer):
-    query_results = QueryResultsExportSerializer(source='queryresults_set', read_only=True, many=True)
+    query_results = QueryResultsExportSerializer(source='queryresult_set', read_only=True, many=True)
     query_regions = QueryRegionExportSerializer(source='queryregion_set', read_only=True, many=True)
 
     class Meta:
