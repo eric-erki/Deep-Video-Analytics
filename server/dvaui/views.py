@@ -101,22 +101,29 @@ class TEventList(UserPassesTestMixin, ListView):
                 kwargs['errored'] = False
             elif self.kwargs['status'] == 'failed':
                 kwargs['errored'] = True
-        new_context = TEvent.objects.filter(**kwargs).order_by('-created')
+        new_context = TEvent.objects.filter(**kwargs).order_by('-created').prefetch_related('video')
         return new_context
 
     def get_context_data(self, **kwargs):
         view_shared.refresh_task_status()
         context = super(TEventList, self).get_context_data(**kwargs)
-        series = {}
+        started_series = {}
+        created_series = {}
         points = defaultdict(list)
         for k in context['object_list']:
             series_name = '{} on {}'.format(k.operation, k.queue)
             if k.start_ts:
-                if series_name not in series:
-                    series[series_name] = {'name':series_name, 'type': "scatter",'x':[],'y':[],"mode":"markers"}
-                series[series_name]['x'].append(str(k.start_ts))
-                series[series_name]['y'].append(k.duration)
-        context['plot_data'] = json.dumps(series.values())
+                if series_name not in started_series:
+                    started_series[series_name] = {'name':series_name, 'type': "scatter",'x':[],'y':[],"mode":"markers"}
+                started_series[series_name]['x'].append(str(k.start_ts))
+                started_series[series_name]['y'].append(k.duration)
+            if series_name not in created_series:
+                created_series[series_name] = {'name':series_name, 'type': "scatter",'x':[],'y':[],"mode":"markers"}
+            created_series[series_name]['x'].append(str(k.created))
+            created_series[series_name]['y'].append(k.duration)
+        context['start_plot_data'] = json.dumps(started_series.values())
+        context['created_plot_data'] = json.dumps(created_series.values())
+        context['header'] = "Across all processes"
         if self.kwargs.get('pk', None):
             context['video'] = Video.objects.get(pk=self.kwargs['pk'])
             context['header'] = "video/dataset : {}".format(context['video'].name)

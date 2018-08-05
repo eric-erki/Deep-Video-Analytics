@@ -32,7 +32,7 @@ class VisualSearchResults(object):
             self.query_region = None
             self.description = "Task ID {task_id} operation: {operation} with retriever {pk} " \
                              "and max_results {count}".format(task_id=task['id'], operation=task['operation'],
-                                                              pk=task['arguments']['retriever_pk'],
+                                                              pk=task['arguments']['retriever_selector'],
                                                               count=task['arguments']['count'])
             for r in task['query_results']:
                 frame = self.query.context.get_frame(r['frame'])
