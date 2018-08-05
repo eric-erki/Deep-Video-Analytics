@@ -35,8 +35,8 @@ class VisualSearchResults(object):
                                                               pk=task['arguments']['retriever_selector'],
                                                               count=task['arguments']['count'])
             for r in task['query_results']:
-                if r['detection']:
-                    region = self.query.context.get_region(r['detection'])
+                if r['region']:
+                    region = self.query.context.get_region(r['region'])
                     self.similar_images.append((r['rank'],VSResult(rank=r['rank'],entry=r,frame_index=r['frame_index'],
                                                                    region=region,video_id=r['video'])))
                 else:

@@ -1001,6 +1001,7 @@ class QueryResult(models.Model):
     query_region = models.ForeignKey(QueryRegion, null=True)
     video = models.ForeignKey(Video)
     frame_index = models.IntegerField()
+    segment_index = models.IntegerField(default=-1)
     region = models.ForeignKey(Region, null=True)
     tube = models.ForeignKey(Tube, null=True)
     rank = models.IntegerField()
