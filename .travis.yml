@@ -72,6 +72,7 @@ script:
   - cd server && ./launch_from_env.py && cd ..
   - cd tests && python test_ci_search.py && cd ..
   - cd server && python scripts/generate_testing_token.py && cp creds.json ../ && cd ..
+  - python tests/test_ci_client.py
   - wget --quiet localhost:8000
   - wget --quiet localhost:8000/videos/
   - wget --quiet localhost:8000/queries/
