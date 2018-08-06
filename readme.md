@@ -10,14 +10,16 @@ locally (even without a GPU) using a single command.
 ### Architecture
 
 Deep Video Analytics implements a client-server architecture pattern, where clients can access state of the server
-via a "REST" API. For uploading, processing data, training models, performing queries, (i.e. mutating state)
-clients can send directed Acycling Graph of operations formatted as JSON specified in DVAPQL (Deep Video Analytics Processing and Query Language)
+via a REST API. For uploading, processing data, training models, performing queries, i.e. mutating the state
+clients can send DVAPQL (Deep Video Analytics Processing and Query Language) formatted as JSON. The query represents
+a directed acyclic graph of operations.
 
 ### Visual Data Network
 
 A separate repository [VisualDataNetwork/root](https://github.com/VisualDataNetwork/root) maintains examples of
-DVAPQL scripts for performing tasks such as processing MSCOCO, Youtube Videos, Twitch livestreams, training FAISS
-indexers  etc.
+DVAPQL scripts for performing tasks such as processing image dataset (e.g. COCO), Youtube videos, Twitch livestreams,
+training FAISS indexers  etc.
+
 
 ### Installation & Demo
 
