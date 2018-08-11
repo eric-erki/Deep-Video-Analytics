@@ -62,9 +62,7 @@ Please visit [https://www.deepvideoanalytics.com](https://www.deepvideoanalytics
 | Text Detection CTPN  |  [MIT License](https://github.com/eragonruan/text-detection-ctpn/LICENSE) |
 | SphereFace  |  [MIT License](https://github.com/wy1iu/sphereface/blob/master/license) |
 | Segment annotator  |   [BSD 3-clause](https://github.com/kyamagu/js-segment-annotator/blob/master/LICENSE) |
-| TF Object detection API  | [Apache 2.0](https://github.com/tensorflow/models/tree/master/research/object_detection) |
-| TF models/slim  | [Apache 2.0](https://github.com/tensorflow/models/tree/master/research/slim) |
-| Youtube 8M feature extractor  | [Apache 2.0](https://github.com/google/youtube-8m) |
+| Youtube 8M feature extractor weights  | [Apache 2.0](https://github.com/google/youtube-8m) |
 | LOPQ   |  [Apache 2.0](https://github.com/yahoo/lopq/blob/master/LICENSE)  | 
 | Open Images Pre-trained network  |  [Apache 2.0](https://github.com/openimages/dataset/blob/master/LICENSE) |
 | Interval Tree  |  [Apache 2.0](https://github.com/chaimleib/intervaltree) |
