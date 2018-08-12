@@ -754,44 +754,41 @@ def import_s3(request):
         counter = 0
         for key in keys.strip().split('\n'):
             dataset_type = False
-            if key.startswith('gs://') or key.startswith('s3://'):
-                key = key.strip()
-                if key:
-                    extract_task = {
-                        'arguments': {'map': json.load(file("../configs/custom_defaults/dataset_processing.json"))},
-                        'operation': 'perform_dataset_extraction'}
-                    segment_decode_task = {'operation': 'perform_video_segmentation',
-                                           'arguments': {
-                                               'map': [
-                                                   {'operation': 'perform_video_decode',
-                                                    'arguments': {
-                                                        'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
-                                                        'map': json.load(
-                                                            file("../configs/custom_defaults/video_processing.json"))
-                                                    }
-                                                    }
-                                               ]},
-                                           }
-                    if key.endswith('.dva_export'):
-                        next_tasks = []
-                    elif key.endswith('.zip'):
-                        next_tasks = [extract_task, ]
-                        dataset_type = True
-                    else:
-                        next_tasks = [segment_decode_task, ]
-                    map_tasks.append({'video_id': '__created__{}'.format(counter),
-                                      'operation': 'perform_import',
-                                      'arguments': {
-                                          'source': 'REMOTE',
-                                          'map': next_tasks}
-                                      })
-                    create.append({'MODEL': 'Video',
-                                   'spec': {'uploader_id': user.pk if user else None, 'dataset': dataset_type,
-                                            'name': key, 'url': key},
-                                   })
-                    counter += 1
-            else:
-                raise NotImplementedError("{} startswith an unknown remote store prefix".format(key))
+            key = key.strip()
+            if key:
+                extract_task = {
+                    'arguments': {'map': json.load(file("../configs/custom_defaults/dataset_processing.json"))},
+                    'operation': 'perform_dataset_extraction'}
+                segment_decode_task = {'operation': 'perform_video_segmentation',
+                                       'arguments': {
+                                           'map': [
+                                               {'operation': 'perform_video_decode',
+                                                'arguments': {
+                                                    'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
+                                                    'map': json.load(
+                                                        file("../configs/custom_defaults/video_processing.json"))
+                                                }
+                                                }
+                                           ]},
+                                       }
+                if key.endswith('.dva_export'):
+                    next_tasks = []
+                elif key.endswith('.zip'):
+                    next_tasks = [extract_task, ]
+                    dataset_type = True
+                else:
+                    next_tasks = [segment_decode_task, ]
+                map_tasks.append({'video_id': '__created__{}'.format(counter),
+                                  'operation': 'perform_import',
+                                  'arguments': {
+                                      'source': 'REMOTE',
+                                      'map': next_tasks}
+                                  })
+                create.append({'MODEL': 'Video',
+                               'spec': {'uploader_id': user.pk if user else None, 'dataset': dataset_type,
+                                        'name': key, 'url': key},
+                               })
+                counter += 1
         process_spec = {'process_type': DVAPQL.PROCESS,
                         'create': create,
                         'map': map_tasks
