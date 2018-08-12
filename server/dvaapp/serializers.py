@@ -554,6 +554,8 @@ class VideoImporter(object):
         da.weight = a.get('weight', None)
         da.name = a.get('name',None)
         da.event_id = a['event']
+        da.per_event_index = a['per_event_index']
+        da.id = '{}_{}'.format(da.event_id, da.per_event_index)
         da.source_region_id = a['source_region']
         da.target_region_id = a['target_region']
         return da
