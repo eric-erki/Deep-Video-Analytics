@@ -772,7 +772,7 @@ def import_s3(request):
                                                     }
                                                ]},
                                            }
-                    if key.endswith('.dva_export.zip'):
+                    if key.endswith('.dva_export'):
                         next_tasks = []
                     elif key.endswith('.zip'):
                         next_tasks = [extract_task, ]

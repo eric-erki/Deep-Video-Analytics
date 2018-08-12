@@ -6,6 +6,7 @@ import time
 import urllib2
 import os
 import json
+import uuid
 
 DOCKER_COMPOSE = 'docker-compose.exe' if 'WSL' in os.environ else 'docker-compose'
 
@@ -172,6 +173,15 @@ def get_auth():
     print "token and server information are stored in creds.json"
 
 
+def ingest(path):
+    vuuid = str(uuid.uuid1()).replace('-', '_')
+    container_path = "/ingest/{}.{}".format(vuuid,path.split('.')[-1])
+    if container_path.endswith('.'):
+        raise ValueError("{} appears to be a directory only files can be ingested".format(path))
+    _ = subprocess.check_output([DOCKER, "cp", path, "webserver:/root/media{}".format(container_path) ]).strip()
+    return container_path
+
+
 def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_envs, gpu_compose_filename, gpu_config,
                               branch, cpu_image, gpu_image, refresh):
     if mode == 'gpu':
@@ -185,6 +195,8 @@ def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_
         get_auth()
     elif args.action == 'auth':
         get_auth()
+    elif args.action == 'ingest':
+        print ingest(args.f)
     elif args.action == 'wait_to_start':
         wait_to_start()
     elif args.action == 'clean':

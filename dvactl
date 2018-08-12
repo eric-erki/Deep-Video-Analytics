@@ -317,6 +317,7 @@ if __name__ == '__main__':
     ./dvactl create_premptible  # create premptible node pool for Kubernetes      
     ./dvactl start 
     ./dvactl auth  # recreates creds.json  
+    ./dvactl ingest -f test.mp4  # copy file to ingest a path with /ingest/<uuid>.<exteion> is printed to stdout
     ./dvactl exec -f script.json  # run process using creds.json and REST API
     ./dvactl shell --container (container default:webserver) --pod (default:empty)  # enter into a shell
     ./dvactl stop 

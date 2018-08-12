@@ -394,7 +394,7 @@ def perform_import(task_id):
         u = urlparse(path)
         if u.hostname == 'www.youtube.com' or dt.arguments.get('force_youtube_dl', False):
             youtube_dl_download = True
-    export_file = path.split('?')[0].endswith('.dva_export.zip')
+    export_file = path.split('?')[0].endswith('.dva_export')
     framelist_file = path.split('?')[0].endswith('.json') or path.split('?')[0].endswith('.gz')
     dv.uploaded = True
     # Donwload videos via youtube-dl
