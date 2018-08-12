@@ -175,10 +175,13 @@ def get_auth():
 
 def ingest(path):
     vuuid = str(uuid.uuid1()).replace('-', '_')
+    temp_path = "/root/{}.{}".format(vuuid,path.split('.')[-1])
     container_path = "/ingest/{}.{}".format(vuuid,path.split('.')[-1])
     if container_path.endswith('.'):
         raise ValueError("{} appears to be a directory only files can be ingested".format(path))
-    _ = subprocess.check_output([DOCKER, "cp", path, "webserver:/root/media{}".format(container_path) ]).strip()
+    _ = subprocess.check_output([DOCKER, "cp", path, "webserver:{}".format(temp_path)]).strip()
+    # This is required since cp fails when trying to copy a file inside volume
+    _ = subprocess.check_output([DOCKER, "exec", "webserver", "cp", temp_path, "/root/media/{}".format(container_path)])
     return container_path
 
 
