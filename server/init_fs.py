@@ -14,8 +14,8 @@ from dvaui.models import ExternalServer
 from dvaapp.models import TrainedModel, DVAPQL, TEvent
 from dvaapp.processing import DVAPQLProcess
 from django.contrib.auth.models import User
-from dvaapp.fs import get_path_to_file
 from django.utils import timezone
+
 
 def create_model(m, init_event):
     try:
@@ -46,9 +46,10 @@ def create_model(m, init_event):
 def init_models():
     # In Kube mode create models when scheduler is launched which is always the first container.
     local_models_path = "../configs/custom_defaults/trained_models.json"
-    default_models = json.loads(file(local_models_path).read())
     if 'INIT_MODELS' in os.environ:
-        default_models = json.loads(base64.decodestring(default_models))
+        default_models = json.loads(base64.decodestring(os.environ['INIT_MODELS']))
+    else:
+        default_models = json.loads(file(local_models_path).read())
     if settings.KUBE_MODE and 'LAUNCH_SCHEDULER' in os.environ:
         init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True
                                            , start_ts=timezone.now())
