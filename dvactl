@@ -3,6 +3,7 @@ import argparse
 import os
 import json
 import random
+import base64
 from deploy import compose, kube
 import subprocess
 
@@ -217,6 +218,17 @@ def configure_kube():
     return config
 
 
+def read_and_encode(path):
+    """
+    Read a .json file and encode using base 64 encoding
+    :param path:
+    :return:
+    """
+    with open(path) as f:
+        data = base64.encodestring(f.read())
+    return data
+
+
 def configure_compose(mode):
     gpu_count = 0
     init_process = '/root/DVA/configs/custom_defaults/init_process.json'
@@ -278,7 +290,8 @@ def configure_compose(mode):
             gpu_image = 'akshayubhat/dva-auto:gpu'
         print "Memory fraction and gpu allocation for individual workers has been written to config.json, please edit" \
               "the file to optionally specify custom allocation"
-    return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models,
+    return {"mode": mode, 'gpus': gpu_count, 'init_process': read_and_encode(init_process),
+            'init_models': read_and_encode(init_models),
             'credentials': envs, 'gpu_compose_filename': gpu_compose_filename, 'gpu_config': gpu_config,
             'refresh': refresh, 'cpu_image':cpu_image, 'gpu_image':gpu_image, 'branch':branch}
 
