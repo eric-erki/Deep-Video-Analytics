@@ -231,10 +231,10 @@ def read_and_encode(path):
 
 def configure_compose(mode):
     gpu_count = 0
-    init_process = '/root/DVA/configs/custom_defaults/init_process.json'
-    init_models = '/root/DVA/configs/custom_defaults/trained_models.json'
+    init_process = 'configs/custom_defaults/init_process.json'
+    init_models = 'configs/custom_defaults/trained_models.json'
     process = raw_input("Please specify init process or press enter to keep default"
-                        " ( /root/DVA/configs/custom_defaults/init_process.json ) >>").strip()
+                        " ( configs/custom_defaults/init_process.json ) >>").strip()
     if process.strip():
         init_process = process
     refresh = raw_input("Refresh docker images by pulling before start: Y/N ,"
@@ -251,7 +251,7 @@ def configure_compose(mode):
         cpu_image = 'akshayubhat/dva-auto:latest'
     gpu_image = ''
     models = raw_input("Please specify default models or press enter to keep default"
-                       " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
+                       " ( configs/custom_defaults/trained_models.json ) >>").strip()
     if process.strip():
         init_models = models
     if mode == 'cpu' or mode == 'gpu':
