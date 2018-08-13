@@ -225,7 +225,7 @@ def read_and_encode(path):
     :return:
     """
     with open(path) as f:
-        data = base64.encodestring(f.read())
+        data = base64.b64encode(f.read())
     return data
 
 
