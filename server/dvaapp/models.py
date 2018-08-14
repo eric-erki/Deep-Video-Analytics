@@ -398,7 +398,7 @@ class TrainedModel(models.Model):
     detector_type = models.CharField(max_length=1, choices=DETECTOR_TYPES, db_index=True, null=True)
     mode = models.CharField(max_length=1, choices=MODES, db_index=True, default=TENSORFLOW)
     model_type = models.CharField(max_length=1, choices=MTYPE, db_index=True, default=INDEXER)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     algorithm = models.CharField(max_length=100, default="")
     shasum = models.CharField(max_length=40, null=True)
     model_filename = models.CharField(max_length=200, default="", null=True)

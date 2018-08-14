@@ -1,0 +1,234 @@
+#!/usr/bin/env python
+import shlex
+import subprocess
+import argparse
+import time
+import json
+import os
+
+IMAGE_COMMAND = "gcloud compute instances create 'dvaimager' --zone='us-west1-b' --image-family='tf-latest-cu92' " \
+"--image-project=deeplearning-platform-release --maintenance-policy TERMINATE " \
+"--accelerator='type=nvidia-tesla-p100,count=1'  --metadata='install-nvidia-driver=True'"
+
+INSTALLER_COPY = "gcloud compute scp installer.sh {username}@dvaimager:~/installer.sh "
+INSTALLER_EXEC = "gcloud compute ssh {username}@dvaimager --command 'sudo sh installer.sh'"
+
+PULL_CPU = "gcloud compute ssh {username}@dvaimager --command 'docker pull akshayubhat/dva-auto:latest'"
+PULL_GPU = "gcloud compute ssh {username}@dvaimager --command 'docker pull akshayubhat/dva-auto:gpu'"
+STOP = "gcloud compute instances stop dvaimager"
+DELETE = "gcloud compute instances -q delete dvaimager --keep-disks boot"
+IMAGE = "gcloud compute images create dvagpuimage --source-disk dvaimager"
+
+IMAGE_INSTALLER = """
+#!/usr/bin/env sh
+sudo apt-get -y update
+sudo apt-get -y install apt-transport-https ca-certificates curl gnupg2 software-properties-common
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+sudo apt-key fingerprint 0EBFCD88
+sudo add-apt-repository  "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+sudo apt-get -y update
+sudo apt-get -y install docker-ce
+sudo docker run hello-world
+curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+sudo apt-get -y update
+sudo apt-get -y install nvidia-docker2
+sudo pkill -SIGHUP dockerd
+sudo curl -L https://github.com/docker/compose/releases/download/1.17.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+echo '{"runtimes": {"nvidia": {"path": "nvidia-container-runtime","runtimeArgs": []}},"default-runtime":"nvidia"}' > temp.json
+sudo mv temp.json /etc/docker/daemon.json
+sudo nvidia-smi -pm 1
+sudo service docker restart
+sudo usermod -aG docker USERNAME
+exit
+"""
+
+INSTANCE_CREATE= "gcloud beta compute instances create {instance}" \
+                 " --zone={zone} --machine-type={machine_type} --subnet=default --network-tier=PREMIUM" \
+                 " --no-restart-on-failure --maintenance-policy=TERMINATE {extra_launch_flags} " \
+                 " --accelerator=type={gpu},count={gpus} --image={image_name} " \
+                 "--image-project={project} --boot-disk-size=120GB " \
+                 "--boot-disk-type=pd-ssd --boot-disk-device-name={instance}"
+INSTANCE_CLONE = "gcloud compute ssh {username}@{instance} --command 'git clone https://github.com/AKSHAYUBHAT/DeepVideoAnalytics'"
+INSTANCE_COPY = "gcloud compute scp config.json {username}@{instance}:~/DeepVideoAnalytics/config.json"
+INSTANCE_START = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl start'"
+INSTANCE_AUTH = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl auth'"
+INSTANCE_AUTH_COPY = "gcloud compute scp {username}@{instance}:~/DeepVideoAnalytics/creds.json creds.json"
+INSTANCE_CLEAN = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl clean && cd .. && rm -rf DeepVideoAnalytics'"
+INSTANCE_DELETE = "gcloud beta compute instances -q delete {instance}"
+
+
+DEV_CREATE = "gcloud beta compute instances create {dev_instance}" \
+             " --zone={zone} --machine-type=n1-standard-8 --subnet=default --network-tier=PREMIUM" \
+             " --no-restart-on-failure --maintenance-policy=MIGRATE --image={image_name} --address {devstaticip} " \
+             " --image-project={project} --boot-disk-size=120GB --boot-disk-type=pd-ssd" \
+             " --boot-disk-device-name={dev_instance} {devperms}"
+DEV_CLONE = "gcloud compute ssh {username}@{dev_instance} --command 'git clone https://github.com/AKSHAYUBHAT/DeepVideoAnalytics'"
+DEV_COPY_CREDS = "gcloud compute scp {credspath} {username}@{dev_instance}:~/{credfilename}"
+
+
+DEFAULT_CONFIG = {
+    'project': 'deepvideoanalytics-161408',
+    'zone': 'us-west1-b',
+    'username': 'akshayubhat',
+    'image_name': 'dvagpuimage',
+    'instance': 'dvainstance',
+    'dev_instance': 'dvadev',
+    'gpus': 2,
+    'gpu': 'nvidia-tesla-p100',
+    'extra_launch_flags':'--preemptible',
+    'machine_type':'custom-12-46080'
+}
+
+
+def create_gpu_image(username):
+    command = shlex.split(IMAGE_COMMAND)
+    print ' '.join(command)
+    subprocess.check_output(command)
+    time.sleep(300)
+    with open('installer.sh','w') as installer:
+        installer.write(IMAGE_INSTALLER.replace('USERNAME',username))
+    command = shlex.split(INSTALLER_COPY.format(username=username))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(INSTALLER_EXEC.format(username=username))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(PULL_CPU.format(username=username))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(PULL_GPU.format(username=username))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(STOP)
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(DELETE)
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(IMAGE)
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def connect(username,instance):
+    command = "gcloud compute ssh {username}@{instance} -- -L 8000:localhost:8000 -L 8888:localhost:8888 -L 8889:localhost:8889"
+    command = command.format(username=username,instance=instance)
+    print command
+    subprocess.check_call(shlex.split(command))
+
+
+def create(config):
+    command = shlex.split(INSTANCE_CREATE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)    
+
+
+def create_dev(config):
+    command = shlex.split(DEV_CREATE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    time.sleep(40)
+    config['credspath'] = os.path.expanduser('~/aws.env')
+    config['credfilename'] = os.path.expanduser('aws.env')
+    command = shlex.split(DEV_COPY_CREDS.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    config['credspath'] = os.path.expanduser('~/do.env')
+    config['credfilename'] = os.path.expanduser('do.env')
+    command = shlex.split(DEV_COPY_CREDS.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(DEV_CLONE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def start(config):
+    command = shlex.split(INSTANCE_CLONE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(INSTANCE_COPY.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(INSTANCE_START.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def auth(config):
+    command = shlex.split(INSTANCE_AUTH.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+    command = shlex.split(INSTANCE_AUTH_COPY.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def clean(config):
+    command = shlex.split(INSTANCE_CLEAN.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def delete(config):
+    command = shlex.split(INSTANCE_DELETE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def delete_dev(config):
+    config['instance'] = config['dev_instance']
+    command = shlex.split(INSTANCE_DELETE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def load_config():
+    if not os.path.isfile('gcp.json'):
+        with open('gcp.json','w') as out:
+            out.write(json.dumps(DEFAULT_CONFIG))
+        raise ValueError("please edit/verify gcp.json")
+    return json.load(file('gcp.json'))
+
+
+if __name__ == '__main__':
+    """
+    gcpctl can be used for creating GCP GPU images, launching/deleting instance and connecting to 
+    launched instance by tunnelling. gcpctl still uses dvactl to orchestrate DVA. Create config.json
+    by running `./dvactl configure` and selecting number of GPU's, init models/processes etc.
+    Edit gcp.json (it will be created if it does not exists.) with information about instance.    
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", help="action can be one of { create_image | create | start | auth | clean | connect | delete }")
+    args = parser.parse_args()
+    config = load_config()
+    if args.action == 'create_image':
+        print "Important please verify that instance is deleted!"
+        create_gpu_image(config['username'])
+    elif args.action == 'create':
+        create(config)
+    elif args.action == 'start':
+        start(config)
+        auth(config)
+    elif args.action == 'auth':
+        auth(config)
+    elif args.action == 'clean':
+        clean(config)
+    elif args.action == 'delete':
+        delete(config)
+    elif args.action == 'connect':
+        connect(config['username'],config['instance'])
+    elif args.action == 'dev':
+        try:
+            create_dev(config)
+        except:
+            print "Assuming instance already exists, attempting to connect to it"
+            pass
+        connect(config['username'],config['dev_instance'])
+    elif args.action == 'devdelete':
+        delete_dev(config)
+    else:
+        raise NotImplementedError(args.action)

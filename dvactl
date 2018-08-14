@@ -3,6 +3,7 @@ import argparse
 import os
 import json
 import random
+import base64
 from deploy import compose, kube
 import subprocess
 
@@ -131,13 +132,14 @@ GPU_CONFIG = {
         "config": {"global_model_gpu_id": 0,
                    "global_model_memory_fraction": 0.1,
                    "workers":
-                       [(0, 0.25, "LAUNCH_BY_NAME_indexer_inception", "inception"),
+                       [(0, 0, "LAUNCH_BY_NAME_analyzer_tagger", "tagger"),
+                        (0, 0.25, "LAUNCH_BY_NAME_indexer_inception", "inception"),
                         (0, 0.2, "LAUNCH_BY_NAME_analyzer_crnn", "crnn"),
                         (0, 0.5, "LAUNCH_BY_NAME_detector_coco", "coco"),
                         (1, 0.5, "LAUNCH_BY_NAME_detector_textbox", "textbox"),
-                        (1, 0.19, "LAUNCH_BY_NAME_detector_face", "face"),
-                        (1, 0.15, "LAUNCH_BY_NAME_indexer_facenet", "facenet"),
-                        (1, 0.15, "LAUNCH_BY_NAME_analyzer_tagger", "tagger")]
+                        (1, 0.25, "LAUNCH_BY_NAME_detector_face", "face"),
+                        (1, 0.21, "LAUNCH_BY_NAME_indexer_facenet", "facenet"),
+                        ]
                    }},
     4: {
         "compose_filename": "deploy/compose/docker-compose-4-gpus.yaml",
@@ -216,12 +218,23 @@ def configure_kube():
     return config
 
 
+def read_and_encode(path):
+    """
+    Read a .json file and encode using base 64 encoding
+    :param path:
+    :return:
+    """
+    with open(path) as f:
+        data = base64.b64encode(f.read())
+    return data
+
+
 def configure_compose(mode):
     gpu_count = 0
-    init_process = '/root/DVA/configs/custom_defaults/init_process.json'
-    init_models = '/root/DVA/configs/custom_defaults/trained_models.json'
+    init_process = 'configs/custom_defaults/init_process.json'
+    init_models = 'configs/custom_defaults/trained_models.json'
     process = raw_input("Please specify init process or press enter to keep default"
-                        " ( /root/DVA/configs/custom_defaults/init_process.json ) >>").strip()
+                        " ( configs/custom_defaults/init_process.json ) >>").strip()
     if process.strip():
         init_process = process
     refresh = raw_input("Refresh docker images by pulling before start: Y/N ,"
@@ -238,7 +251,7 @@ def configure_compose(mode):
         cpu_image = 'akshayubhat/dva-auto:latest'
     gpu_image = ''
     models = raw_input("Please specify default models or press enter to keep default"
-                       " ( /root/DVA/configs/custom_defaults/trained_models.json ) >>").strip()
+                       " ( configs/custom_defaults/trained_models.json ) >>").strip()
     if process.strip():
         init_models = models
     if mode == 'cpu' or mode == 'gpu':
@@ -277,7 +290,8 @@ def configure_compose(mode):
             gpu_image = 'akshayubhat/dva-auto:gpu'
         print "Memory fraction and gpu allocation for individual workers has been written to config.json, please edit" \
               "the file to optionally specify custom allocation"
-    return {"mode": mode, 'gpus': gpu_count, 'init_process': init_process, 'init_models': init_models,
+    return {"mode": mode, 'gpus': gpu_count, 'init_process': read_and_encode(init_process),
+            'init_models': read_and_encode(init_models),
             'credentials': envs, 'gpu_compose_filename': gpu_compose_filename, 'gpu_config': gpu_config,
             'refresh': refresh, 'cpu_image':cpu_image, 'gpu_image':gpu_image, 'branch':branch}
 
@@ -316,6 +330,7 @@ if __name__ == '__main__':
     ./dvactl create_premptible  # create premptible node pool for Kubernetes      
     ./dvactl start 
     ./dvactl auth  # recreates creds.json  
+    ./dvactl ingest -f test.mp4  # copy file to ingest a path with /ingest/<uuid>.<exteion> is printed to stdout
     ./dvactl exec -f script.json  # run process using creds.json and REST API
     ./dvactl shell --container (container default:webserver) --pod (default:empty)  # enter into a shell
     ./dvactl stop 

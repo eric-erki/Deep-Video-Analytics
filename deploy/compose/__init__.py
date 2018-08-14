@@ -6,10 +6,49 @@ import time
 import urllib2
 import os
 import json
-import webbrowser
+import uuid
 
 DOCKER_COMPOSE = 'docker-compose.exe' if 'WSL' in os.environ else 'docker-compose'
+
 DOCKER = 'docker.exe' if 'WSL' in os.environ else 'docker'
+
+DEFAULT_ENV = """GLOBAL_MODEL=1
+DOCKER_MODE=true
+RABBIT_HOST=rabbit
+RABBIT_USER=dvauser
+RABBIT_PASS=localpass
+DB_HOST=db
+DB_NAME=postgres
+DB_USER=pgdbuser
+DB_PASS=pgdbpass
+SUPERUSER=admin
+SUPERPASS=super
+SUPEREMAIL=admin@test.com
+DISABLE_DEBUG=1
+SECRET_KEY=283y312bhv2b13v13
+POSTGRES_USER=pgdbuser
+POSTGRES_PASSWORD=pgdbpass
+RABBITMQ_DEFAULT_USER=dvauser
+RABBITMQ_DEFAULT_PASS=localpass
+REDIS_PASSWORD=redispass
+REDIS_HOST=redis
+"""
+
+
+def wait_to_start(max_minutes=10):
+    while max_minutes:
+        print "Checking if DVA server is running, waiting for another minute and at most {max_minutes} minutes".format(
+            max_minutes=max_minutes)
+        try:
+            r = urllib2.urlopen("http://localhost:8000")
+            if r.getcode() == 200:
+                print "Open browser window and go to http://localhost:8000 to access DVA Web UI"
+                print 'For windows you might need to replace "localhost" with ip address of docker-machine'
+                break
+        except:
+            pass
+        time.sleep(60)
+        max_minutes -= 1
 
 
 def generate_multi_gpu_compose(fname, config, cpu_image, gpu_image):
@@ -57,7 +96,7 @@ def create_custom_env(init_process, init_models, cred_envs, branch):
         envs['BRANCH'] = "git checkout --track origin/{}".format(branch)
     envs.update(cred_envs)
     with open('custom.env', 'w') as out:
-        out.write(file('default.env').read())
+        out.write(DEFAULT_ENV)
         out.write('\n')
         for k, v in envs.items():
             out.write("{}={}\n".format(k, v))
@@ -104,21 +143,7 @@ def start_docker_compose(deployment_type, gpu_count, init_process, init_models, 
         compose_process = subprocess.Popen(args, cwd=os.path.join(os.path.dirname(os.path.curdir), 'deploy/compose/'))
     except:
         raise SystemError("Could not start container")
-    while max_minutes:
-        print "Checking if DVA server is running, waiting for another minute and at most {max_minutes} minutes".format(
-            max_minutes=max_minutes)
-        try:
-            r = urllib2.urlopen("http://localhost:8000")
-            if r.getcode() == 200:
-                print "Open browser window and go to http://localhost:8000 to access DVA Web UI"
-                print 'For windows you might need to replace "localhost" with ip address of docker-machine'
-                webbrowser.open("http://localhost:8000")
-                webbrowser.open("http://localhost:8888")
-                break
-        except:
-            pass
-        time.sleep(60)
-        max_minutes -= 1
+    wait_to_start(max_minutes)
     compose_process.wait()
 
 
@@ -141,15 +166,23 @@ def stop_docker_compose(deployment_type, gpu_count, clean=False):
 
 
 def get_auth():
-    if 'WSL' in os.environ:
-        token = subprocess.check_output([DOCKER, "exec", "webserver", "scripts/generate_testing_token.py"]).strip()
-    else:
-        token = subprocess.check_output(
-            [DOCKER, "exec", '-it', "webserver", "scripts/generate_testing_token.py"]).strip()
+    token = subprocess.check_output([DOCKER, "exec", "webserver", "scripts/generate_testing_token.py"]).strip()
     server = 'http://localhost:8000/api/'
     with open('creds.json', 'w') as fh:
         json.dump({'server': server, 'token': token}, fh)
     print "token and server information are stored in creds.json"
+
+
+def ingest(path):
+    vuuid = str(uuid.uuid1()).replace('-', '_')
+    temp_path = "/root/{}.{}".format(vuuid,path.split('.')[-1])
+    container_path = "/ingest/{}.{}".format(vuuid,path.split('.')[-1])
+    if container_path.endswith('.'):
+        raise ValueError("{} appears to be a directory only files can be ingested".format(path))
+    _ = subprocess.check_output([DOCKER, "cp", path, "webserver:{}".format(temp_path)]).strip()
+    # This is required since cp fails when trying to copy a file inside volume
+    _ = subprocess.check_output([DOCKER, "exec", "webserver", "cp", temp_path, "/root/media/{}".format(container_path)])
+    return container_path
 
 
 def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_envs, gpu_compose_filename, gpu_config,
@@ -165,6 +198,10 @@ def handle_compose_operations(args, mode, gpus, init_process, init_models, cred_
         get_auth()
     elif args.action == 'auth':
         get_auth()
+    elif args.action == 'ingest':
+        print ingest(args.f)
+    elif args.action == 'wait_to_start':
+        wait_to_start()
     elif args.action == 'clean':
         stop_docker_compose(mode, gpus, clean=True)
     elif args.action == 'restart':

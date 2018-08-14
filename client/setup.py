@@ -12,7 +12,7 @@ setup(name='dvaclient',
       package_data={'dvaclient': ['schema.json']},
       include_package_data=True,
       install_requires=[
-            'jsonschema',
+            'jsonschema==2.6.0',
             'requests'
       ],
       )

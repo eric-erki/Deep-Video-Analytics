@@ -133,7 +133,7 @@ def export_video_to_file(video_obj, task_obj):
         download_video_from_remote_to_local(video_obj)
     video_id = video_obj.pk
     export_uuid = str(uuid.uuid4())
-    file_name = '{}.dva_export.zip'.format(export_uuid)
+    file_name = '{}.dva_export'.format(export_uuid)
     try:
         os.mkdir("{}/{}".format(settings.MEDIA_ROOT, 'exports'))
     except:
@@ -152,11 +152,11 @@ def export_video_to_file(video_obj, task_obj):
     local_path = "{}/exports/{}".format(settings.MEDIA_ROOT, file_name)
     path = task_obj.arguments.get('path', None)
     if path:
-        if not path.endswith('dva_export.zip'):
+        if not path.endswith('.dva_export'):
             if path.endswith('.zip'):
-                path = path.replace('.zip', '.dva_export.zip')
+                path = path.replace('.zip', '.dva_export')
             else:
-                path = '{}.dva_export.zip'.format(path)
+                path = '{}.dva_export'.format(path)
         upload_file_to_path(local_path, path, task_obj.arguments.get("public",False))
         os.remove(local_path)
         export.url = path
@@ -175,7 +175,7 @@ def export_model_to_file(model_obj, task_obj):
         model_obj.ensure()
     model_id = model_obj.uuid
     export_uuid = str(uuid.uuid4())
-    file_name = '{}.dva_model_export.zip'.format(export_uuid)
+    file_name = '{}.dva_model_export'.format(export_uuid)
     try:
         os.mkdir("{}/{}".format(settings.MEDIA_ROOT, 'exports'))
     except:
@@ -194,11 +194,11 @@ def export_model_to_file(model_obj, task_obj):
     local_path = "{}/exports/{}".format(settings.MEDIA_ROOT, file_name)
     path = task_obj.arguments.get('path', None)
     if path:
-        if not path.endswith('dva_model_export.zip'):
+        if not path.endswith('dva_model_export'):
             if path.endswith('.zip'):
-                path = path.replace('.zip', '.dva_model_export.zip')
+                path = path.replace('.zip', '.dva_model_export')
             else:
-                path = '{}.dva_model_export.zip'.format(path)
+                path = '{}.dva_model_export'.format(path)
         upload_file_to_path(local_path, path, task_obj.arguments.get("public",False))
         os.remove(local_path)
         export.url = path

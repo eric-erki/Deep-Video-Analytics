@@ -1,0 +1,15 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'akshayubhat/dva-auto:latest', 'deploy/dockerfiles/.']
+  timeout: 1200s
+- name: 'docker/compose:1.15.0'
+  args: ['up', '-d']
+  dir: 'performance/cpu/'
+- name: 'ubuntu'
+  args: ['cp', './performance/cpu/perf_config.json', 'config.json']
+- name: 'ubuntu'
+  args: ['bash', './performance/cpu/perftest.sh']
+options:
+    machineType: 'N1_HIGHCPU_32'
+timeout: 2000s
+tags: ['performance']
