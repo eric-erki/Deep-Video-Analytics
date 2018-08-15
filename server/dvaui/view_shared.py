@@ -161,7 +161,7 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                         'map': [
                             {
                                 'arguments': {'map': json.load(
-                                    file("../configs/custom_defaults/dataset_processing.json"))},
+                                    file("../configs/custom_defaults/processing.json"))['dataset']},
                                 'operation': 'perform_dataset_extraction',
                             }
                         ]
@@ -193,7 +193,7 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                                 'arguments': {
                                     'frames_batch_size': settings.DEFAULT_FRAMES_BATCH_SIZE,
                                     'map': json.load(
-                                        file("../configs/custom_defaults/framelist_processing.json"))
+                                        file("../configs/custom_defaults/processing.json"))['framelist']
                                 },
                             }
                         ]
@@ -227,7 +227,7 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                                              'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
                                              'rate': rate,
                                              'map': json.load(
-                                                 file("../configs/custom_defaults/video_processing.json"))
+                                                 file("../configs/custom_defaults/processing.json"))['video']
                                          }
                                          }
                                     ]},

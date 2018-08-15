@@ -270,7 +270,11 @@ class VisualSearchDetail(UserPassesTestMixin, DetailView):
         qp = DVAPQLProcess(process=context['object'], media_dir=settings.MEDIA_ROOT)
         qp_context = view_shared.collect(qp)
         context['results'] = qp_context['results'].items()
-        context['regions'] = qp_context['regions']
+        context['regions'] = []
+        for k in qp_context['regions']:
+            if 'results' in k and k['results']:
+                k['results'] = k['results'].items()
+            context['regions'].append(k)
         script = context['object'].script
         script[u'image_data_b64'] = "<excluded>"
         context['plan'] = script
