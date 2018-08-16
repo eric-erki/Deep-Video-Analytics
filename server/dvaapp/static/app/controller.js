@@ -478,12 +478,8 @@ $scope.search = function (approximate) {
             'csrfmiddlewaretoken':$(csrf_token).val()
         },
         success: function (response) {
-            $scope.status = "Search Completed";
-            $scope.alert_status = false;
             console.log(response);
-            $scope.results = response.results;
-            $scope.query_url = response.url;
-            $scope.regions = response.regions;
+            window.location.href = response.url;
             $scope.$$phase || $scope.$digest();
         }
     });

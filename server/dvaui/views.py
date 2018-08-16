@@ -270,7 +270,11 @@ class VisualSearchDetail(UserPassesTestMixin, DetailView):
         qp = DVAPQLProcess(process=context['object'], media_dir=settings.MEDIA_ROOT)
         qp_context = view_shared.collect(qp)
         context['results'] = qp_context['results'].items()
-        context['regions'] = qp_context['regions']
+        context['regions'] = []
+        for k in qp_context['regions']:
+            if 'results' in k and k['results']:
+                k['results'] = k['results'].items()
+            context['regions'].append(k)
         script = context['object'].script
         script[u'image_data_b64'] = "<excluded>"
         context['plan'] = script
@@ -445,13 +449,9 @@ def search(request):
         view_shared.create_query_from_request(qp, request)
         qp.launch()
         qp.wait_query()
-        qp_context = view_shared.collect(qp)
-        return JsonResponse(data={'task_id': "",
-                                  'primary_key': qp.process.pk,
-                                  'results': qp_context['results'],
-                                  'regions': qp_context['regions'],
-                                  'url': '{}queries/{}.png'.format(settings.MEDIA_URL, qp.process.uuid)
-                                  })
+        return JsonResponse(data={'url': '/queries/{}/'.format(qp.process.pk)})
+    else:
+        raise ValueError("Only POST method is valid")
 
 
 @user_passes_test(user_check)
@@ -586,7 +586,7 @@ def yt(request):
                                           'rate': settings.DEFAULT_RATE,
                                           'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
                                           'map': json.load(
-                                              file("../configs/custom_defaults/video_processing.json"))
+                                              file("../configs/custom_defaults/processing.json"))['video']
                                       }
                                       }
                                  ]},
@@ -757,7 +757,7 @@ def import_s3(request):
             key = key.strip()
             if key:
                 extract_task = {
-                    'arguments': {'map': json.load(file("../configs/custom_defaults/dataset_processing.json"))},
+                    'arguments': {'map': json.load(file("../configs/custom_defaults/processing.json"))['dataset']},
                     'operation': 'perform_dataset_extraction'}
                 segment_decode_task = {'operation': 'perform_video_segmentation',
                                        'arguments': {
@@ -766,7 +766,7 @@ def import_s3(request):
                                                 'arguments': {
                                                     'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
                                                     'map': json.load(
-                                                        file("../configs/custom_defaults/video_processing.json"))
+                                                        file("../configs/custom_defaults/processing.json"))['video']
                                                 }
                                                 }
                                            ]},
