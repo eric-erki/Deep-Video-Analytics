@@ -91,8 +91,11 @@ def get_from_remote_fs(src, path, dlpath, original_path, safe):
         except:
             raise ValueError("{} to {}".format(path, dlpath))
     else:
-        with open(dlpath, 'w') as fout:
-            BUCKET.get_blob(src).download_to_file(fout)
+        try:
+            with open(dlpath, 'w') as fout:
+                BUCKET.get_blob(src).download_to_file(fout)
+        except:
+            raise ValueError("{} to {}".format(src, dlpath))
     if safe:
         os.rename(dlpath, original_path)
     # checks and puts the object back in cache
