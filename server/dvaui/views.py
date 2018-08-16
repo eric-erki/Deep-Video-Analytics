@@ -449,13 +449,9 @@ def search(request):
         view_shared.create_query_from_request(qp, request)
         qp.launch()
         qp.wait_query()
-        qp_context = view_shared.collect(qp)
-        return JsonResponse(data={'task_id': "",
-                                  'primary_key': qp.process.pk,
-                                  'results': qp_context['results'],
-                                  'regions': qp_context['regions'],
-                                  'url': '{}queries/{}.png'.format(settings.MEDIA_URL, qp.process.uuid)
-                                  })
+        return JsonResponse(data={'url': '/queries/{}/'.format(qp.process.pk)})
+    else:
+        raise ValueError("Only POST method is valid")
 
 
 @user_passes_test(user_check)
