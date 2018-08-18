@@ -170,6 +170,8 @@ class TEvent(models.Model):
     parent_process = models.ForeignKey(DVAPQL, null=True)
     task_group_id = models.IntegerField(default=-1)
     results = JSONField(blank=True, null=True)
+    min_frame_index = models.IntegerField(null=True)
+    max_frame_index = models.IntegerField(null=True)
 
     def create_dir(self,media_root=None):
         if self.video_id:
@@ -731,6 +733,8 @@ class IndexEntries(models.Model):
     created = models.DateTimeField('date created', auto_now_add=True)
     per_event_index = models.IntegerField()
     event = models.ForeignKey(TEvent)
+    min_frame_index = models.IntegerField(null=True)
+    max_frame_index = models.IntegerField(null=True)
 
     def __unicode__(self):
         return "{} in {} index by {}".format(self.target, self.algorithm, self.video.name)
