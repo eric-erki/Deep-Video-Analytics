@@ -29,6 +29,8 @@
                                 <h4>Task id: {{ object.task_id }} in Task group {{ object.task_group_id }}</h4>
                                 <h4>Submitted: {{ object.created|timesince }}</h4>
                                 <h4>Execution time: {{ object.duration|floatformat }}</h4>
+                                <h4>Min frame index: {{ object.min_frame_index }}</h4>
+                                <h4>Max frame index: {{ object.max_frame_index }}</h4>
                             </div>
                             <div class="col-lg-4">
                                 {% if object.errored %}

@@ -44,23 +44,28 @@ class Indexers(object):
     def index_queryset(cls,di,visual_index,event,target, queryset, cloud_paths=False):
         visual_index.load()
         index_entries = []
+        frame_indexes = set()
         temp_root = tempfile.mkdtemp()
         entries, paths, images = [], [], {}
         for i, df in enumerate(queryset):
             if target == 'frames':
                 entry = df.frame_index
+                frame_indexes.add(df.frame_path)
                 if cloud_paths:
                     paths.append(df.path('{}://{}'.format(settings.CLOUD_FS_PREFIX,settings.MEDIA_BUCKET)))
                 else:
                     paths.append(df.path())
             elif target == 'segments':
                 entry = df.segment_index
+                frame_indexes.add(df.start_frame_index)
+                frame_indexes.add(df.start_frame_index + df.frame_count - 1)
                 if cloud_paths:
                     paths.append(df.path('{}://{}'.format(settings.CLOUD_FS_PREFIX,settings.MEDIA_BUCKET)))
                 else:
                     paths.append(df.path())
             else:
                 entry = df.pk
+                frame_indexes.add(df.frame_index)
                 if df.full_frame:
                     paths.append(df.frame_path())
                 else:
@@ -75,6 +80,8 @@ class Indexers(object):
             i.store_entries(entries,event)
             i.video_id = event.video_id
             i.count = len(entries)
+            i.min_frame_index = min(frame_indexes)
+            i.max_frame_index = max(frame_indexes)
             i.target = target
             i.algorithm = di.name
             i.indexer_shasum = di.shasum
