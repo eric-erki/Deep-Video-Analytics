@@ -332,8 +332,9 @@ class TEvent(models.Model):
             self.results['created_objects']['HyperTubeRegionRelation'] = len(temp)
         ancestor_events.discard(self.pk)  # Remove self from ancestors.
         self.results['ancestors'] = list(ancestor_events)
-        self.max_frame_index = max(frame_indexes)
-        self.min_frame_index = min(frame_indexes)
+        if frame_indexes:
+            self.max_frame_index = max(frame_indexes)
+            self.min_frame_index = min(frame_indexes)
         if results:
             self.results.update(results)
 

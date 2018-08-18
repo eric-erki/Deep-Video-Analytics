@@ -50,7 +50,7 @@ class Indexers(object):
         for i, df in enumerate(queryset):
             if target == 'frames':
                 entry = df.frame_index
-                frame_indexes.add(df.frame_path)
+                frame_indexes.add(df.frame_index)
                 if cloud_paths:
                     paths.append(df.path('{}://{}'.format(settings.CLOUD_FS_PREFIX,settings.MEDIA_BUCKET)))
                 else:
