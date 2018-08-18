@@ -201,13 +201,6 @@ def process_next(dt, inject_filters=None, custom_next_tasks=None, sync=True, lau
     return launched
 
 
-def mark_as_completed(start):
-    start.completed = True
-    if start.start_ts:
-        start.duration = (timezone.now() - start.start_ts).total_seconds()
-    start.save()
-
-
 class DVAPQLProcess(object):
 
     def __init__(self, process=None, media_dir=None):
@@ -329,7 +322,7 @@ class DVAPQLProcess(object):
             instance = m.objects.create(**c_copy['spec'])
             self.created_objects.append(instance)
         for dt in video_id_to_event.values():
-            mark_as_completed(dt)
+            dt.mark_as_completed()
 
     def create_root_task(self):
         self.root_task = TEvent.objects.create(operation="perform_launch", task_group_id=self.task_group_index,

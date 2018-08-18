@@ -350,11 +350,6 @@ class TEvent(models.Model):
     def upload(self):
         if self.operation == 'perform_import' and self.video_id:
             fs.upload_video_to_remote(self.video_id)
-            # This ensures that all files are uploaded to remote fs.
-            # Otherwise a retriever may attempt to load an imported index before its available.
-            for dt in TEvent.objects.filter(imported=self):
-                dt.completed = True
-                dt.save()
         else:
             fnames = []
             created_type_count = 0
@@ -380,6 +375,18 @@ class TEvent(models.Model):
                 # TODO(akshay): Remove this
                 if fnames:
                     time.sleep(2)
+
+    def mark_as_completed(self):
+        if self.operation == 'perform_import' and self.video_id:
+            # This ensures that all files are uploaded to remote fs.
+            # Otherwise a retriever may attempt to load an imported index before its available.
+            for dt in TEvent.objects.filter(imported=self):
+                dt.completed = True
+                dt.save()
+        self.completed = True
+        if self.start_ts:
+            self.duration = (timezone.now() - self.start_ts).total_seconds()
+        self.save()
 
 
 class TrainedModel(models.Model):

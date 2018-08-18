@@ -12,7 +12,7 @@ from .operations.decoding import VideoDecoder
 from .operations.dataset import DatasetCreator
 from .operations.training import train_lopq, train_faiss
 from .operations.livestreaming import LivestreamCapture
-from .processing import process_next, mark_as_completed
+from .processing import process_next
 from . import global_model_retriever
 from . import task_handlers
 from dva.in_memory import redis_client
@@ -93,7 +93,7 @@ def perform_reduce(task_id):
     reduce_waiter = Waiter(dt)
     if reduce_waiter.is_complete():
         next_ids = process_next(dt)
-        mark_as_completed(dt)
+        dt.mark_as_completed()
         return next_ids
     else:
         eta = datetime.utcnow() + timedelta(seconds=timeout_seconds)
@@ -131,7 +131,7 @@ def perform_process_monitoring(task_id):
     if models.TEvent.objects.filter(parent_process=dt.parent_process, completed=False).count() == 1:
         dt.parent_process.completed = True
         dt.parent_process.save()
-        mark_as_completed(dt)
+        dt.mark_as_completed()
     else:
         eta = datetime.utcnow() + timedelta(seconds=timeout_seconds)
         app.send_task(dt.operation, args=[dt.pk, ], queue=dt.queue, eta=eta)
@@ -144,7 +144,7 @@ def perform_indexing(task_id):
         return 0
     sync = task_handlers.handle_perform_indexing(dt)
     next_ids = process_next(dt, sync=sync)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return next_ids
 
 
@@ -155,7 +155,7 @@ def perform_index_approximation(task_id):
         return 0
     sync = task_handlers.handle_perform_index_approximation(dt)
     next_ids = process_next(dt, sync=sync)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return next_ids
 
 
@@ -188,7 +188,7 @@ def perform_transformation(task_id):
             else:
                 cropped.save(dr.path())
     process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
 
 
 @app.task(track_started=True, name="perform_retrieval")
@@ -209,7 +209,7 @@ def perform_retrieval(task_id):
             Retrievers.retrieve(dt, index_retriever, dr, vector, args.get('count', 20), region_pk=query_region_pk)
     else:
         raise NotImplementedError(target)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return 0
 
 
@@ -227,7 +227,7 @@ def perform_matching(task_id):
         return 0
     task_handlers.handle_perform_matching(dt)
     process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return 0
 
 
@@ -249,7 +249,7 @@ def perform_dataset_extraction(task_id):
     v = DatasetCreator(dvideo=dv, media_dir=settings.MEDIA_ROOT)
     v.extract(dt)
     process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return 0
 
 
@@ -280,7 +280,7 @@ def perform_video_segmentation(task_id):
         process_next(dt, sync=True, launch_next=False)
     else:
         process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return 0
 
 
@@ -307,7 +307,7 @@ def perform_video_decode(task_id):
         frame_batch += v.decode_segment(ds,dt.pk,denominator=args.get('rate', 30))
     dt.finalize({"Frame":frame_batch})
     process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return task_id
 
 
@@ -323,7 +323,7 @@ def perform_detection(task_id):
     else:
         task_handlers.handle_perform_detection(dt)
     launched = process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     if query_flow:
         return launched
     else:
@@ -337,7 +337,7 @@ def perform_analysis(task_id):
         return 0
     task_handlers.handle_perform_analysis(dt)
     process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return 0
 
 
@@ -367,7 +367,7 @@ def perform_export(task_id):
         exc_info = sys.exc_info()
         raise exc_info[0], exc_info[1], exc_info[2]
     dt.finalize({"Export":exports})
-    mark_as_completed(dt)
+    dt.mark_as_completed()
 
 
 @app.task(track_started=True, name="perform_model_import")
@@ -379,7 +379,7 @@ def perform_model_import(task_id):
     dm = models.TrainedModel.objects.get(pk=args['pk'])
     dm.download()
     process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
 
 
 @app.task(track_started=True, name="perform_import")
@@ -420,7 +420,7 @@ def perform_import(task_id):
         task_shared.import_path(dv, path)
     dv.save()
     process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
 
 
 @app.task(track_started=True, name="perform_region_import")
@@ -447,7 +447,7 @@ def perform_region_import(task_id):
     dv.save()
     process_next(dt)
     os.remove(temp_filename)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
 
 
 @app.task(track_started=True, name="perform_frame_download")
@@ -465,7 +465,7 @@ def perform_frame_download(task_id):
     task_shared.load_frame_list(dv, dt, frame_index__gte=filters['frame_index__gte'],
                                 frame_index__lt=filters.get('frame_index__lt', -1))
     process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
 
 
 @app.task(track_started=True, name="perform_sync")
@@ -474,7 +474,7 @@ def perform_sync(task_id):
     if dt is None:
         return 0
     dt.parent.upload()
-    mark_as_completed(dt)
+    dt.mark_as_completed()
 
 
 @app.task(track_started=True, name="perform_deletion")
@@ -519,7 +519,7 @@ def perform_deletion(task_id):
     else:
         logging.info("Media bucket name not specified, nothing was synced.")
         dt.error_message = "Media bucket name is empty".format(settings.MEDIA_BUCKET)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return
 
 
@@ -532,7 +532,7 @@ def perform_stream_capture(task_id):
     l.start_process()
     l.poll()
     l.finalize()
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return
 
 
@@ -570,7 +570,7 @@ def perform_training_set_creation(task_id):
     else:
         raise NotImplementedError
     process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return 0
 
 
@@ -588,7 +588,7 @@ def perform_training(task_id):
     else:
         raise ValueError("Unknown trainer {}".format(trainer))
     process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return 0
 
 
@@ -612,7 +612,7 @@ def perform_test(task_id):
             raise ValueError("Throwing error until attempt {}, current attempt {} ".format(throw_error_until,
                                                                                            current_attempt))
     process_next(dt)
-    mark_as_completed(dt)
+    dt.mark_as_completed()
     return 0
 
 
