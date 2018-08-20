@@ -39,6 +39,8 @@ urlpatterns = [
     url(r'^Search$', views.search),
     url(r'^videos/(?P<pk>[0-9a-f-]+)/$', views.VideoDetail.as_view(), name='video_detail'),
     url(r'^frames/(?P<pk>\d+)/$', views.FrameDetail.as_view(), name='frame_detail'),
+    url(r'^regions/(?P<pk>\d+)/$', views.RegionDetail.as_view(), name='region_detail'),
+    url(r'^tubes/(?P<pk>\d+)/$', views.TubeDetail.as_view(), name='tube_detail'),
     url(r'^segments/(?P<pk>\d+)/$', views.SegmentDetail.as_view(), name='segment_detail'),
     url(r'^queries/(?P<pk>\d+)/$', views.VisualSearchDetail.as_view(), name='query_detail'),
     url(r'^retry/$', views.retry_task, name='restart_task'),
