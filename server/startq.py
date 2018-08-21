@@ -44,6 +44,12 @@ if __name__ == "__main__":
             command = 'celery -A dva worker -l info {} -c {} -Q {} -n {}.%h {}'.format(mute, max(int(conc), 4),
                                                                                        queue_name, queue_name,
                                                                                        log_output(queue_name, settings))
+    elif 'retriever' in queue_name:
+        command = 'celery -A dva worker -l info {} -P solo -c {} -Q {},{} -n {}.%h {}'.format(mute, 1, queue_name,
+                                                                                           settings.Q_REFRESHER,
+                                                                                           queue_name,
+                                                                                           log_output(queue_name,
+                                                                                                      settings))
     elif queue_name == settings.Q_STREAMER:
         if settings.KUBE_MODE:
             command = 'celery -A dva worker -l info {} -P solo -c 1 -Q {} -n {}.%h'.format(mute, queue_name, queue_name)

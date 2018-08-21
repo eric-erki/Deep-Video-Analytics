@@ -232,6 +232,7 @@ GLOBAL_MODEL_QUEUE_ENABLED = os.environ.get('GLOBAL_MODEL',False)
 GLOBAL_RETRIEVER_QUEUE_ENABLED = False if os.environ.get('DISABLE_GLOBAL_RETRIEVER',False) else True
 
 Q_MANAGER = 'qmanager'
+Q_REFRESHER = 'qrefresher'
 Q_REDUCER = 'qreducer'
 Q_EXTRACTOR = 'qextract'
 Q_STREAMER = 'qstreamer'

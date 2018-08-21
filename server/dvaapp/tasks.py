@@ -711,3 +711,16 @@ def monitor_system():
                                           process_stats=process_stats,
                                           worker_stats=worker_stats)
 
+
+@app.task(track_started=True, name="refresh_retriever")
+def refresh_retriever():
+    global W
+    if W.queue_name == settings.GLOBAL_RETRIEVER:
+        for dr in Retrievers._selector_to_dr.values():
+            Retrievers.refresh_index(dr)
+    elif 'retriever_' in W.queue_name:
+        pk = int(W.queue_name.split('_')[-1])
+        _, dr = Retrievers.get_retriever(args={'retriever_selector':{'pk':pk}})
+        Retrievers.refresh_index(dr)
+    else:
+        raise ValueError("{} is not valid for retriever".format(W.queue_name))
