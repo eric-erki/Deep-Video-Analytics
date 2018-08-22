@@ -25,6 +25,11 @@ if __name__ == "__main__":
     from django.conf import settings
 
     queue_name = sys.argv[1]
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        datefmt='%m-%d %H:%M',
+                        filename='../logs/start_{}.log'.format(queue_name),
+                        filemode='w')
     if len(sys.argv) > 2 and sys.argv[2] != '&':
         conc = int(sys.argv[2])
     else:

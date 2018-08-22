@@ -689,6 +689,7 @@ def monitor_system():
         ping_index = 0
     # TODO: Handle the case where host manager has not responded to last and itself has died
     _ = app.send_task('manage_host', args=['list', ping_index], exchange='qmanager')
+    _ = app.send_task('refresh_retriever', args=[], exchange=settings.Q_REFRESHER)
     worker_stats = {'alive':0,
                     'transition':0,
                     'dead': models.Worker.objects.filter(alive=False).count()
