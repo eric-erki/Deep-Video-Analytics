@@ -717,10 +717,14 @@ def refresh_retriever():
     global W
     if W.queue_name == settings.GLOBAL_RETRIEVER:
         for dr in Retrievers._selector_to_dr.values():
+            logging.info("Starting index refresh on queue {} for retriever {}".format(W.queue_name,dr.pk))
             Retrievers.refresh_index(dr)
+            logging.info("Finished index refresh on queue {} for retriever {}".format(W.queue_name, dr.pk))
     elif 'retriever_' in W.queue_name:
         pk = int(W.queue_name.split('_')[-1])
-        _, dr = Retrievers.get_retriever(args={'retriever_selector':{'pk':pk}})
+        logging.info("Starting index refresh on queue {} for retriever {}".format(W.queue_name, pk))
+        _, dr = Retrievers.get_retriever(args={'retriever_selector': {'pk': pk}})
         Retrievers.refresh_index(dr)
+        logging.info("Finished index refresh on queue {} for retriever {}".format(W.queue_name, pk))
     else:
         raise ValueError("{} is not valid for retriever".format(W.queue_name))
