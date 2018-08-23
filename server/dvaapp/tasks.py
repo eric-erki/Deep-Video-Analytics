@@ -689,7 +689,6 @@ def monitor_system():
         ping_index = 0
     # TODO: Handle the case where host manager has not responded to last and itself has died
     _ = app.send_task('manage_host', args=['list', ping_index], exchange='qmanager')
-    _ = app.send_task('refresh_retriever', args=[], exchange=settings.Q_REFRESHER)
     worker_stats = {'alive':0,
                     'transition':0,
                     'dead': models.Worker.objects.filter(alive=False).count()
@@ -713,19 +712,37 @@ def monitor_system():
                                           worker_stats=worker_stats)
 
 
+@app.task(track_started=True, name="monitor_retrievers")
+def monitor_retrievers():
+    """
+    This task used by scheduler to refresh retrievers every minute. This can modified to optionally not launch
+    refresh tasks. e.g. if no new IndexEntry has been created.
+    :return:
+    """
+    _ = app.send_task('refresh_retriever', args=[], exchange=settings.Q_REFRESHER)
+
+
 @app.task(track_started=True, name="refresh_retriever")
 def refresh_retriever():
     global W
     if W.queue_name == settings.GLOBAL_RETRIEVER:
         for dr in Retrievers._selector_to_dr.values():
             logging.info("Starting index refresh on queue {} for retriever {}".format(W.queue_name,dr.pk))
+            start_ts = time.time()
             Retrievers.refresh_index(dr)
+            delta = time.time() - start_ts
+            redis_client.hset("retriever_state", "{},{},{}".format(W.pk, W.queue_name, dr.pk), {"delta": delta,
+                                                                                           'ts':time.time()})
             logging.info("Finished index refresh on queue {} for retriever {}".format(W.queue_name, dr.pk))
     elif 'retriever_' in W.queue_name:
         pk = int(W.queue_name.split('_')[-1])
         logging.info("Starting index refresh on queue {} for retriever {}".format(W.queue_name, pk))
+        start_ts = time.time()
         _, dr = Retrievers.get_retriever(args={'retriever_selector': {'pk': pk}})
         Retrievers.refresh_index(dr)
+        delta = time.time() - start_ts
+        redis_client.hset("retriever_state","{},{},{}".format(W.pk, W.queue_name, dr.pk),{"delta":delta,
+                                                                                     'ts':time.time()})
         logging.info("Finished index refresh on queue {} for retriever {}".format(W.queue_name, pk))
     else:
         raise ValueError("{} is not valid for retriever".format(W.queue_name))
