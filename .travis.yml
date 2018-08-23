@@ -99,6 +99,7 @@ script:
   - wget --quiet localhost:8000/api/restarts/
   - wget --quiet localhost:8000/api/workers/
   - wget --quiet localhost:8000/api/system_state/
+  - wget --quiet localhost:8000/api/retriever_state/
   - fuser -k 8000/tcp
 #  - ./dvactl start &
 #  - sleep 420 && docker logs webserver

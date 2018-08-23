@@ -7,9 +7,7 @@ import serializers
 from rest_framework import viewsets
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import authentication
 from .processing import DVAPQLProcess
 from dva.in_memory import redis_client
 import logging
@@ -196,16 +194,15 @@ class TubeRegionRelationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.TubeRegionRelationSerializer
 
 
-class RetrieverStateViewState(APIView):
-    authentication_classes = (authentication.TokenAuthentication,)
+class RetrieverStateViewState(viewsets.ViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,) if settings.AUTH_DISABLED else (IsAuthenticated,)
 
-    def get(self, request, format=None):
+    def list(self, request, format=None):
         """
         Returns state of the retriever
         """
         retriever_state = redis_client.hgetall("retriever_state")
         if retriever_state:
-            return Response(json.loads(retriever_state))
+            return Response(retriever_state)
         else:
             return Response({})
