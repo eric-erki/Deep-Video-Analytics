@@ -731,12 +731,12 @@ def refresh_retriever():
             start_ts = time.time()
             Retrievers.refresh_index(dr)
             delta = time.time() - start_ts
-            redis_client.hset("retriever_state", "{},{},{}".format(W.pk, W.queue_name, dr.pk), {"delta":delta,
+            redis_client.hset("retriever_state", "{},{},{}".format(W.pk, W.queue_name, dr.pk),json.dumps({"delta":delta,
                                                                                                 'worker_id':W.pk,
                                                                                                 'retriever_id':dr.pk,
                                                                                                 'queue_name':
                                                                                                     W.queue_name,
-                                                                                                'ts':time.time()})
+                                                                                                'ts':time.time()}))
             logging.info("Finished index refresh on queue {} for retriever {}".format(W.queue_name, dr.pk))
     elif 'retriever_' in W.queue_name:
         pk = int(W.queue_name.split('_')[-1])
@@ -745,11 +745,11 @@ def refresh_retriever():
         _, dr = Retrievers.get_retriever(args={'retriever_selector': {'pk': pk}})
         Retrievers.refresh_index(dr)
         delta = time.time() - start_ts
-        redis_client.hset("retriever_state","{},{},{}".format(W.pk, W.queue_name, dr.pk),{"delta":delta,
+        redis_client.hset("retriever_state","{},{},{}".format(W.pk, W.queue_name, dr.pk),json.dumps({"delta":delta,
                                                                                           'worker_id':W.pk,
                                                                                           'retriever_id':dr.pk,
                                                                                           'queue_name':W.queue_name,
-                                                                                          'ts':time.time()})
+                                                                                          'ts':time.time()}))
         logging.info("Finished index refresh on queue {} for retriever {}".format(W.queue_name, pk))
     else:
         raise ValueError("{} is not valid for retriever".format(W.queue_name))

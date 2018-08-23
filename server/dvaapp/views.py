@@ -203,6 +203,6 @@ class RetrieverStateViewState(viewsets.ViewSet):
         """
         retriever_state = redis_client.hgetall("retriever_state")
         if retriever_state:
-            return Response(retriever_state)
+            return Response({k:json.loads(v) for k,v in retriever_state.items()})
         else:
             return Response({})
