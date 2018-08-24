@@ -1,4 +1,8 @@
  version: '3'
+ networks:
+   default:
+     external:
+       name: cloudbuild
  services:
    db:
      image: postgres:9.6.6
@@ -58,7 +62,3 @@
   dvadata:
   dvarabbit:
   dvaredis:
-networks:
-    default:
-        external:
-            name: cloudbuild
