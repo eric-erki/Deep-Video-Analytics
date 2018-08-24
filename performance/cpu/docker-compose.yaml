@@ -50,7 +50,7 @@
      command: bash -c "git reset --hard && git fetch && git checkout --track origin/performance && git pull && sleep 10 && ./start_container.py"
      ports:
        - "80:80"
-       - "8889:8888"
+       - "8888:8888"
      depends_on:
        - db
        - rabbit
