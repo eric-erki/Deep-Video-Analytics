@@ -5,7 +5,7 @@ import sys
 try:
     sys.path.append('/root/thirdparty/faiss/python')
     import faiss
-except ImportError:
+except:
     logging.warning("Could not import faiss")
 
 

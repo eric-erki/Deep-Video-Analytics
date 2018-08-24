@@ -19,7 +19,7 @@ except ImportError:
 try:
     sys.path.append('/root/thirdparty/faiss/python')
     import faiss
-except ImportError:
+except:
     logging.warning("could not import FAISS")
 
 

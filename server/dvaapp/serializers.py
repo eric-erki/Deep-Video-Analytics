@@ -200,7 +200,7 @@ class QueryResultsExportSerializer(serializers.ModelSerializer):
 
 
 class QueryRegionExportSerializer(serializers.ModelSerializer):
-    query_results = QueryResultsExportSerializer(source='queryresults_set', read_only=True, many=True)
+    query_results = QueryResultsExportSerializer(source='queryresult_set', read_only=True, many=True)
 
     class Meta:
         model = QueryRegion
@@ -210,14 +210,14 @@ class QueryRegionExportSerializer(serializers.ModelSerializer):
 
 
 class TaskExportSerializer(serializers.ModelSerializer):
-    query_results = QueryResultsExportSerializer(source='queryresults_set', read_only=True, many=True)
+    query_results = QueryResultsExportSerializer(source='queryresult_set', read_only=True, many=True)
     query_regions = QueryRegionExportSerializer(source='queryregion_set', read_only=True, many=True)
 
     class Meta:
         model = TEvent
         fields = ('started', 'completed', 'errored', 'worker', 'error_message', 'video', 'operation', 'queue',
-                  'created', 'start_ts', 'duration', 'arguments', 'task_id', 'parent', 'parent_process',
-                  'training_set', 'imported', 'query_results', 'query_regions', 'id')
+                  'created', 'start_ts', 'duration', 'arguments', 'task_id', 'parent', 'parent_process','min_frame_index',
+                  'max_frame_index','training_set', 'imported', 'query_results', 'query_regions', 'id')
 
 
 class IndexEntriesSerializer(serializers.HyperlinkedModelSerializer):
@@ -333,7 +333,7 @@ class TEventExportSerializer(serializers.ModelSerializer):
         fields = ('id', 'started', 'completed', 'errored', 'error_message', 'operation', 'queue', 'created',
                   'start_ts', 'duration', 'arguments', 'task_id', 'parent', 'parent_process', 'task_group_id',
                   'results', 'region_list', 'hyper_region_relation_list', 'index_entries_list', 'frame_list',
-                  'segment_list', 'tube_list', 'region_relation_list')
+                  'min_frame_index','max_frame_index','segment_list', 'tube_list', 'region_relation_list')
 
 
 class VideoExportSerializer(serializers.ModelSerializer):
@@ -389,16 +389,16 @@ def create_event(e, v, dt):
     de.results = e.get('results', None)
     de.started = e.get('started', False)
     de.start_ts = e.get('start_ts', None)
-    de.completed = e.get('completed', False)
+    # Completed is set to False since we it will be completed only when task performing import uploads all the data.
+    de.completed = False
     de.errored = e.get('errored', False)
     de.error_message = e.get('error_message', "")
     de.video_id = v.pk
     de.operation = e.get('operation', "")
     de.created = e['created']
-    if 'seconds' in e:
-        de.duration = e.get('seconds', -1)
-    else:
-        de.duration = e.get('duration', -1)
+    de.min_frame_index = e.get('min_frame_index', None)
+    de.max_frame_index = e.get('max_frame_index', None)
+    de.duration = e.get('duration', -1)
     de.arguments = e.get('arguments', {})
     de.task_id = e.get('task_id', "")
     return de
@@ -499,6 +499,8 @@ class VideoImporter(object):
             di.entries = i['entries']
             di.target = i['target']
             di.metadata = i.get('metadata', {})
+            di.min_frame_index = i.get('min_frame_index', None)
+            di.max_frame_index = i.get('max_frame_index', None)
             di.save()
 
     def bulk_import_frames(self, frame_list_json):
@@ -554,6 +556,8 @@ class VideoImporter(object):
         da.weight = a.get('weight', None)
         da.name = a.get('name',None)
         da.event_id = a['event']
+        da.per_event_index = a['per_event_index']
+        da.id = '{}_{}'.format(da.event_id, da.per_event_index)
         da.source_region_id = a['source_region']
         da.target_region_id = a['target_region']
         return da

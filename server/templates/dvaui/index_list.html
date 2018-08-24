@@ -42,10 +42,9 @@
                         <th>Algorithm</th>
                         <th>Video name</th>
                         <th>Target</th>
-                        <th>Approximate</th>
                         <th>UUID</th>
-                        <th>Features</th>
-                        <th>Storage</th>
+                        <th>Features/Storage</th>
+                        <th>Frame index min/max</th>
                         <th>Indexer shasum</th>
                         <th>Approximator shasum</th>
                         <th>count</th>
@@ -59,10 +58,9 @@
                             <td>{{ k.algorithm }}</td>
                             <td>{{ k.video.name }} </td>
                             <td>{{ k.target }} </td>
-                            <td>{{ k.approximate }} </td>
                             <td>{{ k.uuid }} </td>
-                            <td>{{ k.features }} </td>
-                            <td>{{ k.storage_type }} </td>
+                            <td>{{ k.features }}/{{ k.storage_type }} </td>
+                            <td>{{ k.min_frame_index }}/{{ k.max_frame_index }}</td>
                             <td>{{ k.indexer_shasum }} </td>
                             <td>{{ k.approximator_shasum }} </td>
                             <td class="text-right">{{ k.count }}</td>

@@ -7,7 +7,23 @@ Deep Video Analytics is a platform for indexing and extracting information from 
 With latest version of docker installed correctly, you can run Deep Video Analytics in minutes
 locally (even without a GPU) using a single command.
 
-#### For installation instructions & demo please visit [https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com)
+### Architecture
+
+Deep Video Analytics implements a client-server architecture pattern, where clients can access state of the server
+via a REST API. For uploading, processing data, training models, performing queries, i.e. mutating the state
+clients can send DVAPQL (Deep Video Analytics Processing and Query Language) formatted as JSON. The query represents
+a directed acyclic graph of operations.
+
+### Visual Data Network
+
+A separate repository [VisualDataNetwork/root](https://github.com/VisualDataNetwork/root) maintains examples of
+DVAPQL scripts for performing tasks such as processing image dataset (e.g. COCO), Youtube videos, Twitch livestreams,
+training FAISS indexers  etc.
+
+
+### Installation & Demo
+
+Please visit [https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com)
 
 ### Documentation
 
@@ -46,9 +62,7 @@ locally (even without a GPU) using a single command.
 | Text Detection CTPN  |  [MIT License](https://github.com/eragonruan/text-detection-ctpn/LICENSE) |
 | SphereFace  |  [MIT License](https://github.com/wy1iu/sphereface/blob/master/license) |
 | Segment annotator  |   [BSD 3-clause](https://github.com/kyamagu/js-segment-annotator/blob/master/LICENSE) |
-| TF Object detection API  | [Apache 2.0](https://github.com/tensorflow/models/tree/master/research/object_detection) |
-| TF models/slim  | [Apache 2.0](https://github.com/tensorflow/models/tree/master/research/slim) |
-| Youtube 8M feature extractor  | [Apache 2.0](https://github.com/google/youtube-8m) |
+| Youtube 8M feature extractor weights  | [Apache 2.0](https://github.com/google/youtube-8m) |
 | LOPQ   |  [Apache 2.0](https://github.com/yahoo/lopq/blob/master/LICENSE)  | 
 | Open Images Pre-trained network  |  [Apache 2.0](https://github.com/openimages/dataset/blob/master/LICENSE) |
 | Interval Tree  |  [Apache 2.0](https://github.com/chaimleib/intervaltree) |
@@ -57,8 +71,8 @@ locally (even without a GPU) using a single command.
 
 | Library  | Link to the license |
 | -------- | ------------------- |
-| pqkmeans |  [MIT License](https://github.com/DwangoMediaVillage/pqkmeans/blob/master/LICENSE) |
 | faiss | [BSD + PATENTS License](https://github.com/facebookresearch/faiss/blob/master/LICENSE) |
+| dlib | [Boost Software License](https://github.com/davisking/dlib/blob/master/dlib/LICENSE.txt) |
 
 
 
@@ -70,6 +84,7 @@ locally (even without a GPU) using a single command.
 * Numpy
 * Pytorch
 * Docker
+* LMDB
 * Nvidia-docker
 * Docker-compose
 * All packages in [requirements.txt](/requirements.txt)

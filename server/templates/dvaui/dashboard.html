@@ -11,7 +11,6 @@
 <section class="content-header" xmlns="http://www.w3.org/1999/html">
 </section>
 <section class="content">
-
 <div class="row large-margin">
     <div class="col-xs-1 col-sm-1 m-t" object-buttons-enabled="getSelected()" id="side_options">
         <div class="outer">
@@ -134,7 +133,7 @@
                                     <span aria-hidden="true">&times;</span></button><h4 class="modal-title">Upload video / dataset or list of images or exported zip file.</h4></div>
                                 <div class="modal-body">
                                 <p>An .mp4 video file or multiple images in a single zip file <a href="https://github.com/AKSHAYUBHAT/DeepVideoAnalytics/blob/master/tests/ci/exampledataset.zip" target="_blank">(example of a zip file)</a> or json/gz file containing list of image urls, s3/gcs paths
-                                    <a href="https://github.com/AKSHAYUBHAT/DeepVideoAnalytics/blob/master/tests/ci/framelist.json" target="_blank">(example of a json or gz file)</a>  or an exported ".dva_export.zip".</p>
+                                    <a href="https://github.com/AKSHAYUBHAT/DeepVideoAnalytics/blob/master/tests/ci/framelist.json" target="_blank">(example of a json or gz file)</a>  or an exported ".dva_export".</p>
                                 <form role="form"  method="post" enctype="multipart/form-data" action="#" >
                                     <div class="form-group">
                                     <input id="id_name" name="name" class="form-control" type="text" required="" placeholder="provide a name">
@@ -190,7 +189,7 @@
                                 <p>We do not provide a method to enter AWS credentials via web interface.</p>
                                 <form role="form"  method="post" action="/import_s3" >
                                 <div class="form-group">
-                                    <textarea id="id_s3_key" rows="2" name="key" class="form-control" type="text" required="" placeholder="S3 or GCS paths e.g. s3://bucket_name/key (.mp4, .zip, .json, .gz or .dva_export.zip) with one per line"></textarea>
+                                    <textarea id="id_s3_key" rows="2" name="key" class="form-control" type="text" required="" placeholder="S3 or GCS paths e.g. s3://bucket_name/key (.mp4, .zip, .json, .gz or .dva_export) with one per line"></textarea>
                                 </div>
                                 <div class="form-group">
                                     {% csrf_token %}
@@ -237,141 +236,54 @@
                     </div>
                 </div>
                 <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <div class="row">
-                            <div class="col-xs-3 text-center">
-                                <h4 style="margin-top:18px">Objects</h4>
-                            </div>
-                        </div>
-                    </div>
                     <div class="box-body">
                         <div class="row">
-                            <div class="col-xs-3">
+                            <div class="col-xs-4">
                                 <a class="btn" href="/videos/" style="margin: 10px auto" > <i class="fa fa-video-camera"></i> {{ video_count }} video / datasets</a>
                             </div>
-                            <div class="col-xs-3">
+                            <div class="col-xs-4">
                                 <a class="btn" href="/videos/" style="margin: 10px auto" > <i class="fa fa-picture-o"></i> {{ frame_count }} frames</a>
                             </div>
-                            <div class="col-xs-3">
-                                <a class="btn" href="/queries/" style="margin: 10px auto" > <i class="fa fa-search"></i> {{ query_count }} queries</a>
-                            </div>
-                            <div class="col-xs-3">
-                                <a class="btn" href="/indexes/" style="margin: 10px auto" > <i class="fa fa-list"></i> {{ index_entries_count }} indexes</a>
+                            <div class="col-xs-4">
+                                <a class="btn" href="/videos/" style="margin: 10px auto" > <i class="fa fa-circle"></i> {{ exported_video_count }} data exports</a>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-xs-3">
+                            <div class="col-xs-4">
                                 <a class="btn" href="/models/" style="margin: 10px auto" > <i class="fa fa-play"></i> {{ models_count }} trained models</a>
                             </div>
-                            <div class="col-xs-3">
+                            <div class="col-xs-4">
                                 <a class="btn" href="/stored_process/" style="margin: 10px auto" > <i class="fa fa-newspaper-o"></i> {{ script_count }} scripts</a>
                             </div>
-                            <div class="col-xs-3">
-                                <a class="btn" href="/videos/" style="margin: 10px auto" > <i class="fa fa-circle"></i> {{ exported_video_count }} data exports</a>
-                            </div>
-                            <div class="col-xs-3">
+                            <div class="col-xs-4">
                                 <a class="btn" href="/models/" style="margin: 10px auto" > <i class="fa fa-backward"></i> {{ exported_model_count }} model exports</a>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-xs-3">
+                            <div class="col-xs-4">
                                 <a class="btn" href="/training_sets/" style="margin: 10px auto" > <i class="fa fa-circle"></i> {{ training_set_count }} training sets</a>
                             </div>
-                            <div class="col-xs-3">
-                                <a class="btn" href="/retrievers/" style="margin: 10px auto" > <i class="fa fa-backward"></i> {{ retriever_counts }}  retrievers </a>
-                            </div>
-                            <div class="col-xs-3">
+                            <div class="col-xs-4">
                                 <a class="btn" href="/external/" style="margin: 10px auto" > <i class="fa fa-globe"></i> {{ external_server_count }} external servers</a>
                             </div>
-                            <div class="col-xs-3">
+                            <div class="col-xs-4">
                                 <a class="btn" href="/management/" style="margin: 10px auto" > <i class="fa fa-gears"></i> {{ worker_count }} workers</a>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="row m-t">
-    <div class="col-lg-12" ng-show="results_available()" >
-    <div class="box">
-    <div class="box-header box-primary text-center">
-        <h3>Retrieval results for query image</h3>
-    </div>
-    </div>
-    </div>
-    <div class="col-lg-6" ng-repeat="(name, entries) in results">
-    <div class="box">
-    <div class="box-header">
-        <h4>Results: {[ name ]} </h4>
-    </div>
-    </div>
-        <div class="row">
-        <div ng-repeat="item in entries" class="col-lg-3 col-sm-3 col-xs-6" >
-            <div class="box box-primary">
-                <div class="box-header with-border">
-                    <h4>{[ item.rank ]} {[ item.result_type ]}</h4>
-                    <p class=""><a href="/videos/{[ item.video_id ]}"> Video/Dataset {[ item.video_id ]} </a> at {[ item.frame_index ]}</p>
-                    <div class="text-center">
-                    </div>
-                </div>
-                <div class="box-body" style="height:220px">
-                    <a href="/frames/by_index/{[ item.video_id ]}/{[ item.frame_index ]}"><img class="img-responsive img-bordered-sm" style="max-height:200px;margin-left:auto;margin-right:auto"  ng-src="{[ item.url ]}">
-                    </a>
-                </div>
-            </div>
-        </div>
-        </div>
-    </div>
-    <div class="col-lg-12" ng-show="results_available()" >
-    <div class="box">
-    <div class="box-header box-primary text-center">
-        <h3>Detections, annotations and retrieval results with regions as query</h3>
-    </div>
-    </div>
-        <div class="row">
-        <div class="col-lg-12" ng-repeat="item in regions">
-            <div class="box box-primary">
-                <div class="box-header with-border text-center">
-                    <h4 style="display:inline-block" class="pull-left">{[ item.region_type ]}</h4>
-                    <h4 style="display:inline-block" >Object name: {[ item.object_name ]}</h4>
-                    <h4 style="display:inline-block" class="pull-right">Confidence: {[ item.confidence ]}</h4>
-                </div>
-                <div class="box-body">
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div style="width: {[ item.w ]}px; height: {[ item.h ]}px; position: relative;overflow:hidden;margin: auto;">
-                          <img src="{[ query_url ]}" id="image" style="position: absolute; top: -{[ item.y ]}px; left: -{[ item.x ]}px" />
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div style="margin:5px"><textarea class="uneditable-textarea" disabled="disabled" style="height:100px;width:100%" placeholder="text metadata if present">{[ item.text ]}</textarea></div>
-                        <div style="margin:5px"><textarea class="uneditable-textarea" disabled="disabled" style="height:100px;width:100%" placeholder="JSON metadata if present">{[ item.metadata ]}</textarea></div>
-                    </div>
-                </div>
-                </div>
-            </div>
-            <div class="row">
-            <div class="col-lg-12" ng-repeat="(rname, rentries) in item.results">
-                <h4>Results (using above bounding box region as query): {[ rname ]} </h4>
-                <div class="row">
-                <div ng-repeat="ritem in rentries" class="col-lg-3 col-sm-3 col-xs-6" >
-                    <div class="clearfix" ng-if="$index % 4 == 0"></div>
-                    <div class="box">
-                        <div class="box-header with-border">
-                            <p class=""> {[ ritem.rank ]} : {[ ritem.result_type ]} in <a href="/videos/{[ ritem.video_id ]}"> Video/Dataset {[ ritem.video_id]}</a> at {[ ritem.frame_index ]}</p>
-                        </div>
-                        <div class="box-body" style="height:220px">
-                            <a href="/frames/by_index/{[ ritem.video_id ]}/{[ ritem.frame_index ]}"><img class="img-responsive img-bordered-sm" style="max-height:200px;margin-left:auto;margin-right:auto"  ng-src="{[ ritem.url ]}">
-                            </a>
+                        <div class="row">
+                            <div class="col-xs-4">
+                                <a class="btn" href="/indexes/" style="margin: 10px auto" > <i class="fa fa-list"></i> {{ index_entries_count }} indexes</a>
+                            </div>
+                            <div class="col-xs-4">
+                                <a class="btn" href="/retrievers/" style="margin: 10px auto" > <i class="fa fa-backward"></i> {{ retriever_counts }}  retrievers </a>
+                            </div>
+                            <div class="col-xs-4">
+                                <a class="btn" href="/queries/" style="margin: 10px auto" > <i class="fa fa-search"></i> {{ query_count }} queries</a>
+                            </div>
                         </div>
                     </div>
                 </div>
-                </div>
             </div>
-            </div>
-        </div>
         </div>
     </div>
 </div>

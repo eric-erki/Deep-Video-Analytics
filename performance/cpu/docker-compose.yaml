@@ -58,3 +58,7 @@
   dvadata:
   dvarabbit:
   dvaredis:
+networks:
+    default:
+        external:
+            name: cloudbuild

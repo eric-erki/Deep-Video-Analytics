@@ -93,12 +93,39 @@
         </div>
     </div>
 </div>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="box">
+            <div class="box-header with-border">
+                <h4>Duration for completed tasks plotted against timestamp of start</h4>
+            </div>
+            <div class="box-body">
+                <div id="start_taskplot"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-12">
+        <div class="box">
+            <div class="box-header with-border">
+                <h4>Duration for completed tasks plotted against timestamp of creation</h4>
+            </div>
+            <div class="box-body">
+                <div id="created_taskplot"></div>
+            </div>
+        </div>
+    </div>
+</div>
 </section>
 {% endblock %}
 {% block page_js%}
 <script>
     $(document).ready(function() {
         InitializeTables();
+        var start_plot_data = JSON.parse('{{ start_plot_data | escapejs }}');
+        var created_plot_data = JSON.parse('{{ created_plot_data | escapejs }}');
+        Plotly.newPlot('start_taskplot', start_plot_data);
+        Plotly.newPlot('created_taskplot', created_plot_data);
+        debugger;
     })
 </script>
 {% endblock %}

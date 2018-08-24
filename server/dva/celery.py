@@ -24,9 +24,10 @@ app.conf.update(
 
 )
 app.conf.task_queue_max_priority = 10
-app.conf.task_queues = (Broadcast('qmanager'),)
+app.conf.task_queues = (Broadcast('qmanager'),Broadcast('qrefresher'),)
 app.conf.task_routes = {
     'manage_host': {'queue': 'qmanager'},
+    'refresh_retriever': {'queue': 'qrefresher'},
 }
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
