@@ -729,27 +729,34 @@ def refresh_retriever():
         for dr in Retrievers._selector_to_dr.values():
             logging.info("Starting index refresh on queue {} for retriever {}".format(W.queue_name,dr.pk))
             start_ts = time.time()
-            Retrievers.refresh_index(dr)
-            delta = time.time() - start_ts
-            redis_client.hset("retriever_state", "{},{},{}".format(W.pk, W.queue_name, dr.pk),json.dumps({"delta":delta,
-                                                                                                'worker_id':W.pk,
-                                                                                                'retriever_id':dr.pk,
-                                                                                                'queue_name':
-                                                                                                    W.queue_name,
-                                                                                                'ts':time.time()}))
+            index_entries_count,vectors_count = Retrievers.refresh_index(dr)
+            entry = {
+                'index_entries_count':index_entries_count,
+                'vectors_count':vectors_count,
+                "delta":time.time() - start_ts,
+                'worker_id':W.pk,
+                'retriever_id':dr.pk,
+                'queue_name':W.queue_name,
+                'ts':time.time()
+            }
+            redis_client.hset("retriever_state", "{},{},{}".format(W.pk, W.queue_name, dr.pk),json.dumps(entry))
             logging.info("Finished index refresh on queue {} for retriever {}".format(W.queue_name, dr.pk))
     elif 'retriever_' in W.queue_name:
         pk = int(W.queue_name.split('_')[-1])
         logging.info("Starting index refresh on queue {} for retriever {}".format(W.queue_name, pk))
         start_ts = time.time()
         _, dr = Retrievers.get_retriever(args={'retriever_selector': {'pk': pk}})
-        Retrievers.refresh_index(dr)
-        delta = time.time() - start_ts
-        redis_client.hset("retriever_state","{},{},{}".format(W.pk, W.queue_name, dr.pk),json.dumps({"delta":delta,
-                                                                                          'worker_id':W.pk,
-                                                                                          'retriever_id':dr.pk,
-                                                                                          'queue_name':W.queue_name,
-                                                                                          'ts':time.time()}))
+        index_entries_count, vectors_count = Retrievers.refresh_index(dr)
+        entry = {
+            'index_entries_count': index_entries_count,
+            'vectors_count': vectors_count,
+            "delta": time.time() - start_ts,
+            'worker_id': W.pk,
+            'retriever_id': dr.pk,
+            'queue_name': W.queue_name,
+            'ts': time.time()
+        }
+        redis_client.hset("retriever_state", "{},{},{}".format(W.pk, W.queue_name, dr.pk), json.dumps(entry))
         logging.info("Finished index refresh on queue {} for retriever {}".format(W.queue_name, pk))
     else:
         raise ValueError("{} is not valid for retriever".format(W.queue_name))

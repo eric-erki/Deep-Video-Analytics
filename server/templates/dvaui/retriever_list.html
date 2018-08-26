@@ -18,7 +18,44 @@
         <div class="col-lg-12">
             <div class="box box-primary">
             <div class="box-header with-border">
-                <h4>Retrievers</h4>
+                <h4>Retriever workers</h4>
+            </div>
+            <div class="box-body">
+                <table class="table dataTables-dict">
+                <thead>
+                <tr>
+                    <th>Retriever ID</th>
+                    <th>Queue</th>
+                    <th>Worker</th>
+                    <th>Index entries</th>
+                    <th>Vectors</th>
+                    <th>Refresh duration</th>
+                    <th>Last updated</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for r in retriever_state %}
+                    <tr>
+                        <td class="text-right">{{ r.retriever_id }} </td>
+                        <td>{{ r.queue_name }} </td>
+                        <td class="text-right">{{ r.worker_id }} </td>
+                        <td class="text-right">{{ r.index_entries_count }} </td>
+                        <td class="text-right">{{ r.vectors_count }} </td>
+                        <td class="text-right">{{ r.delta }}</td>
+                        <td class="text-right">{{ r.ts|timesince }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="box box-primary">
+            <div class="box-header with-border">
+                <h4>Configured Retrievers</h4>
             </div>
             <div class="box-body">
                 <table class="table dataTables-dict">

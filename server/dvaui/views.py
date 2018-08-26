@@ -8,6 +8,9 @@ from .forms import UploadFileForm, YTVideoForm, AnnotationForm
 from dvaapp import models
 from .models import StoredDVAPQL, ExternalServer
 from dva.celery import app
+from dva.in_memory import redis_client
+from datetime import datetime
+from django.utils import timezone
 import math
 from django.db.models import Max
 import view_shared
@@ -341,6 +344,13 @@ class RetrieverList(UserPassesTestMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(RetrieverList, self).get_context_data(**kwargs)
+        retriever_state = redis_client.hgetall("retriever_state")
+        if retriever_state:
+            context['retriever_state'] = [json.loads(v) for k,v in retriever_state.items()]
+        else:
+            context['retriever_state'] = []
+        for k in context['retriever_state']:
+            k['ts'] = datetime.fromtimestamp(k['ts'],tz=timezone.utc)
         return context
 
     def test_func(self):
