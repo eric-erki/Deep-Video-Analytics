@@ -154,14 +154,11 @@ class VideoDetail(UserPassesTestMixin, DetailView):
         context['url'] = '{}{}/video/{}.mp4'.format(settings.MEDIA_URL, self.object.pk, self.object.pk)
         label_list = []
         context['label_list'] = label_list
-        delta = 10000
+        delta = 5000
         if context['object'].dataset:
             delta = 500
         if max_frame_index <= delta:
             context['frame_list'] = models.Frame.objects.all().filter(video=self.object).order_by('frame_index')
-            context['region_list'] = models.Region.objects.all().filter(video=self.object,
-                                                                           region_type=models.Region.DETECTION)
-            context['region_relation_list'] = models.RegionRelation.objects.all().filter(video=self.object)
             context['offset'] = 0
             context['limit'] = max_frame_index
         else:
@@ -174,15 +171,11 @@ class VideoDetail(UserPassesTestMixin, DetailView):
             context['limit'] = limit
             context['frame_list'] = models.Frame.objects.all().filter(video=self.object, frame_index__gte=offset,
                                                                frame_index__lte=limit).order_by('frame_index')
-            context['region_list'] = models.Region.objects.all().filter(video=self.object, frame_index__gte=offset,
-                                                                    frame_index__lte=limit)
-            context['region_relation_list'] = models.RegionRelation.objects.all().filter(video=self.object,
-                                                                                source_region__frame_index__gte=offset,
-                                                                                source_region__frame_index__lte=limit)
             context['frame_index_offsets'] = [(k * delta, (k * delta) + delta) for k in
                                               range(int(math.ceil(max_frame_index / float(delta))))]
         context['frame_first'] = context['frame_list'].first()
         context['frame_last'] = context['frame_list'].last()
+        context['task_list'] = models.TEvent.objects.all().filter(video=self.object)
         context['segments'] = models.Segment.objects.filter(video=self.object)
         context['pending_tasks'] = models.TEvent.objects.all().filter(video=self.object, started=False, errored=False).count()
         context['running_tasks'] = models.TEvent.objects.all().filter(video=self.object, started=True, completed=False,

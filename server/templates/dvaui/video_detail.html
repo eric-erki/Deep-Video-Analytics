@@ -118,7 +118,7 @@
 <div class="col-lg-6">
     <div class="box " >
         <div class="box-header with-border"><h3 style="display: inline-block">Task status</h3>
-        <a class="btn btn-primary pull-right" href="{% url 'video_tasks' object.pk %}" style="margin: 10px auto" > <i class="fa fa-list"></i> All tasks</a>
+        <a class="btn btn-primary pull-right" href="#tasks" style="margin: 10px auto" > <i class="fa fa-list"></i> All tasks</a>
         </div>
         <div class="box-body">
             <div class="row text-center">
@@ -138,12 +138,11 @@
         </div>
     </div>
     <div class="box ">
-        <div class="box-header with-border"><h3>Admin actions</h3></div>
         <div class="box-body">
-            <div class="row">
+            <div class="row m-t" style="margin-top:25px">
                 <div class="col-sm-3 text-center">
                     <form action="/export_video" method="post"><input type="hidden" value="{{ object.pk }}" name="video_id"><input type="hidden" value="file" name="export_method">{% csrf_token %}
-                        <button type="submit" class="btn btn-info btn-block"><i class="fa fa-download"></i> Export as a file</button>
+                        <button type="submit" class="btn btn-info btn-block"><i class="fa fa-download"></i> Export to file</button>
                     </form>
                 </div>
                 <div class="col-sm-3 text-center">
@@ -151,19 +150,15 @@
                         <button type="submit" class="btn btn-danger btn-block"><i class="fa fa-delete"></i> Delete (only staff)</button>
                     </form>
                 </div>
-            </div>
-            <form action="/export_video" method="post">
-            <div class="row m-t" style="margin-top:25px">
-                <div class="col-sm-3"><div class="form-group"><label for="bucket">S3 Bucket <input name="bucket" type="text" placeholder="bucket" required="required" class="form-control" /></label></div></div>
-                <div class="col-sm-3"><div class="form-group"><label for="key">S3 Key <input name="key" type="text" placeholder="key_prefix" required="required" class="form-control" /></label></div></div>
-                <div class="col-sm-3"><div class="form-group"><label for="region">Region <input name="region" type="text" placeholder="region" required="required" value="us-east-1" class="form-control" /></label></div></div>
+                <form action="/export_video" method="post">
+                <div class="col-sm-3"><div class="form-group"><label for="bucket"> S3/GS/DO Path <input name="path" type="text" placeholder="s3://test/temp.dva_export" required="required" class="form-control" /></label></div></div>
                 <div class="col-sm-3">{% csrf_token %}
                     <input type="hidden" value="{{ object.pk }}" name="video_id">
                     <input type="hidden" value="s3" name="export_method">
                     <button type="submit" class="btn btn-block btn-primary" style="margin-top:20px"> <i class="fa fa-cloud-upload"></i> Backup to S3</button>
                 </div>
+                </form>
             </div>
-            </form>
             <h5 class="text-center">Delete currently requires retrieval workers to be restarted to purge index loaded in memory (a fix is pending)</h5>
             <h5 class="text-center">Provide AWS credential via environment variables or by running aws configure inside container or via IAM roles on EC2</h5>
             {% if exports or s3_exports %}
@@ -216,7 +211,7 @@
 <div class="col-lg-12">
             <div class="box">
             <div class="box-header with-border">
-            <h3>List of frames and regions</h3>
+            <h3>List of frames from {{ offset }} to {{ limit }}</h3>
             </div>
             <div class="box-body">
                 {% if frame_first and frame_last %}
@@ -229,8 +224,7 @@
                 <thead>
                 <tr>
                         <th class="text-center">type</th>
-                        <th class="text-center">file / annotation / object name</th>
-                        <th class="text-center">confidence</th>
+                        <th class="text-center">name</th>
                         <th class="text-center">size in pixels</th>
                         <th class="text-center">x</th>
                         <th class="text-center">y</th>
@@ -246,7 +240,6 @@
                     <tr>
                         <td>{% if object.dataset %} image {% else %} video frame {% endif %}</td>
                         <td class="text-left">{% if object.dataset %}  {{ f.name }} {% endif %}</td>
-                        <td class="text-right"> 100.0 %</td>
                         <td class="text-right">{% widthratio object.height 1 object.width %}</td>
                         <td class="text-right">{{ 0 }}</td>
                         <td class="text-right">{{ 0 }}</td>
@@ -257,21 +250,6 @@
                         <td class="text-center"><a href="/frames/{{ f.pk }}">view</a></td>
                     </tr>
                 {% endfor %}
-                {% for d in region_list %}
-                    <tr>
-                        <td>Region {{ d.region_type }}</td>
-                        <td class="text-left">{{ d.object_name }} </td>
-                        <td class="text-right">{% if d.confidence %}{{ d.confidence|floatformat }} %{% endif %}</td>
-                        <td class="text-right">{% widthratio d.h 1 d.w %}</td>
-                        <td class="text-right">{{ d.x }}</td>
-                        <td class="text-right">{{ d.y }}</td>
-                        <td class="text-right">{{ d.w }}</td>
-                        <td class="text-right">{{ d.h }}</td>
-                        {% if not object.dataset %}<td class="text-right"><a href="/segments/by_index/{{ object.pk }}/{{ d.segment_index }}">{{ d.segment_index }}</a></td>{% endif %}
-                        <td class="text-right">{{ d.frame_index }} </td>
-                        <td class="text-center"><a href="/frames/by_index/{{ object.pk }}/{{ d.frame_index }}">view</a></td>
-                    </tr>
-                {% endfor %}
                 </tbody>
                 </table>
                 </div>
@@ -279,14 +257,57 @@
     </div>
 </div>
 <div class="row">
-<div class="col-lg-12">
-    <div class="box">
-    <div class="box-header with-border">
-    <h3>List of relations and hyper-relations</h3>
-    </div>
-    <div class="box-body">
+    <div id="tasks" class="col-lg-12">
+        <div class="box">
+            <div class="box-header with-border">
+                <h3>Tasks</h3>
+            </div>
+            <div class="box-body">
+                <form method="post">
+                {% csrf_token %}
+                <table class="table dataTables">
+                    <thead>
+                    <tr>
+                        <th class="text-center">Process / Group</th>
+                        <th class="text-center">Operation</th>
+                        <th class="text-center">Model</th>
+                        <th class="text-center">Objects</th>
+                        <th class="text-center">min frame index</th>
+                        <th class="text-center">max frame index</th>
+                        <th class="text-center">created</th>
+                        <th class="text-center">status & view details</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for e in task_list %}
+                        <tr>
+                            <td><a href="/process/{{ e.parent_process_id }}">{{ e.parent_process_id }}</a> / {{ e.task_group_id }}</td>
+                            <td>{{ e.operation }}</td>
+                            <td  class="text-right">{{ e.arguments.trainedmodel_selector }}</td>
+                            <td  class="text-right">{{ e.results.created_objects }}</td>
+                            <td class="text-right">{{ e.min_frame_index }}</td>
+                            <td class="text-right">{{ e.max_frame_index }}</td>
+                            <td class="text-center">{{ e.created|timesince}}</td>
+                            <td>
+                                {% if e.errored %}
+                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-danger btn-block">{% if e.imported %}Imported{% endif %} Failed</a>
+                                {% elif e.duration < 0 and not e.started %}
+                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-warning btn-block">{% if e.imported %}Imported{% endif %} Pending</a>
+                                {% elif e.duration < 0 and e.started and not e.completed%}
+                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-primary btn-block">{% if e.imported %}Imported{% endif %} Running</a>
+                                {% elif e.completed%}
+                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-success btn-block">{% if e.imported %}Imported{% endif %} Completed</a>
+                                {% else %}
+                                    <a href="/task_detail/{{ e.pk }}" class="btn btn-info btn-block">Unknown</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                </form>
+            </div>
         </div>
-    </div>
     </div>
 </div>
 </section>
