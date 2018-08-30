@@ -1018,6 +1018,7 @@ class ManagementAction(models.Model):
 
 class SystemState(models.Model):
     created = models.DateTimeField('date created', auto_now_add=True)
+    retriever_stats = JSONField(blank=True, null=True)
     process_stats = JSONField(blank=True, null=True)
     worker_stats = JSONField(blank=True, null=True)
     redis_stats = JSONField(blank=True, null=True)

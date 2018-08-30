@@ -707,8 +707,14 @@ def monitor_system():
                      'tasks': models.TEvent.objects.count(),
                      'pending_tasks': models.TEvent.objects.filter(started=False).count(),
                      'completed_tasks': models.TEvent.objects.filter(started=True, completed=True).count()}
+    retriever_state = redis_client.hgetall("retriever_state")
+    if retriever_state:
+        retriever_stats = {k: json.loads(v) for k, v in retriever_state.items()}
+    else:
+        retriever_stats = {}
     _ = models.SystemState.objects.create(redis_stats=redis_client.info(),
                                           process_stats=process_stats,
+                                          retriever_stats=retriever_stats,
                                           worker_stats=worker_stats)
 
 

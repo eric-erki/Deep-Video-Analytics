@@ -55,15 +55,19 @@
                                 <h4>Arguments</h4>
                                 <textarea rows="5" style="width:90%;margin: auto" contenteditable="false">{{ object.arguments }}</textarea>
                             </div>
+                            {% if object.error_message %}
                             <div class="col-lg-12">
                                 <h4>Error message</h4>
                                 <textarea rows="5" style="width:90%;margin: auto" contenteditable="false">{{ object.error_message }}</textarea>
                             </div>
+                            {% endif %}
                             {% if celery_task %}
+                                {% if celery_task.traceback %}
                                 <div class="col-lg-12">
                                 <h4>Exception</h4>
                                 <textarea  style="width: 90%;margin: auto;height: 400px;" contenteditable="false">{{ celery_task.traceback }}</textarea>
                                 </div>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -75,7 +79,7 @@
                         <h3>Results</h3>
                     </div>
                     <div class="box-body">
-                <textarea style="width: 90%;margin: auto;height: 400px;"
+                <textarea style="width: 90%;margin: auto;height: 250px;"
                           class="textarea form-control disabled">{{ object.results }}</textarea>
                     </div>
                 </div>
@@ -219,7 +223,76 @@
                 </div>
             </div>
         </div>
-
+        <div class="row">
+            <div class="col-lg-12">
+                {% if object.results.created_objects and object.results.created_objects.Frame %}
+                <div class="box">
+                    <div class="box-header with-border">
+                        <h3>Frames</h3>
+                    </div>
+                    <div class="box-body">
+                        <table class="table dataTables">
+                            <thead>
+                            <tr>
+                                <th>frame index</th>
+                                <th>segment index</th>
+                                <th>name</th>
+                                <th>w</th>
+                                <th>h</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for k in object.frame_set.all %}
+                                <tr>
+                                    <td>{{ k.frame_index }}</td>
+                                    <td>{{ k.segment_index }}</td>
+                                    <td>{{ k.name }}</td>
+                                    <td>{{ k.w }}</td>
+                                    <td>{{ k.h }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+                {% if object.results.created_objects and object.results.created_objects.Region %}
+                <div class="box">
+                    <div class="box-header with-border">
+                        <h3>Regions</h3>
+                    </div>
+                    <div class="box-body">
+                        <table class="table dataTables">
+                            <thead>
+                            <tr>
+                                <th>frame index</th>
+                                <th>segment index</th>
+                                <th>object name</th>
+                                <th>x</th>
+                                <th>y</th>
+                                <th>w</th>
+                                <th>h</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for k in object.region_set.all %}
+                                <tr>
+                                    <td>{{ k.frame_index }}</td>
+                                    <td>{{ k.segment_index }}</td>
+                                    <td>{{ k.object_name }}</td>
+                                    <td>{{ k.x }}</td>
+                                    <td>{{ k.y }}</td>
+                                    <td>{{ k.w }}</td>
+                                    <td>{{ k.h }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+            </div>
+        </div>
     </section>
 {% endblock %}
 {% block page_js %}
