@@ -45,21 +45,18 @@ def create_model(m, init_event):
 
 def init_models():
     # In Kube mode create models when scheduler is launched which is always the first container.
-    local_models_path = "../configs/custom_defaults/trained_models.json"
     if 'INIT_MODELS' in os.environ:
         default_models = json.loads(base64.decodestring(os.environ['INIT_MODELS']))
-    else:
-        default_models = json.loads(file(local_models_path).read())
-    if settings.KUBE_MODE and 'LAUNCH_SCHEDULER' in os.environ:
-        init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True
-                                           , start_ts=timezone.now())
-        for m in default_models:
-            create_model(m, init_event)
-    elif not settings.KUBE_MODE:
-        init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True,
-                                           start_ts=timezone.now())
-        for m in default_models:
-            create_model(m, init_event)
+        if settings.KUBE_MODE and 'LAUNCH_SCHEDULER' in os.environ:
+            init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True
+                                               , start_ts=timezone.now())
+            for m in default_models:
+                create_model(m, init_event)
+        elif not settings.KUBE_MODE:
+            init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True,
+                                               start_ts=timezone.now())
+            for m in default_models:
+                create_model(m, init_event)
 
 
 def init_process():

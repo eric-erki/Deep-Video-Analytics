@@ -74,3 +74,13 @@
             secretKeyRef:
               name: redis-secret
               key: redispassword
+        - name: INIT_PROCESS
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: initprocess
+        - name: INIT_MODELS
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: initmodels
