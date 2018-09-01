@@ -218,6 +218,8 @@ def setup_kube():
             superuser=base64.encodestring(config['superuser']),
             superpass=base64.encodestring(config['superpass']),
             superemail=base64.encodestring(config['superemail']),
+            initmodels=base64.encodestring(config['initmodels']),
+            initprocess=base64.encodestring(config['initprocess']),
             cloudfsprefix=base64.encodestring(config['cloudfsprefix']),
             redishost=base64.encodestring(config['redishost']),
             redispassword=base64.encodestring(config['redispassword']),
