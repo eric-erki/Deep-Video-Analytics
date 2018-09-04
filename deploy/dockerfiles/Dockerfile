@@ -50,8 +50,7 @@ RUN git reset --hard cdc5a8b7b876fb636362c724f54e06fe889e3ac7
 RUN apt-get install -y libopenblas-dev swig
 ENV BLASLDFLAGS /usr/lib/libopenblas.so.0
 # Replace this with repo version /root/DVA/deploy/dockerfiles/faiss.patch before merging into stable
-RUN wget https://gist.githubusercontent.com/AKSHAYUBHAT/4242d9590e2f7be2043892b40da21277/raw/4d8444ec4831c9155968ad2b6cfcfdb5a6997f80/faiss.patch
-RUN git apply faiss.patch
+RUN git apply /root/DVA/deploy/dockerfiles/faiss.patch
 RUN ./configure
 RUN make -j $(nproc) && make install && make py
 #RUN cd tests && ./run_tests.sh && cd ..
