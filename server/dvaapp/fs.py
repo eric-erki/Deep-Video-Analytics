@@ -23,8 +23,11 @@ except:
 try:
     GS = storage.Client()
 except:
-    logging.exception("Could not initialize GS client")
+    # suppress the exception unless GCloud support is really required.
+    if settings.MEDIA_BUCKET and settings.CLOUD_FS_PREFIX == 'gs':
+        logging.exception("Could not initialize GS client")
     pass
+
 if settings.MEDIA_BUCKET and settings.CLOUD_FS_PREFIX == 's3':
     S3_MODE = True
     GS_MODE = False
