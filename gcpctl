@@ -17,24 +17,11 @@ PULL_CPU = "gcloud compute ssh {username}@dvaimager --command 'docker pull aksha
 PULL_GPU = "gcloud compute ssh {username}@dvaimager --command 'docker pull akshayubhat/dva-auto:gpu'"
 STOP = "gcloud compute instances stop dvaimager"
 DELETE = "gcloud compute instances -q delete dvaimager --keep-disks boot"
-IMAGE = "gcloud compute images create dvagpuimage --source-disk dvaimager"
+IMAGE = "gcloud compute images create {image_name} --source-disk dvaimager"
 
 IMAGE_INSTALLER = """
 #!/usr/bin/env sh
 sudo apt-get -y update
-sudo apt-get -y install apt-transport-https ca-certificates curl gnupg2 software-properties-common
-curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
-sudo apt-key fingerprint 0EBFCD88
-sudo add-apt-repository  "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
-sudo apt-get -y update
-sudo apt-get -y install docker-ce
-sudo docker run hello-world
-curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-sudo apt-get -y update
-sudo apt-get -y install nvidia-docker2
-sudo pkill -SIGHUP dockerd
 sudo curl -L https://github.com/docker/compose/releases/download/1.17.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 echo '{"runtimes": {"nvidia": {"path": "nvidia-container-runtime","runtimeArgs": []}},"default-runtime":"nvidia"}' > temp.json
@@ -83,7 +70,7 @@ DEFAULT_CONFIG = {
 }
 
 
-def create_gpu_image(username):
+def create_gpu_image(username,image_name):
     command = shlex.split(IMAGE_COMMAND)
     print ' '.join(command)
     subprocess.check_output(command)
@@ -108,7 +95,7 @@ def create_gpu_image(username):
     command = shlex.split(DELETE)
     print ' '.join(command)
     subprocess.check_output(command)
-    command = shlex.split(IMAGE)
+    command = shlex.split(IMAGE.format(image_name=image_name))
     print ' '.join(command)
     subprocess.check_output(command)
 
@@ -207,7 +194,7 @@ if __name__ == '__main__':
     config = load_config()
     if args.action == 'create_image':
         print "Important please verify that instance is deleted!"
-        create_gpu_image(config['username'])
+        create_gpu_image(config['username'],config['image_name'])
     elif args.action == 'create':
         create(config)
     elif args.action == 'start':

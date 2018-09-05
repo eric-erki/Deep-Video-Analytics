@@ -71,6 +71,7 @@ class Retrievers(object):
         if last_count == 0 or last_count != current_count or len(visual_index.loaded_entries) == 0:
             cls._index_count[dr.pk] = current_count
             cls.update_index(dr)
+        return len(visual_index.loaded_entries), visual_index.findex
 
     @classmethod
     def update_index(cls, dr):

@@ -46,9 +46,11 @@ WORKDIR "/root/thirdparty/"
 RUN git clone --recursive https://github.com/facebookresearch/faiss
 # install faiss
 WORKDIR "/root/thirdparty/faiss"
-RUN git reset --hard 2dc30e14cfa76985ff8c2821c051f1725fe66afa
+RUN git reset --hard cdc5a8b7b876fb636362c724f54e06fe889e3ac7
 RUN apt-get install -y libopenblas-dev swig
 ENV BLASLDFLAGS /usr/lib/libopenblas.so.0
+# Replace this with repo version /root/DVA/deploy/dockerfiles/faiss.patch before merging into stable
+RUN git apply /root/DVA/deploy/dockerfiles/faiss.patch
 RUN ./configure
 RUN make -j $(nproc) && make install && make py
 #RUN cd tests && ./run_tests.sh && cd ..

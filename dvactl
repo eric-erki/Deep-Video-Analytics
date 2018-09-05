@@ -214,6 +214,18 @@ def configure_kube():
                 config[k] = v
         else:
             config[k] = v
+    process = raw_input("Please specify path to init process.json or press enter to keep default"
+                        " ( configs/custom_defaults/init_process.json ) >>").strip()
+    if process.strip():
+        config['initprocess'] = read_and_encode(process)
+    else:
+        config['initprocess'] = read_and_encode('configs/custom_defaults/init_process.json')
+    models = raw_input("Please specify path to default models.json or press enter to keep default"
+                       " ( configs/custom_defaults/trained_models.json ) >>").strip()
+    if models.strip():
+        config['initmodels'] = read_and_encode(models)
+    else:
+        config['initmodels'] = read_and_encode('configs/custom_defaults/trained_models.json')
     print "worker configurations are stored in config.json"
     return config
 
@@ -233,7 +245,7 @@ def configure_compose(mode):
     gpu_count = 0
     init_process = 'configs/custom_defaults/init_process.json'
     init_models = 'configs/custom_defaults/trained_models.json'
-    process = raw_input("Please specify init process or press enter to keep default"
+    process = raw_input("Please specify path to init process.json or press enter to keep default"
                         " ( configs/custom_defaults/init_process.json ) >>").strip()
     if process.strip():
         init_process = process
@@ -250,9 +262,9 @@ def configure_compose(mode):
     else:
         cpu_image = 'akshayubhat/dva-auto:latest'
     gpu_image = ''
-    models = raw_input("Please specify default models or press enter to keep default"
+    models = raw_input("Please specify path to init models.json or press enter to keep default"
                        " ( configs/custom_defaults/trained_models.json ) >>").strip()
-    if process.strip():
+    if models.strip():
         init_models = models
     if mode == 'cpu' or mode == 'gpu':
         branch_input = raw_input("Please specify upstream branch (stable, master, etc.) or press enter to keep default"

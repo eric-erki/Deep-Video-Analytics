@@ -1,0 +1,21 @@
+diff --git a/python/swigfaiss.swig b/python/swigfaiss.swig
+index b181059..ddf92c0 100644
+--- a/python/swigfaiss.swig
++++ b/python/swigfaiss.swig
+@@ -91,6 +91,7 @@ extern "C" {
+
+ #include "index_io.h"
+
++#include "IVFlib.h"
+ #include "utils.h"
+ #include "Heap.h"
+ #include "AuxIndexStructures.h"
+@@ -262,6 +263,7 @@ int get_num_gpus()
+ %include "IndexPQ.h"
+ %include "InvertedLists.h"
+ %include "IndexIVF.h"
++%include "IVFlib.h"
+ %include "IndexScalarQuantizer.h"
+ %include "IndexHNSW.h"
+ %include "IndexIVFFlat.h"
+--

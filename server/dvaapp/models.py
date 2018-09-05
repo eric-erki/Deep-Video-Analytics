@@ -170,6 +170,8 @@ class TEvent(models.Model):
     parent_process = models.ForeignKey(DVAPQL, null=True)
     task_group_id = models.IntegerField(default=-1)
     results = JSONField(blank=True, null=True)
+    min_frame_index = models.IntegerField(null=True)
+    max_frame_index = models.IntegerField(null=True)
 
     def create_dir(self,media_root=None):
         if self.video_id:
@@ -204,6 +206,7 @@ class TEvent(models.Model):
         created_regions = []
         created_tubes = []
         ancestor_events = set()
+        frame_indexes = set()
         if self.results:
             raise ValueError("Finalize should be only called once")
         else:
@@ -218,18 +221,25 @@ class TEvent(models.Model):
             temp = []
             for i, d in enumerate(bulk_create['Frame']):
                 temp.append(d)
+                frame_indexes.add(d.frame_index)
             created_frames = Frame.objects.bulk_create(temp, batch_size=1000)
             self.results['created_objects']['Frame'] = len(created_frames)
         if 'Segment' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['Segment']):
                 temp.append(d)
+                frame_indexes.add(d.start_index)
+                frame_indexes.add(d.start_index + d.frame_count - 1)
             created_segments = Segment.objects.bulk_create(temp, batch_size=1000)
             self.results['created_objects']['Segment'] = len(created_segments)
         if 'IndexEntries' in bulk_create:
             temp = []
             for i, d in enumerate(bulk_create['IndexEntries']):
                 d.per_event_index = i
+                if d.max_frame_index:
+                    frame_indexes.add(d.max_frame_index)
+                if d.min_frame_index:
+                    frame_indexes.add(d.min_frame_index)
                 d.id = '{}_{}'.format(self.id, i)
                 temp.append(d)
             created_index_entries = IndexEntries.objects.bulk_create(temp, batch_size=1000)
@@ -238,6 +248,7 @@ class TEvent(models.Model):
             temp = []
             for i, d in enumerate(bulk_create['Region']):
                 d.per_event_index = i
+                frame_indexes.add(d.frame_index)
                 d.id = '{}_{}'.format(self.id, i)
                 temp.append(d)
             created_regions = Region.objects.bulk_create(temp, batch_size=1000)
@@ -246,6 +257,8 @@ class TEvent(models.Model):
             temp = []
             for i, d in enumerate(bulk_create['Tube']):
                 d.per_event_index = i
+                frame_indexes.add(d.start_frame_index)
+                frame_indexes.add(d.end_frame_index)
                 d.id = '{}_{}'.format(self.id, i)
                 temp.append(d)
             created_tubes = Tube.objects.bulk_create(temp, batch_size=1000)
@@ -319,6 +332,9 @@ class TEvent(models.Model):
             self.results['created_objects']['HyperTubeRegionRelation'] = len(temp)
         ancestor_events.discard(self.pk)  # Remove self from ancestors.
         self.results['ancestors'] = list(ancestor_events)
+        if frame_indexes:
+            self.max_frame_index = max(frame_indexes)
+            self.min_frame_index = min(frame_indexes)
         if results:
             self.results.update(results)
 
@@ -359,6 +375,18 @@ class TEvent(models.Model):
                 # TODO(akshay): Remove this
                 if fnames:
                     time.sleep(2)
+
+    def mark_as_completed(self):
+        if self.operation == 'perform_import' and self.video_id:
+            # This ensures that all files are uploaded to remote fs.
+            # Otherwise a retriever may attempt to load an imported index before its available.
+            for dt in TEvent.objects.filter(imported=self):
+                dt.completed = True
+                dt.save()
+        self.completed = True
+        if self.start_ts:
+            self.duration = (timezone.now() - self.start_ts).total_seconds()
+        self.save()
 
 
 class TrainedModel(models.Model):
@@ -731,6 +759,8 @@ class IndexEntries(models.Model):
     created = models.DateTimeField('date created', auto_now_add=True)
     per_event_index = models.IntegerField()
     event = models.ForeignKey(TEvent)
+    min_frame_index = models.IntegerField(null=True)
+    max_frame_index = models.IntegerField(null=True)
 
     def __unicode__(self):
         return "{} in {} index by {}".format(self.target, self.algorithm, self.video.name)
@@ -988,6 +1018,7 @@ class ManagementAction(models.Model):
 
 class SystemState(models.Model):
     created = models.DateTimeField('date created', auto_now_add=True)
+    retriever_stats = JSONField(blank=True, null=True)
     process_stats = JSONField(blank=True, null=True)
     worker_stats = JSONField(blank=True, null=True)
     redis_stats = JSONField(blank=True, null=True)

@@ -26,5 +26,6 @@ router.register(r'events', views.TEventViewSet)
 router.register(r'restarts', views.TaskRestartViewSet)
 router.register(r'workers', views.WorkerViewSet)
 router.register(r'system_state', views.SystemStateViewSet)
+router.register(r'retriever_state', views.RetrieverStateViewState, base_name='retriever_state')
 
 urlpatterns = [url(r'', include(router.urls)), ]
