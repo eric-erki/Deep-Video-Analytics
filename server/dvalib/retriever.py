@@ -112,7 +112,7 @@ class FaissApproximateRetriever(object):
         self.index_path = str(approximator.index_path).replace('//', '/')
         self.ivfs = []
         self.ivf_vector = faiss.InvertedListsPtrVector()
-        self.algorithm = "FAISS_APPROXIMATE"
+        self.algorithm = "FAISS"
         self.uuid = str(uuid.uuid4()).replace('-', '_')
         self.faiss_index = None
         self.tree = IntervalTree()

@@ -533,7 +533,12 @@ class TrainedModel(models.Model):
                 dr.last_built = timezone.now()
                 dr.save()
         elif self.model_type == self.APPROXIMATOR:
-            algo = Retriever.LOPQ if self.algorithm == 'LOPQ' else Retriever.EXACT
+            if self.algorithm == 'LOPQ':
+                algo = Retriever.LOPQ
+            elif self.algorithm == 'FAISS':
+                algo = Retriever.FAISS
+            else:
+                algo = Retriever.EXACT
             dr, dcreated = Retriever.objects.get_or_create(name=self.name,
                                                            source_filters={},
                                                            algorithm=algo,

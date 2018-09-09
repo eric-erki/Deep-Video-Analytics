@@ -197,7 +197,7 @@
   {
     "files": [],
     "name": "FAISS_PCAR128_IVF4096_SQ8_on_LFW",
-    "algorithm": "FAISS_APPROXIMATE",
+    "algorithm": "FAISS",
     "arguments": {
       "indexer_shasum": "9f99caccbc75dcee8cb0a55a0551d7c5cb8a6836",
       "path": "https://vdn.nyc3.digitaloceanspaces.com/models/PCAR128_IVF4096_SQ8_LFW.dva_model_export"
