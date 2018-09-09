@@ -52,7 +52,7 @@
                                     "operation": "perform_index_approximation",
                                     "arguments": {
                                       "target": "index_entries",
-                                      "trainedmodel_selector":{"shasum":"93be2f99d432a7ce2d1626107659510755ea3815"},
+                                      "trainedmodel_selector":{"shasum":"9f99caccbc75dcee8cb0a55a0551d7c5cb8a6836"},
                                       "filters": {
                                         "event_id": "__parent_event__"
                                       }
@@ -165,7 +165,7 @@
                               "operation": "perform_index_approximation",
                               "arguments": {
                                 "target": "index_entries",
-                                "trainedmodel_selector":{"shasum":"93be2f99d432a7ce2d1626107659510755ea3815"},
+                                "trainedmodel_selector":{"shasum":"9f99caccbc75dcee8cb0a55a0551d7c5cb8a6836"},
                                 "filters": {
                                   "event_id": "__parent_event__"
                                 }
@@ -293,7 +293,7 @@
                               "operation": "perform_index_approximation",
                               "arguments": {
                                 "target": "index_entries",
-                                "trainedmodel_selector":{"shasum":"93be2f99d432a7ce2d1626107659510755ea3815"},
+                                "trainedmodel_selector":{"shasum":"9f99caccbc75dcee8cb0a55a0551d7c5cb8a6836"},
                                 "filters": {
                                   "event_id": "__parent_event__"
                                 }
@@ -400,7 +400,7 @@
                               "operation": "perform_index_approximation",
                               "arguments": {
                                 "target": "index_entries",
-                                "trainedmodel_selector":{"shasum":"93be2f99d432a7ce2d1626107659510755ea3815"},
+                                "trainedmodel_selector":{"shasum":"9f99caccbc75dcee8cb0a55a0551d7c5cb8a6836"},
                                 "filters": {
                                   "event_id": "__parent_event__"
                                 }
