@@ -131,7 +131,10 @@ class FaissApproximateRetriever(object):
                 self.faiss_index = faiss.read_index(computed_index_path)
             else:
                 index = faiss.read_index(computed_index_path)
-                self.faiss_index.merge_from(index, self.faiss_index.ntotal)
+                if type(self.faiss_index) == faiss.swigfaiss.IndexPreTransform:
+                    faiss.merge_into(self.faiss_index,index,True)
+                else:
+                    self.faiss_index.merge_from(index, self.faiss_index.ntotal)
             logging.info("Index size {}".format(self.faiss_index.ntotal))
 
     def nearest(self, vector=None, n=12, nprobe=16):
