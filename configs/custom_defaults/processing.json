@@ -63,7 +63,7 @@
                   "arguments": {
                     "target": "index_entries",
                     "trainedmodel_selector": {
-                      "shasum": "93be2f99d432a7ce2d1626107659510755ea3815"
+                      "shasum": "5e4b86a0267255426834396a5a855f4fa775691a"
                     },
                     "filters": {
                       "event_id": "__parent_event__"
@@ -179,7 +179,7 @@
                   "arguments": {
                     "target": "index_entries",
                     "trainedmodel_selector": {
-                      "shasum": "93be2f99d432a7ce2d1626107659510755ea3815"
+                      "shasum": "5e4b86a0267255426834396a5a855f4fa775691a"
                     },
                     "filters": {
                       "event_id": "__parent_event__"
@@ -295,7 +295,7 @@
                   "arguments": {
                     "target": "index_entries",
                     "trainedmodel_selector": {
-                      "shasum": "93be2f99d432a7ce2d1626107659510755ea3815"
+                      "shasum": "5e4b86a0267255426834396a5a855f4fa775691a"
                     },
                     "filters": {
                       "event_id": "__parent_event__"
