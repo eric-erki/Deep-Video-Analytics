@@ -200,7 +200,7 @@
     "algorithm": "FAISS",
     "arguments": {
       "indexer_shasum": "9f99caccbc75dcee8cb0a55a0551d7c5cb8a6836",
-      "path": "root/DVA/models/PCAR128_IVF4096_SQ8_LFW.dva_model_export"
+      "path": "/root/DVA/models/PCAR128_IVF4096_SQ8_LFW.dva_model_export"
     },
     "model_type": "P"
   },
