@@ -296,6 +296,7 @@ def create_query_from_request(p, request):
     """
     query_json = {'process_type': dvaapp.models.DVAPQL.QUERY}
     count = request.POST.get('count')
+    nprobe = request.POST.get('nprobe')
     generate_tags = request.POST.get('generate_tags')
     selected_indexers = json.loads(request.POST.get('selected_indexers', "[]"))
     selected_detectors = json.loads(request.POST.get('selected_detectors', "[]"))
@@ -315,7 +316,7 @@ def create_query_from_request(p, request):
         di = dvaapp.models.TrainedModel.objects.get(pk=i, model_type=dvaapp.models.TrainedModel.INDEXER)
         rtasks = []
         for r in indexer_tasks[i]:
-            rtasks.append({'operation': 'perform_retrieval', 'arguments': {'count': int(count), 'retriever_selector': {"pk":r}}})
+            rtasks.append({'operation': 'perform_retrieval', 'arguments': {'count': int(count),'nprobe':int(nprobe), 'retriever_selector': {"pk":r}}})
         query_json['map'].append(
             {
                 'operation': 'perform_indexing',
@@ -362,7 +363,8 @@ def create_query_from_request(p, request):
                                                                                             'filters': {
                                                                                                 'event_id': '__parent_event__'},
                                                                                             'target': 'query_region_index_vectors',
-                                                                                            'count': 10}
+                                                                                            'count': int(count),
+                                                                                            'nprobe': int(nprobe),}
                                                                           }]}
                                                         }]
                                                         }

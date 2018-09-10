@@ -118,7 +118,10 @@ class Retrievers(object):
     @classmethod
     def retrieve(cls, event, index_retriever, dr, vector, count, region_pk=None):
         cls.refresh_index(dr)
-        results = index_retriever.nearest(vector=vector, n=count)
+        if 'nprobe' in event.arguments:
+            results = index_retriever.nearest(vector=vector, n=count, nprobe=event.arguments['nprobe'])
+        else:
+            results = index_retriever.nearest(vector=vector, n=count)
         qr_batch = []
         for rank, r in enumerate(results):
             if 'indexentries_pk' in r:
