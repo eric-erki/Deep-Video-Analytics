@@ -1,4 +1,4 @@
-# Dealing with GFW blocking download
+# Dealing with GFW blocking downloads
 
 DVA downloads model weights from Dropbox and Digial Ocean spaces, in some cases the files cannot be downloaded. As a workaround
 
