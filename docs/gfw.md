@@ -8,7 +8,7 @@ DVA downloads model weights from Dropbox and Digial Ocean spaces, in some cases 
 
 3. Run `./dvactl configure`, set "dev" mode and set path of tranined models to "configs/custom_defaults/trained_models_local.json"
 
-4. Run `./dvactl clean && ./dvactl start`.
+4. Run `/dvactl start`. (note that if you previously started containers make sure to remove them by running `./dvactl clean`)
 
 Note that these instructions are valid for "dev" mode since it relies on directory on host instance being
 mapped as a shared docker volume with the webserver container. For Kube, CPU and GPU mode we recomment replacing the
