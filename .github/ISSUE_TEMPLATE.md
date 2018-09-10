@@ -1,6 +1,7 @@
 # Checklist for submitting an issue 
 
 - Have you verified that docker is installed correctly and e.g. GFW is not preventing downloads?
+  https://github.com/AKSHAYUBHAT/DeepVideoAnalytics/blob/master/docs/gfw.md
 
 - Which docker-compose.yml file are you using?
 
