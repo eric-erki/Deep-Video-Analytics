@@ -5,6 +5,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dva.settings")
 django.setup()
 from dvaapp.models import TrainedModel, Retriever
 from django.conf import settings
+import logging
 
 
 QTYPE_TO_MODEL_TYPE = {
@@ -15,27 +16,51 @@ QTYPE_TO_MODEL_TYPE = {
 }
 
 
-def launch_model_queue(k):
+def launch_model_queue_by_name(k):
     qtype, model_name = k.split('_')[-2:]
     if qtype == 'retriever':
         dm = Retriever.objects.filter(name=model_name).first()
-        queue_name = 'q_retriever_{}'.format(dm.pk)
-        _ = subprocess.Popen(['./startq.py', queue_name])
+        if dm is None:
+            logging.error("Retriever with name {} not found. Not launching worker.".format(model_name))
+        else:
+            queue_name = 'q_retriever_{}'.format(dm.pk)
+            _ = subprocess.Popen(['./startq.py', queue_name])
     else:
         dm = TrainedModel.objects.filter(name=model_name, model_type=QTYPE_TO_MODEL_TYPE[qtype]).first()
-        queue_name = 'q_model_{}'.format(dm.pk)
-        envs = os.environ.copy()
-        if dm.mode == dm.PYTORCH:
-            env_mode = "PYTORCH_MODE"
-        elif dm.mode == dm.CAFFE:
-            env_mode = "CAFFE_MODE"
-        elif dm.mode == dm.MXNET:
-            env_mode = "MXNET_MODE"
+        if dm is None:
+            logging.error("Trained Model with name {} and queue type {} not found. Not launching worker.".format(
+                model_name,qtype))
         else:
-            env_mode = None
-        if env_mode:
-            envs[env_mode] = "1"
-        _ = subprocess.Popen(['./startq.py', queue_name], env=envs)
+            launch_trained_model_worker(dm)
+
+
+def launch_model_queue_by_pk(k):
+    qtype, pk = k.split('_')[-2:]
+    if qtype == 'retriever':
+        queue_name = 'q_retriever_{}'.format(pk)
+        _ = subprocess.Popen(['./startq.py', queue_name])
+    else:
+        dm = TrainedModel.objects.get(pk=pk)
+        if dm is None:
+            logging.error("Trained Model with PK {}  not found. Not launching worker.".format(pk))
+        else:
+            launch_trained_model_worker(dm)
+
+
+def launch_trained_model_worker(dm):
+    queue_name = 'q_model_{}'.format(dm.pk)
+    envs = os.environ.copy()
+    if dm.mode == dm.PYTORCH:
+        env_mode = "PYTORCH_MODE"
+    elif dm.mode == dm.CAFFE:
+        env_mode = "CAFFE_MODE"
+    elif dm.mode == dm.MXNET:
+        env_mode = "MXNET_MODE"
+    else:
+        env_mode = None
+    if env_mode:
+        envs[env_mode] = "1"
+    _ = subprocess.Popen(['./startq.py', queue_name], env=envs)
 
 
 def launch_named_queue(k):
@@ -112,7 +137,9 @@ if __name__ == '__main__':
     block_on_manager = sys.argv[-1] == '1'
     for k in os.environ:
         if k.startswith('LAUNCH_BY_NAME_'):
-            launch_model_queue(k)
+            launch_model_queue_by_name(k)
+        if k.startswith('LAUNCH_BY_PK_'):
+            launch_model_queue_by_pk(k)
         elif k.startswith('LAUNCH_Q_') and k != 'LAUNCH_Q_{}'.format(settings.Q_MANAGER):
             launch_named_queue(k)
     launch_scheduler()
