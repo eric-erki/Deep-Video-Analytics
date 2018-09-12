@@ -5,6 +5,7 @@ DVA downloads model weights from Dropbox and Digial Ocean spaces, in some cases 
 1. Manually download files in trained_models.json [/configs/custom_defaults/trained_models.json](/configs/custom_defaults/trained_models.json).
 
 2. Store downloaded files in new directory (models) inside the repo thus in dev mode that directory will appear inside the container at /root/DVA/models/.
+   This script shows how to download files [/configs/custom_defaults/gfw_models_download.sh](/configs/custom_defaults/gfw_models_download.sh)
 
 3. Run `./dvactl configure`, set "dev" mode and set path of tranined models to "configs/custom_defaults/trained_models_local.json"
 
