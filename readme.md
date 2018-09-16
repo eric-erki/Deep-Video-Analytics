@@ -9,8 +9,10 @@ locally (even without a GPU) using a single command.
 
 ### Installation & Overview
 
-For  quick overview we **strongly recommend** visiting [https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com) and going through the presentation
-** Note that the standalone OCR example has been moved to [/docs/experiments/ocr](/docs/experiments/ocr) directory**.
+For  quick overview we **strongly recommend** visiting
+[https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com) and going through the presentation
+
+The standalone OCR example has been moved to [/docs/experiments/ocr](/docs/experiments/ocr) directory.
 
 ### Architecture
 
@@ -19,11 +21,6 @@ via a REST API. For uploading, processing data, training models, performing quer
 clients can send DVAPQL (Deep Video Analytics Processing and Query Language) formatted as JSON. Each query represents
 a directed acyclic graph of operations.
 
-### Visual Data Network
-
-A separate repository [VisualDataNetwork/root](https://github.com/VisualDataNetwork/root) maintains examples of
-DVAPQL scripts for performing tasks such as processing image dataset (e.g. COCO), Youtube videos, Twitch livestreams,
-training FAISS indexers  etc.
 
 ### Libraries present in this repository and their licenses
 
