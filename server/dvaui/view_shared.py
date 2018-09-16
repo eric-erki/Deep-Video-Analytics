@@ -9,6 +9,11 @@ from dvaapp import fs
 from PIL import Image
 from dvaapp.processing import DVAPQLProcess
 
+if 'INIT_MODELS' in os.environ:
+    DEFAULT_PROCESSING = json.loads(base64.decodestring(os.environ['INIT_MODELS']))['processing']
+else:
+    DEFAULT_PROCESSING = {}
+
 
 def create_retriever(name, algorithm, filters, indexer_shasum, approximator_shasum, user=None):
     p = DVAPQLProcess()
@@ -160,8 +165,7 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                     {'arguments': {
                         'map': [
                             {
-                                'arguments': {'map': json.load(
-                                    file("../configs/custom_defaults/processing.json"))['dataset']},
+                                'arguments': {'map': DEFAULT_PROCESSING['dataset']},
                                 'operation': 'perform_dataset_extraction',
                             }
                         ]
@@ -192,8 +196,7 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                                 'operation': 'perform_frame_download',
                                 'arguments': {
                                     'frames_batch_size': settings.DEFAULT_FRAMES_BATCH_SIZE,
-                                    'map': json.load(
-                                        file("../configs/custom_defaults/processing.json"))['framelist']
+                                    'map': DEFAULT_PROCESSING['framelist']
                                 },
                             }
                         ]
@@ -226,8 +229,7 @@ def handle_uploaded_file(f, name, user=None, rate=None):
                                          'arguments': {
                                              'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
                                              'rate': rate,
-                                             'map': json.load(
-                                                 file("../configs/custom_defaults/processing.json"))['video']
+                                             'map': DEFAULT_PROCESSING['video']
                                          }
                                          }
                                     ]},

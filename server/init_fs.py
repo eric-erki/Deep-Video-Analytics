@@ -46,7 +46,7 @@ def create_model(m, init_event):
 def init_models():
     # In Kube mode create models when scheduler is launched which is always the first container.
     if 'INIT_MODELS' in os.environ:
-        default_models = json.loads(base64.decodestring(os.environ['INIT_MODELS']))
+        default_models = json.loads(base64.decodestring(os.environ['INIT_MODELS']))['models']
         if settings.KUBE_MODE and 'LAUNCH_SCHEDULER' in os.environ:
             init_event = TEvent.objects.create(operation="perform_init", duration=0, started=True, completed=True
                                                , start_ts=timezone.now())
@@ -73,12 +73,6 @@ def init_process():
 
 
 if __name__ == "__main__":
-    # TODO(akshay): remove this once merged into stable
-    try:
-        import sortedcontainers
-    except ImportError:
-        subprocess.check_output(['pip','install','sortedcontainers==2.0.4'])
-        pass
     if 'SUPERUSER' in os.environ and not User.objects.filter(is_superuser=True).exists():
         try:
             User.objects.create_superuser(username=os.environ['SUPERUSER'],
@@ -94,8 +88,8 @@ if __name__ == "__main__":
                 os.mkdir("{}/{}".format(settings.MEDIA_ROOT, create_dirname))
             except:
                 pass
-    if ExternalServer.objects.count() == 0:
-        for e in json.loads(file("../configs/custom_defaults/external.json").read()):
+    if ExternalServer.objects.count() == 0 and 'INIT_MODELS' in os.environ:
+        for e in json.loads(base64.decodestring(os.environ['INIT_MODELS']))['external']:
             de, _ = ExternalServer.objects.get_or_create(name=e['name'], url=e['url'])
             de.pull()
     init_models()
