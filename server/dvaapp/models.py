@@ -479,13 +479,40 @@ class TrainedModel(models.Model):
             except:
                 pass
         shasums = []
-        for m in self.files:
-            dlpath = "{}/{}".format(model_dir, m['filename'])
-            if m['url'].startswith('/'):
-                shutil.copy(m['url'], dlpath)
+        if 'path' in self.arguments and self.arguments['path'].endswith('.dva_model_export'):
+            dlpath = "{}/model.zip".format(model_dir)
+            if self.arguments['path'].startswith('/'):
+                shutil.copy(self.arguments['path'], dlpath)
             else:
-                fs.get_path_to_file(m['url'], dlpath)
-            shasums.append(str(hashlib.sha1(file(dlpath).read()).hexdigest()))
+                fs.get_path_to_file(self.arguments['path'], dlpath)
+            source_zip = "{}/model.zip".format(model_dir)
+            zipf = zipfile.ZipFile(source_zip, 'r')
+            zipf.extractall(model_dir)
+            zipf.close()
+            os.remove(source_zip)
+            files = []
+            import_dirname = os.listdir("{}/".format(model_dir))[-1]
+            for fname in os.listdir("{}/{}/".format(model_dir,import_dirname)):
+                shutil.move("{}/{}/{}".format(model_dir,import_dirname,fname),
+                            "{}/{}".format(model_dir,fname))
+            shutil.rmtree("{}/{}".format(model_dir,import_dirname))
+            for fname in os.listdir(model_dir):
+                if fname != 'model_spec.json':
+                    files.append({"url":"","filename":fname})
+                    shasums.append(str(hashlib.sha1(file("{}/{}".format(model_dir,fname)).read()).hexdigest()))
+                else:
+                    with open('{}/model_spec.json'.format(model_dir),'r') as import_spec:
+                        self.arguments['imported_spec'] = json.load(import_spec)
+            self.files = files
+            self.save()
+        else:
+            for m in self.files:
+                dlpath = "{}/{}".format(model_dir, m['filename'])
+                if m['url'].startswith('/'):
+                    shutil.copy(m['url'], dlpath)
+                else:
+                    fs.get_path_to_file(m['url'], dlpath)
+                shasums.append(str(hashlib.sha1(file(dlpath).read()).hexdigest()))
         if self.shasum is None:
             if len(shasums) == 1:
                 self.shasum = shasums[0]
@@ -493,14 +520,7 @@ class TrainedModel(models.Model):
                 self.shasum = str(hashlib.sha1(''.join(sorted(shasums))).hexdigest())
             self.save()
         self.upload()
-        if self.model_type == TrainedModel.DETECTOR and self.detector_type == TrainedModel.YOLO:
-            source_zip = "{}/models/{}/model.zip".format(settings.MEDIA_ROOT, self.uuid)
-            zipf = zipfile.ZipFile(source_zip, 'r')
-            zipf.extractall("{}/models/{}/".format(settings.MEDIA_ROOT, self.uuid))
-            zipf.close()
-            os.remove(source_zip)
-            self.save()
-        elif self.model_type == self.INDEXER:
+        if self.model_type == self.INDEXER:
             if settings.ENABLE_FAISS:
                 dr, dcreated = Retriever.objects.get_or_create(name=self.name, source_filters={},
                                                                algorithm=Retriever.FAISS,
@@ -513,7 +533,12 @@ class TrainedModel(models.Model):
                 dr.last_built = timezone.now()
                 dr.save()
         elif self.model_type == self.APPROXIMATOR:
-            algo = Retriever.LOPQ if self.algorithm == 'LOPQ' else Retriever.EXACT
+            if self.algorithm == 'LOPQ':
+                algo = Retriever.LOPQ
+            elif self.algorithm == 'FAISS':
+                algo = Retriever.FAISS
+            else:
+                algo = Retriever.EXACT
             dr, dcreated = Retriever.objects.get_or_create(name=self.name,
                                                            source_filters={},
                                                            algorithm=algo,

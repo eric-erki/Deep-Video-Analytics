@@ -614,8 +614,7 @@ def yt(request):
                                       'arguments': {
                                           'rate': settings.DEFAULT_RATE,
                                           'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
-                                          'map': json.load(
-                                              file("../configs/custom_defaults/processing.json"))['video']
+                                          'map': view_shared.DEFAULT_PROCESSING['video']
                                       }
                                       }
                                  ]},
@@ -786,7 +785,7 @@ def import_s3(request):
             key = key.strip()
             if key:
                 extract_task = {
-                    'arguments': {'map': json.load(file("../configs/custom_defaults/processing.json"))['dataset']},
+                    'arguments': {'map': view_shared.DEFAULT_PROCESSING['dataset']},
                     'operation': 'perform_dataset_extraction'}
                 segment_decode_task = {'operation': 'perform_video_segmentation',
                                        'arguments': {
@@ -794,8 +793,7 @@ def import_s3(request):
                                                {'operation': 'perform_video_decode',
                                                 'arguments': {
                                                     'segments_batch_size': settings.DEFAULT_SEGMENTS_BATCH_SIZE,
-                                                    'map': json.load(
-                                                        file("../configs/custom_defaults/processing.json"))['video']
+                                                    'map': view_shared.DEFAULT_PROCESSING['video']
                                                 }
                                                 }
                                            ]},

@@ -99,7 +99,7 @@ class Retrievers(object):
             logging.info("loading approximate index {}".format(index_entry.pk))
             visual_index.add_entries(entries, index_entry.video_id, index_entry.target)
             visual_index.loaded_entries.add(index_entry.pk)
-        elif visual_index.algorithm == 'FAISS_APPROXIMATE':
+        elif visual_index.algorithm == 'FAISS':
             index_file_path = index_entry.get_vectors()
             logging.info("loading FAISS index {}".format(index_entry.pk))
             visual_index.add_vectors(index_file_path, index_entry.count, index_entry.pk)
@@ -118,7 +118,10 @@ class Retrievers(object):
     @classmethod
     def retrieve(cls, event, index_retriever, dr, vector, count, region_pk=None):
         cls.refresh_index(dr)
-        results = index_retriever.nearest(vector=vector, n=count)
+        if 'nprobe' in event.arguments:
+            results = index_retriever.nearest(vector=vector, n=count, nprobe=event.arguments['nprobe'])
+        else:
+            results = index_retriever.nearest(vector=vector, n=count)
         qr_batch = []
         for rank, r in enumerate(results):
             if 'indexentries_pk' in r:

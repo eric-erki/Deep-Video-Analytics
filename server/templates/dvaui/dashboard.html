@@ -80,7 +80,9 @@
         </div>
             <label for="result_count">Results</label>
             <input style="display:inline-block; margin-right:10px;width:50px;" type="number" name="result_count"  id="result_count" value="20" class="checkbox text-right index_name">
-            <label for="generate_tags" >Apply Open Images tagger</label>
+            <label for="nprobe">nprobe</label>
+            <input style="display:inline-block; margin-right:10px;width:50px;" type="number" name="nprobe"  id="nprobe" value="16" class="checkbox text-right index_name">
+            <label for="generate_tags" >Open Images tagger</label>
             <input type="checkbox" ng-model="generate_tags" class="checkbox" style="display: inline-block;margin-right:5px">
             <label for="entire_image">Send entire image</label>
             <input style="display:inline-block; margin-right:5px" type="checkbox" ng-model="send_entire_image" class="checkbox">

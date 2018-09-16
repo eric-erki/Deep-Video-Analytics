@@ -282,14 +282,16 @@ def configure_compose(mode):
         envs.update(compose.load_envs(os.path.expanduser('~/aws.env')))
         print '~/aws.env found. writing credentials to config.json'
     else:
-        print '{} not found. not passing AWS creds. Please create ~/aws.env with AWS_ACCESS_KEY_ID ' \
+        print '{} not found. not passing AWS creds. This is optional and only required if you wish to import/export ' \
+              'from AWS S3. To provide credentials please create ~/aws.env with AWS_ACCESS_KEY_ID ' \
               'and AWS_SECRET_ACCESS_KEY or manually ' \
               'add them to credentials in config.json'.format(os.path.expanduser('~/aws.env'))
     if os.path.isfile(os.path.expanduser('~/do.env')):
         envs.update(compose.load_envs(os.path.expanduser('~/do.env')))
         print '~/do.env found. writing credentials to config.json'
     else:
-        print '{} not found. not passing Digital Ocean creds.'.format(os.path.expanduser('~/do.env'))
+        print '{} not found. not passing Digital Ocean creds. This is optional and only required if you wish to' \
+              ' import/export from Digital Ocean Spaces'.format(os.path.expanduser('~/do.env'))
     if mode == 'gpu':
         gpu_count = int(raw_input("Please select number of GPUs >>").strip())
         gpu_compose_filename = GPU_CONFIG[gpu_count]['compose_filename']

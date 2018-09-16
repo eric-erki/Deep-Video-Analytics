@@ -50,7 +50,7 @@ class SimpleRetriever(object):
                 self.index = np.concatenate([self.index, np.atleast_2d(np.concatenate(temp_index).squeeze())])
                 logging.info(self.index.shape)
 
-    def nearest(self, vector=None, n=12):
+    def nearest(self, vector=None, n=12, nprobe=None):
         dist = None
         results = []
         if self.approximator:
@@ -96,7 +96,7 @@ class LOPQRetriever(object):
             self.entries.append({"id":e[0],"type":entry_type,"video":video_id})
         self.searcher.add_codes(codes, ids)
 
-    def nearest(self, vector=None, n=12):
+    def nearest(self, vector=None, n=12, nprobe=None):
         results = []
         pca_vec = self.approximator.get_pca_vector(vector)
         results_indexes, visited = self.searcher.search(pca_vec, quota=n)
@@ -112,7 +112,7 @@ class FaissApproximateRetriever(object):
         self.index_path = str(approximator.index_path).replace('//', '/')
         self.ivfs = []
         self.ivf_vector = faiss.InvertedListsPtrVector()
-        self.algorithm = "FAISS_APPROXIMATE"
+        self.algorithm = "FAISS"
         self.uuid = str(uuid.uuid4()).replace('-', '_')
         self.faiss_index = None
         self.tree = IntervalTree()
@@ -131,7 +131,10 @@ class FaissApproximateRetriever(object):
                 self.faiss_index = faiss.read_index(computed_index_path)
             else:
                 index = faiss.read_index(computed_index_path)
-                self.faiss_index.merge_from(index, self.faiss_index.ntotal)
+                if type(self.faiss_index) == faiss.swigfaiss.IndexPreTransform:
+                    faiss.merge_into(self.faiss_index,index,True)
+                else:
+                    self.faiss_index.merge_from(index, self.faiss_index.ntotal)
             logging.info("Index size {}".format(self.faiss_index.ntotal))
 
     def nearest(self, vector=None, n=12, nprobe=16):
@@ -189,7 +192,7 @@ class FaissFlatRetriever(object):
             self.faiss_index.add(numpy_matrix)
             logging.info("Index size {}".format(self.faiss_index.ntotal))
 
-    def nearest(self, vector=None, n=12):
+    def nearest(self, vector=None, n=12, nprobe=None):
         vector = np.atleast_2d(vector)
         if vector.shape[-1] != self.components:
             vector = vector.T
@@ -203,7 +206,7 @@ class FaissFlatRetriever(object):
                 results.append(temp)
         return results
 
-    def nearest_batch(self, vectors=None, n=12):
+    def nearest_batch(self, vectors=None, n=12, nprobe=None):
         vectors = np.atleast_2d(vectors)
         if vectors.shape[-1] != self.components:
             vectors = vectors.T

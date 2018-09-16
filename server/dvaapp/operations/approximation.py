@@ -36,7 +36,7 @@ class Approximators(object):
             elif di.algorithm == 'FAISS':
                 Approximators._index_approximator[di.pk] = approximator.FAISSApproximator(di.name, model_dirname)
             else:
-                raise ValueError,"unknown approximator type {}".format(di.pk)
+                raise ValueError,"unknown approximator algorithm {} for pk : {}".format(di.algorithm,di.pk)
         return Approximators._index_approximator[di.pk]
 
     @classmethod
