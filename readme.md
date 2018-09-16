@@ -7,11 +7,16 @@ Deep Video Analytics is a platform for indexing and extracting information from 
 With latest version of docker installed correctly, you can run Deep Video Analytics in minutes
 locally (even without a GPU) using a single command.
 
+### Installation & Overview
+
+For  quick overview we **strongly recommend** visiting [https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com) and going through the presentation
+** Note that the standalone OCR example has been moved to [/docs/experiments/ocr](/docs/experiments/ocr) directory**.
+
 ### Architecture
 
 Deep Video Analytics implements a client-server architecture pattern, where clients can access state of the server
 via a REST API. For uploading, processing data, training models, performing queries, i.e. mutating the state
-clients can send DVAPQL (Deep Video Analytics Processing and Query Language) formatted as JSON. The query represents
+clients can send DVAPQL (Deep Video Analytics Processing and Query Language) formatted as JSON. Each query represents
 a directed acyclic graph of operations.
 
 ### Visual Data Network
@@ -19,30 +24,6 @@ a directed acyclic graph of operations.
 A separate repository [VisualDataNetwork/root](https://github.com/VisualDataNetwork/root) maintains examples of
 DVAPQL scripts for performing tasks such as processing image dataset (e.g. COCO), Youtube videos, Twitch livestreams,
 training FAISS indexers  etc.
-
-
-### Installation & Demo
-
-Please visit [https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com)
-
-### Documentation
-
-- For a quick overview we **strongly recommend** going through the [presentation in readme.pdf](/docs/readme.pdf)
-
-### Experiments
-
-- **OCR example has been moved to [/docs/experiments/ocr](/docs/experiments/ocr) directory**.
-
-### Code organization
-
-- /client : Python client using DVA REST API
-- /configs : ngnix config + default models + processing pipelines
-- /deploy : Dockerfiles + Instructions for development, single machine deployment and scalable deployment with Kubernetes
-- /docs : Documentation, tutorial and experiments
-- /tests : Tests, Notebooks for interactive debugging andtest data
-- /repos : Code copied from third party repos, e.g. Yahoo LOPQ, TF-CTPN etc.
-- /server : dvalib + django server contains contains bulk of the code for UI, App and models.
-- /logs : Empty dir for storing logs
 
 ### Libraries present in this repository and their licenses
 
