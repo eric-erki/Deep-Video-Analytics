@@ -140,7 +140,11 @@ class FaissApproximateRetriever(object):
     def nearest(self, vector=None, n=12, nprobe=16):
         logging.info("Index size {} with {} loaded entries in {}".format(self.faiss_index.ntotal,
                                                                          len(self.loaded_entries), self.name))
-        self.faiss_index.nprobe = nprobe
+        if type(self.faiss_index) == faiss.swigfaiss.IndexPreTransform:
+            index_ivf = faiss.downcast_index(self.faiss_index.index)
+            index_ivf.nprobe = nprobe
+        else:
+            self.faiss_index.nprobe = nprobe
         vector = np.atleast_2d(vector)
         if vector.shape[-1] != self.faiss_index.d:
             vector = vector.T

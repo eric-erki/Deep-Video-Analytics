@@ -291,6 +291,45 @@
                     </div>
                 </div>
             {% endif %}
+            {% if object.results.created_objects and object.results.created_objects.IndexEntries %}
+                <div class="box">
+                    <div class="box-header with-border">
+                        <h3>Index entries</h3>
+                    </div>
+                    <div class="box-body">
+                        <table class="table dataTables">
+                            <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Target</th>
+                                <th>UUID</th>
+                                <th>Features/Storage</th>
+                                <th>Frame index min/max</th>
+                                <th>Indexer shasum</th>
+                                <th>Approximator shasum</th>
+                                <th>count</th>
+                                <th>created</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for k in object.indexentries_set.all %}
+                                <tr>
+                                    <td>{{ k.algorithm }}</td>
+                                    <td>{{ k.target }} </td>
+                                    <td>{{ k.uuid }} </td>
+                                    <td>{{ k.features }}/{{ k.storage_type }} </td>
+                                    <td>{{ k.min_frame_index }}/{{ k.max_frame_index }}</td>
+                                    <td>{{ k.indexer_shasum }} </td>
+                                    <td>{{ k.approximator_shasum }} </td>
+                                    <td class="text-right">{{ k.count }}</td>
+                                    <td class="text-center">{{ k.created }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
             </div>
         </div>
     </section>
