@@ -55,7 +55,8 @@
         </div>
         <div class="box-body" style="text-align:center">
             {% if not video.stream %}
-                <video class="video-js" controls="" preload="metadata" id="media" style="width:90%;margin-left:auto;margin-right:auto">
+                <video class="video-js" controls="" preload="metadata" id="media" data-setup='{"fluid": true}'
+                       style="width:90%;margin-left:auto;margin-right:auto">
                     <source src="{{url}}" type="video/mp4">
                 </video>
             {% else %}
