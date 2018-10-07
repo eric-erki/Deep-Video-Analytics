@@ -16,7 +16,7 @@
                 <div class="box">
                     <div class="box-header"><h4 style="display:inline-block">Celery processes</h4>
                         <div class="pull-right">
-                            <form action="/debug/" method="post">{% csrf_token %}
+                            <form action="/debug_restart_workers/" method="post">{% csrf_token %}
                                 <button class="btn btn-primary" type="submit">Restart workers</button>
                             </form>
                         </div>

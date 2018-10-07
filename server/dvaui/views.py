@@ -487,13 +487,19 @@ def search(request):
 @user_passes_test(user_check)
 def debug(request):
     if settings.DEBUG:
-        if request.method == 'POST':
-            debug_mode.restart_all_workers()
         return render(request, 'dvaui/debug.html', {
             'workers':debug_mode.list_workers()
         })
     else:
         return redirect('app_home')
+
+
+@user_passes_test(user_check)
+def debug_restart_workers(request):
+    if settings.DEBUG:
+        if request.method == 'POST':
+            debug_mode.restart_all_workers()
+    return redirect('debug')
 
 
 @user_passes_test(user_check)

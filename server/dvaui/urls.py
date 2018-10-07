@@ -6,6 +6,7 @@ urlpatterns = [
     url(r'^$', views.index, name='app_home'),
     url(r'^app$', views.index, name='app'),
     url(r'^debug/$', views.debug, name='debug'),
+    url(r'^debug_restart_workers/$', views.debug_restart_workers, name='debug_restart_workers'),
     url(r'^tasks/$', views.TEventList.as_view(), name='tasks'),
     url(r'^task_detail/(?P<pk>[0-9a-f-]+)/$', views.TEventDetail.as_view(), name='task_detail'),
     url(r'^video_tasks/(?P<pk>[0-9a-f-]+)/$', views.TEventList.as_view(), name='video_tasks'),
