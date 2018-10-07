@@ -484,6 +484,14 @@ def search(request):
 
 
 @user_passes_test(user_check)
+def debug(request):
+    if settings.DEBUG:
+        return render(request, 'dvaui/debug.html', {})
+    else:
+        return redirect('app_home')
+
+
+@user_passes_test(user_check)
 def index(request, query_pk=None, frame_pk=None, detection_pk=None):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
