@@ -21,9 +21,10 @@
             <h3 style="margin-top:5px">Segment {{ object.segment_index }}</h3>
         </div>
         <div class="box-body" style="text-align:center">
-            <video controls="" preload="metadata" name="media" style="width:90%;margin-left:auto;margin-right:auto">
-            <source src="{{url}}" type="video/mp4">
-            </video>
+                <video class="video-js" controls="" preload="metadata" id="media" data-setup='{"fluid": true}'
+                       style="width:90%;margin-left:auto;margin-right:auto">
+                    <source src="{{url}}" type="video/mp4">
+                </video>
         </div>
         </div>
         {% if frame_index_offsets %}
