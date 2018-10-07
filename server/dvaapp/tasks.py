@@ -651,7 +651,7 @@ def manage_host(self, op, ping_index=None, worker_name=None):
     DELETED_COUNT = task_shared.collect_garbage(DELETED_COUNT)
     models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message="", host=host_name,
                                            ping_index=ping_index)
-    for w in models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True):
+    for w in models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True, shutdown=False):
         if not task_shared.pid_exists(w.pid):
             w.alive = False
             w.save()

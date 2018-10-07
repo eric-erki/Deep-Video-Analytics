@@ -14,6 +14,7 @@ from django.utils import timezone
 import math
 from django.db.models import Max
 import view_shared
+import debug_mode
 from dvaapp.processing import DVAPQLProcess
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.utils.decorators import method_decorator
@@ -486,7 +487,11 @@ def search(request):
 @user_passes_test(user_check)
 def debug(request):
     if settings.DEBUG:
-        return render(request, 'dvaui/debug.html', {})
+        if request.method == 'POST':
+            debug_mode.restart_all_workers()
+        return render(request, 'dvaui/debug.html', {
+            'workers':debug_mode.list_workers()
+        })
     else:
         return redirect('app_home')
 
