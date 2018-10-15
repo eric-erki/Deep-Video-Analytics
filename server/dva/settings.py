@@ -26,6 +26,7 @@ SECRET_KEY = os.environ['SECRET_KEY']
 AUTH_DISABLED = os.environ.get('AUTH_DISABLED', False)
 
 INTERNAL_IPS = ['localhost','127.0.0.1']
+CSRF_COOKIE_NAME = 'dvacsrftoken'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = 'ENABLE_DEBUG' in os.environ
