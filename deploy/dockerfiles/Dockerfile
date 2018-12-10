@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:1.9.0
+FROM tensorflow/tensorflow:1.12.0
 MAINTAINER Akshay Bhat <akshayubhat@gmail.com>
 RUN apt-get update -q && apt-get install -y wget xz-utils
 WORKDIR "/bin/"
