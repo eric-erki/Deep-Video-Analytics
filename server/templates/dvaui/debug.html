@@ -1,0 +1,33 @@
+{% extends "dvaui/base.html" %}
+{% load staticfiles %}
+{% block page_content %}
+    <section class="content-header" style="padding-top:0px" xmlns="http://www.w3.org/1999/html">
+        <div class="row">
+            <div class="box box-info">
+                <div class="box-header">
+                    <h4>Debug toolkit</h4>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="content">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="box">
+                    <div class="box-header"><h4 style="display:inline-block">Celery processes</h4>
+                        <div class="pull-right">
+                            <form action="/debug_restart_workers/" method="post">{% csrf_token %}
+                                <button class="btn btn-primary" type="submit">Restart workers</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="box-body">
+                        <textarea style="width:100%;height:400px">{{ workers }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+{% block page_js %}
+{% endblock %}

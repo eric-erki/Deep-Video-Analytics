@@ -37,6 +37,7 @@ class Worker(models.Model):
     host = models.CharField(max_length=500, default="")
     pid = models.IntegerField()
     alive = models.BooleanField(default=True)
+    shutdown = models.BooleanField(default=False)
     last_ping = models.DateTimeField('date last ping', null=True)
     created = models.DateTimeField('date created', auto_now_add=True)
 

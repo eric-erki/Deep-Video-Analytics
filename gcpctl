@@ -7,8 +7,8 @@ import json
 import os
 
 IMAGE_COMMAND = "gcloud compute instances create 'dvaimager' --zone='us-west1-b' --image-family='tf-latest-cu92' " \
-"--image-project=deeplearning-platform-release --maintenance-policy TERMINATE " \
-"--accelerator='type=nvidia-tesla-p100,count=1'  --metadata='install-nvidia-driver=True'"
+                "--image-project=deeplearning-platform-release --maintenance-policy TERMINATE " \
+                "--accelerator='type=nvidia-tesla-p100,count=1'  --metadata='install-nvidia-driver=True'"
 
 INSTALLER_COPY = "gcloud compute scp installer.sh {username}@dvaimager:~/installer.sh "
 INSTALLER_EXEC = "gcloud compute ssh {username}@dvaimager --command 'sudo sh installer.sh'"
@@ -32,12 +32,12 @@ sudo usermod -aG docker USERNAME
 exit
 """
 
-INSTANCE_CREATE= "gcloud beta compute instances create {instance}" \
-                 " --zone={zone} --machine-type={machine_type} --subnet=default --network-tier=PREMIUM" \
-                 " --no-restart-on-failure --maintenance-policy=TERMINATE {extra_launch_flags} " \
-                 " --accelerator=type={gpu},count={gpus} --image={image_name} " \
-                 "--image-project={project} --boot-disk-size=120GB " \
-                 "--boot-disk-type=pd-ssd --boot-disk-device-name={instance}"
+INSTANCE_CREATE = "gcloud beta compute instances create {instance}" \
+                  " --zone={zone} --machine-type={machine_type} --subnet=default --network-tier=PREMIUM" \
+                  " --no-restart-on-failure --maintenance-policy=TERMINATE {extra_launch_flags} " \
+                  " --accelerator=type={gpu},count={gpus} --image={image_name} " \
+                  "--image-project={project} --boot-disk-size=120GB " \
+                  "--boot-disk-type=pd-ssd --boot-disk-device-name={instance}"
 INSTANCE_CLONE = "gcloud compute ssh {username}@{instance} --command 'git clone https://github.com/AKSHAYUBHAT/DeepVideoAnalytics'"
 INSTANCE_COPY = "gcloud compute scp config.json {username}@{instance}:~/DeepVideoAnalytics/config.json"
 INSTANCE_START = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl start'"
@@ -46,7 +46,6 @@ INSTANCE_AUTH_COPY = "gcloud compute scp {username}@{instance}:~/DeepVideoAnalyt
 INSTANCE_CLEAN = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl clean && cd .. && rm -rf DeepVideoAnalytics'"
 INSTANCE_DELETE = "gcloud beta compute instances -q delete {instance}"
 
-
 DEV_CREATE = "gcloud beta compute instances create {dev_instance}" \
              " --zone={zone} --machine-type=n1-standard-8 --subnet=default --network-tier=PREMIUM" \
              " --no-restart-on-failure --maintenance-policy=MIGRATE --image={image_name} --address {devstaticip} " \
@@ -54,7 +53,6 @@ DEV_CREATE = "gcloud beta compute instances create {dev_instance}" \
              " --boot-disk-device-name={dev_instance} {devperms}"
 DEV_CLONE = "gcloud compute ssh {username}@{dev_instance} --command 'git clone https://github.com/AKSHAYUBHAT/DeepVideoAnalytics'"
 DEV_COPY_CREDS = "gcloud compute scp {credspath} {username}@{dev_instance}:~/{credfilename}"
-
 
 DEFAULT_CONFIG = {
     'project': 'deepvideoanalytics-161408',
@@ -65,18 +63,18 @@ DEFAULT_CONFIG = {
     'dev_instance': 'dvadev',
     'gpus': 2,
     'gpu': 'nvidia-tesla-p100',
-    'extra_launch_flags':'--preemptible',
-    'machine_type':'custom-12-46080'
+    'extra_launch_flags': '--preemptible',
+    'machine_type': 'custom-12-46080'
 }
 
 
-def create_gpu_image(username,image_name):
+def create_gpu_image(username, image_name):
     command = shlex.split(IMAGE_COMMAND)
     print ' '.join(command)
     subprocess.check_output(command)
     time.sleep(300)
-    with open('installer.sh','w') as installer:
-        installer.write(IMAGE_INSTALLER.replace('USERNAME',username))
+    with open('installer.sh', 'w') as installer:
+        installer.write(IMAGE_INSTALLER.replace('USERNAME', username))
     command = shlex.split(INSTALLER_COPY.format(username=username))
     print ' '.join(command)
     subprocess.check_output(command)
@@ -100,9 +98,9 @@ def create_gpu_image(username,image_name):
     subprocess.check_output(command)
 
 
-def connect(username,instance):
+def connect(username, instance):
     command = "gcloud compute ssh {username}@{instance} -- -L 8000:localhost:8000 -L 8888:localhost:8888 -L 8889:localhost:8889"
-    command = command.format(username=username,instance=instance)
+    command = command.format(username=username, instance=instance)
     print command
     subprocess.check_call(shlex.split(command))
 
@@ -110,7 +108,7 @@ def connect(username,instance):
 def create(config):
     command = shlex.split(INSTANCE_CREATE.format(**config))
     print ' '.join(command)
-    subprocess.check_output(command)    
+    subprocess.check_output(command)
 
 
 def create_dev(config):
@@ -175,7 +173,7 @@ def delete_dev(config):
 
 def load_config():
     if not os.path.isfile('gcp.json'):
-        with open('gcp.json','w') as out:
+        with open('gcp.json', 'w') as out:
             out.write(json.dumps(DEFAULT_CONFIG))
         raise ValueError("please edit/verify gcp.json")
     return json.load(file('gcp.json'))
@@ -189,12 +187,13 @@ if __name__ == '__main__':
     Edit gcp.json (it will be created if it does not exists.) with information about instance.    
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", help="action can be one of { create_image | create | start | auth | clean | connect | delete }")
+    parser.add_argument("action",
+                        help="action can be one of { create_image | create | start | auth | clean | connect | delete }")
     args = parser.parse_args()
     config = load_config()
     if args.action == 'create_image':
         print "Important please verify that instance is deleted!"
-        create_gpu_image(config['username'],config['image_name'])
+        create_gpu_image(config['username'], config['image_name'])
     elif args.action == 'create':
         create(config)
     elif args.action == 'start':
@@ -207,14 +206,14 @@ if __name__ == '__main__':
     elif args.action == 'delete':
         delete(config)
     elif args.action == 'connect':
-        connect(config['username'],config['instance'])
+        connect(config['username'], config['instance'])
     elif args.action == 'dev':
         try:
             create_dev(config)
         except:
             print "Assuming instance already exists, attempting to connect to it"
             pass
-        connect(config['username'],config['dev_instance'])
+        connect(config['username'], config['dev_instance'])
     elif args.action == 'devdelete':
         delete_dev(config)
     else:

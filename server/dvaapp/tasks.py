@@ -616,29 +616,6 @@ def perform_test(task_id):
     return 0
 
 
-@app.task(track_started=True, name="perform_compression")
-def perform_compression(task_id):
-    """
-    TODO Compress a video or a dataset by removing all materialized regions
-    and frames/segments (for videos). While retaining metadata and indexes.
-    :param task_id:
-    :return:
-    """
-    raise NotImplementedError
-
-
-@app.task(track_started=True, name="perform_decompression")
-def perform_decompression(task_id):
-    """
-    TODO De-compress a compressed video or a dataset by re-creating all materialized regions
-    and frames/segments (for videos). Implementing this tasks correctly requires, exact
-    FFmpeg version otherwise the segements might be split at different frames.
-    :param task_id:
-    :return:
-    """
-    raise NotImplementedError
-
-
 @app.task(track_started=True, name="manage_host", bind=True)
 def manage_host(self, op, ping_index=None, worker_name=None):
     """
@@ -651,7 +628,7 @@ def manage_host(self, op, ping_index=None, worker_name=None):
     DELETED_COUNT = task_shared.collect_garbage(DELETED_COUNT)
     models.ManagementAction.objects.create(op=op, parent_task=self.request.id, message="", host=host_name,
                                            ping_index=ping_index)
-    for w in models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True):
+    for w in models.Worker.objects.filter(host=host_name.split('.')[-1], alive=True, shutdown=False):
         if not task_shared.pid_exists(w.pid):
             w.alive = False
             w.save()
