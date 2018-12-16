@@ -35,7 +35,7 @@ if 'ALLOWED_HOSTS' in os.environ:
     ALLOWED_HOSTS = [k.strip() for k in os.environ['ALLOWED_HOSTS'].split(',') if k.strip()]
 else:
     ALLOWED_HOSTS = ["*"]  # Dont use this in prod
-    CSRF_TRUSTED_ORIGINS = ["*"]
+    CSRF_TRUSTED_ORIGINS = [".appspot.com"]
 
 #: Only add pickle to this list if your broker is secured
 #: from unwanted access (see userguide/security.html)
