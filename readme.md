@@ -10,9 +10,8 @@ locally (even without a GPU) using a single command.
 ### Installation & Overview
 
 For installation instructions and overview please visit
-[https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com) and go through the presentation.
-
-The standalone OCR example has been moved to [/docs/experiments/ocr](/docs/experiments/ocr) directory.
+[https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com) and go through the presentation. The
+standalone OCR example has been moved to [/docs/experiments/ocr](/docs/experiments/ocr) directory.
 
 ### Google Cloud Platform
 
