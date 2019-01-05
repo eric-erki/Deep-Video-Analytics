@@ -1,4 +1,4 @@
-# Deep Video Analytics &nbsp; &nbsp; [![Build Status](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics.svg?branch=master)](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics) [![Build Status](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics.svg?branch=stable)](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics/branches)  [![Open in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2FAKSHAYUBHAT%2FDeepVideoAnalytics&cloudshell_print=cloud-shell-readme.txt)
+# Deep Video Analytics &nbsp; &nbsp; [![Build Status](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics.svg?branch=master)](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics) [![Build Status](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics.svg?branch=stable)](https://travis-ci.org/AKSHAYUBHAT/DeepVideoAnalytics/branches)
 #### by [Akshay Bhat](http://www.akshaybhat.com)
 
 ![UI Screenshot](docs/figures/emma.png "Emma Watson, from poster of her latest subject appropriate movie The Circle")
@@ -13,6 +13,12 @@ For installation instructions and overview please visit
 [https://www.deepvideoanalytics.com](https://www.deepvideoanalytics.com) and go through the presentation.
 
 The standalone OCR example has been moved to [/docs/experiments/ocr](/docs/experiments/ocr) directory.
+
+### Google Cloud Platform
+
+Deep Video Analytics recommends Google Cloud Platform and is configured to work out of box.
+
+[![Open in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2FAKSHAYUBHAT%2FDeepVideoAnalytics&cloudshell_print=cloud-shell-readme.txt)
 
 ### Architecture
 
