@@ -15,7 +15,7 @@ raven
 psycopg2-binary
 requests
 boto3
-protobuf==3.5.2.post1
+protobuf==3.6.0
 humanize
 enum34
 scikit-learn
