@@ -1,6 +1,6 @@
 pillow
 fabric
-django==1.11.15
+django==1.11.19
 jinja
 jinja2
 djangorestframework
