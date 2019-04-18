@@ -45,6 +45,7 @@ INSTANCE_AUTH = "gcloud compute ssh {username}@{instance} --command 'cd DeepVide
 INSTANCE_AUTH_COPY = "gcloud compute scp {username}@{instance}:~/DeepVideoAnalytics/creds.json creds.json"
 INSTANCE_CLEAN = "gcloud compute ssh {username}@{instance} --command 'cd DeepVideoAnalytics && ./dvactl clean && cd .. && rm -rf DeepVideoAnalytics'"
 INSTANCE_DELETE = "gcloud beta compute instances -q delete {instance}"
+RSYNC = "rsync -r -a -v -e ssh ./server/ {username}@{dev_instance}.{zone}.{project}:/home/{username}/DeepVideoAnalytics/server/"
 
 DEV_CREATE = "gcloud beta compute instances create {dev_instance}" \
              " --zone={zone} --machine-type=n1-standard-8 --subnet=default --network-tier=PREMIUM" \
@@ -118,12 +119,14 @@ def create_dev(config):
     time.sleep(40)
     config['credspath'] = os.path.expanduser('~/aws.env')
     config['credfilename'] = os.path.expanduser('aws.env')
-    command = shlex.split(DEV_COPY_CREDS.format(**config))
-    print ' '.join(command)
-    subprocess.check_output(command)
-    config['credspath'] = os.path.expanduser('~/do.env')
-    config['credfilename'] = os.path.expanduser('do.env')
-    command = shlex.split(DEV_COPY_CREDS.format(**config))
+    if os.path.isfile(config['credspath']):
+        command = shlex.split(DEV_COPY_CREDS.format(**config))
+        print ' '.join(command)
+        subprocess.check_output(command)
+    if os.path.isfile(config['credspath']):
+        config['credspath'] = os.path.expanduser('~/do.env')
+        config['credfilename'] = os.path.expanduser('do.env')
+        command = shlex.split(DEV_COPY_CREDS.format(**config))
     print ' '.join(command)
     subprocess.check_output(command)
     command = shlex.split(DEV_CLONE.format(**config))
@@ -160,6 +163,12 @@ def clean(config):
 
 def delete(config):
     command = shlex.split(INSTANCE_DELETE.format(**config))
+    print ' '.join(command)
+    subprocess.check_output(command)
+
+
+def rsync(config):
+    command = shlex.split(RSYNC.format(**config))
     print ' '.join(command)
     subprocess.check_output(command)
 
@@ -205,6 +214,8 @@ if __name__ == '__main__':
         clean(config)
     elif args.action == 'delete':
         delete(config)
+    elif args.action == 'devsync':
+        rsync(config)
     elif args.action == 'connect':
         connect(config['username'], config['instance'])
     elif args.action == 'dev':
