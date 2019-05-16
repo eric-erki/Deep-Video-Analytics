@@ -7,6 +7,8 @@ Deep Video Analytics is a platform for indexing and extracting information from 
 With latest version of docker installed correctly, you can run Deep Video Analytics in minutes
 locally (even without a GPU) using a single command.
 
+#### May 2019 Update: Over the last few months I have been developing DVA on a private repo and will be updating the public version in Fall 2019. 
+
 ### Installation & Overview
 
 For installation instructions and overview please visit
