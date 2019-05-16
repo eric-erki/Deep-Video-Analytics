@@ -77,12 +77,8 @@ a directed acyclic graph of operations.
 
 
 # License & Copyright
-
 **Copyright 2016-2018, Akshay Bhat, All rights reserved.**
 
 # Contact
-
-Deep Video Analytics is nearing stable 1.0, we expect to release in Summer 2018.
-The license will be relaxed once a stable release version is reached.
 Please contact me for more information.
  
