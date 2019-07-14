@@ -214,7 +214,7 @@ if __name__ == '__main__':
         clean(config)
     elif args.action == 'delete':
         delete(config)
-    elif args.action == 'devsync':
+    elif args.action == 'sync':
         rsync(config)
     elif args.action == 'connect':
         connect(config['username'], config['instance'])
