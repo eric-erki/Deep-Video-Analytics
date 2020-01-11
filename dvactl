@@ -177,6 +177,7 @@ def configure_kube():
         "superemail": "admin@test.com",
         "cloudfsprefix": "gs",
         "cors_origin": "*",
+ "resource_bucket": "dvaresources",
         "redishost": "redis-master",
         "redispassword": "1234567890",
         "zone": "us-west1-b",
